@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Korean Name Converter</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="hero-badges">
+            <p class="eyebrow">Korean Name Converter</p>
+          </div>
+        </div>
+        <form id="search-form" class="search-panel">
+          <div class="search-panel-head">
+            <label class="search-label" for="query">Search</label>
+            <p class="search-help">Spaces, commas, hyphens, and mixed scripts are all accepted.</p>
+          </div>
+          <div class="search-row">
+            <input
+              id="query"
+              name="query"
+              type="text"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Examples: 정준, Jung Joon, チョンジュン, 鄭俊, Seo Taiji"
+            />
+            <button type="submit">Convert</button>
+          </div>
+          <div class="example-row">
+            <button type="button" class="example-chip" data-example="정준">정준</button>
+            <button type="button" class="example-chip" data-example="Jung Joon">Jung Joon</button>
+            <button type="button" class="example-chip" data-example="チョンジュン">チョンジュン</button>
+            <button type="button" class="example-chip" data-example="鄭俊">鄭俊</button>
+            <button type="button" class="example-chip" data-example="Seo Taiji">Seo Taiji</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="status-grid">
+        <article class="status-card">
+          <span class="status-label">Detected Scripts</span>
+          <div id="detected-scripts" class="status-value">Waiting for input</div>
+        </article>
+      </section>
+
+      <section class="results-section">
+        <div class="section-head">
+          <span class="section-badge">Results</span>
+          <h2>Ranked Results</h2>
+        </div>
+        <div id="results" class="results-list"></div>
+      </section>
+    </main>
+
+    <template id="result-template">
+      <article class="result-card">
+        <div class="result-top">
+          <div>
+            <div class="result-hangul"></div>
+            <div class="result-subtitle"></div>
+          </div>
+          <div class="score-box">
+            <span class="score-label">Plausibility</span>
+            <span class="score-value"></span>
+          </div>
+        </div>
+        <div class="score-bar"><span></span></div>
+        <div class="result-grid">
+          <section>
+            <h3>Roman Alphabet</h3>
+            <ol class="variant-list roman-list"></ol>
+          </section>
+          <section>
+            <h3>Japanese Kana</h3>
+            <ol class="variant-list kana-list"></ol>
+          </section>
+          <section>
+            <h3>Hanja</h3>
+            <ol class="variant-list hanja-list"></ol>
+          </section>
+        </div>
+      </article>
+    </template>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
