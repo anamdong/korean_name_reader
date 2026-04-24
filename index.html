@@ -15,15 +15,9 @@
   <body>
     <main class="app-shell">
       <section class="hero">
-        <div class="hero-copy">
-          <div class="hero-badges">
-            <p class="eyebrow">Korean Name Converter</p>
-          </div>
-        </div>
         <form id="search-form" class="search-panel">
           <div class="search-panel-head">
             <label class="search-label" for="query">Search</label>
-            <p class="search-help">Spaces, commas, hyphens, and mixed scripts are all accepted.</p>
           </div>
           <div class="search-row">
             <input
@@ -32,7 +26,7 @@
               type="text"
               autocomplete="off"
               spellcheck="false"
-              placeholder="Examples: 정준, Jung Joon, チョンジュン, 鄭俊, Seo Taiji"
+              placeholder="Spaces, commas, hyphens, and mixed scripts are all accepted."
             />
             <button type="submit">Convert</button>
           </div>
@@ -46,16 +40,8 @@
         </form>
       </section>
 
-      <section class="status-grid">
-        <article class="status-card">
-          <span class="status-label">Detected Scripts</span>
-          <div id="detected-scripts" class="status-value">Waiting for input</div>
-        </article>
-      </section>
-
-      <section class="results-section">
+      <section class="results-section is-hidden" aria-hidden="true">
         <div class="section-head">
-          <span class="section-badge">Results</span>
           <h2>Ranked Results</h2>
         </div>
         <div id="results" class="results-list"></div>

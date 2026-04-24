@@ -13,10 +13,11 @@ const scriptPatterns = {
 };
 
 const resultTemplate = document.querySelector("#result-template");
+const resultsSectionEl = document.querySelector(".results-section");
 const resultsEl = document.querySelector("#results");
 const queryEl = document.querySelector("#query");
 const formEl = document.querySelector("#search-form");
-const detectedScriptsEl = document.querySelector("#detected-scripts");
+const exampleChipEls = Array.from(document.querySelectorAll(".example-chip"));
 
 const compoundSurnamesFallback = new Set(["남궁", "황보", "선우", "제갈", "사공", "서문", "독고", "동방", "어금", "망절"]);
 const HANGUL_BASE = 0xac00;
@@ -24,6 +25,14 @@ const HANGUL_END = 0xd7a3;
 const HANGUL_ONSETS = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
 const HANGUL_VOWELS = ["ㅏ", "ㅐ", "ㅑ", "ㅒ", "ㅓ", "ㅔ", "ㅕ", "ㅖ", "ㅗ", "ㅘ", "ㅙ", "ㅚ", "ㅛ", "ㅜ", "ㅝ", "ㅞ", "ㅟ", "ㅠ", "ㅡ", "ㅢ", "ㅣ"];
 const HANGUL_CODAS = ["", "ㄱ", "ㄲ", "ㄳ", "ㄴ", "ㄵ", "ㄶ", "ㄷ", "ㄹ", "ㄺ", "ㄻ", "ㄼ", "ㄽ", "ㄾ", "ㄿ", "ㅀ", "ㅁ", "ㅂ", "ㅄ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
+const COMPLEX_CODAS = new Set(["ㄳ", "ㄵ", "ㄶ", "ㄺ", "ㄻ", "ㄼ", "ㄽ", "ㄾ", "ㄿ", "ㅀ", "ㅄ"]);
+const KANA_CODA_CARRIER_MAP = new Map([
+  ["ム", new Set(["ㅁ"])],
+  ["ン", new Set(["ㄴ", "ㅇ"])],
+  ["ク", new Set(["ㄱ"])],
+  ["プ", new Set(["ㅂ"])],
+  ["ル", new Set(["ㄹ"])],
+]);
 
 function stripDiacritics(text) {
   return text.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
@@ -243,7 +252,7 @@ function mergeKanaCandidateLists(primary, synthetic, targetField = "hangul", lim
 
 function isBlockedUnsupportedComplexCodaSyllable(syllable) {
   const parts = decomposeHangulSyllable(syllable);
-  if (!parts?.coda || parts.coda.length <= 1) return false;
+  if (!parts?.coda || !COMPLEX_CODAS.has(parts.coda)) return false;
   return !isSinoAllowedSyllable(syllable);
 }
 
@@ -511,6 +520,14 @@ function givenWholeNamePrior(units) {
   if (datasetCount > 0) prior += Math.log1p(datasetCount) * 35;
   if (rowOccurrences > 0) prior += Math.log1p(rowOccurrences) * 8;
   return prior;
+}
+
+function hasSupportedWholeGivenName(units) {
+  const name = units.join("");
+  if (!name) return false;
+  const data = state.data?.givenNames?.[name];
+  if (!data) return false;
+  return Number(data.totalWeight || 0) > 0 || Number(data.datasetCount || 0) > 0 || Number(data.rowOccurrences || 0) > 0;
 }
 
 function givenUnitsNamePrior(units) {
@@ -802,12 +819,19 @@ function collapsedVowelSignature(text) {
   return (text.match(/[aeiouy]+/g) || []).join("").replace(/([aeiouy])\1+/g, "$1");
 }
 
+function normalizedVowelChunks(text) {
+  return (normalizeLatin(text).match(/[aeiouy]+/g) || []).map((chunk) => {
+    if (chunk === "ou") return "oo";
+    return chunk;
+  });
+}
+
 function preservesCoreVowels(norm, key) {
-  const normVowels = collapsedVowelSignature(norm);
-  const keyVowels = collapsedVowelSignature(key);
-  if (!normVowels || !keyVowels) return true;
-  if (normVowels.length === 1 && keyVowels.length === 1) return normVowels === keyVowels;
-  return true;
+  const normChunks = normalizedVowelChunks(norm);
+  const keyChunks = normalizedVowelChunks(key);
+  if (!normChunks.length || !keyChunks.length) return true;
+  if (normChunks.length !== keyChunks.length) return false;
+  return normChunks.every((chunk, index) => chunk === keyChunks[index]);
 }
 
 function hasOddInitialHCluster(text) {
@@ -905,6 +929,33 @@ function addExactNameCandidates(query, candidateMap) {
   }
 }
 
+function surnameLatinShapeAllowed(token, hangul) {
+  const surname = state.runtime?.surnameByHangul?.get(hangul);
+  if (!surname?.latin?.length) return true;
+  const norm = normalizeLatin(token);
+  if (!norm) return true;
+
+  const aliases = surname.latin
+    .map((item) => ({
+      norm: normalizeLatin(item.text),
+      score: Number(item.score) || 0,
+    }))
+    .filter((item) => item.norm);
+  if (!aliases.length) return true;
+
+  const bestAlias = aliases.reduce((best, item) => (item.score > best.score ? item : best), aliases[0]);
+  if (preservesCoreVowels(norm, bestAlias.norm) && preservesTrailingCoda(norm, bestAlias.norm)) {
+    return true;
+  }
+
+  return aliases.some(
+    (item) =>
+      item.score >= bestAlias.score * 0.75 &&
+      preservesCoreVowels(norm, item.norm) &&
+      preservesTrailingCoda(norm, item.norm),
+  );
+}
+
 function findSurnameCandidatesFromLatin(token) {
   const norm = normalizeLatin(token);
   if (!norm) return [];
@@ -914,6 +965,7 @@ function findSurnameCandidatesFromLatin(token) {
     const direct = data.surnameLatinIndex[variant.token];
     if (direct) {
       for (const item of direct) {
+        if (!surnameLatinShapeAllowed(variant.token, item.hangul)) continue;
         results.push({ hangul: item.hangul, score: Number(item.score) - variant.penalty });
       }
       continue;
@@ -926,10 +978,15 @@ function findSurnameCandidatesFromLatin(token) {
         if (Math.abs(key.length - variant.token.length) > 1) return false;
         if (levenshtein(key, variant.token) > 1) return false;
         if (!preservesTrailingCoda(variant.token, key)) return false;
+        if (!preservesCoreVowels(variant.token, key)) return false;
         if (variant.token.length >= 5 && consonantSignature(key) !== consonantSignature(variant.token)) return false;
         return true;
       })
-      .flatMap((key) => data.surnameLatinIndex[key].map((item) => ({ hangul: item.hangul, score: Number(item.score) * 0.78 - variant.penalty })));
+      .flatMap((key) =>
+        data.surnameLatinIndex[key]
+          .filter((item) => surnameLatinShapeAllowed(variant.token, item.hangul))
+          .map((item) => ({ hangul: item.hangul, score: Number(item.score) * 0.78 - variant.penalty })),
+      );
     results.push(...fuzzy);
   }
   return dedupeScoredByField(results, "hangul", "score", 8);
@@ -1235,6 +1292,30 @@ function parseGivenKanaTokens(tokens) {
   return recoverPronouncedSinoGivenCandidates(filterEvidenceBackedGivenCandidates(dedupeCandidateUnits(combos, 24)));
 }
 
+function kanaJoinedSurnameBoundaryAdjustment(sourceKana, surnameVariant, surnameHangul, givenUnits = []) {
+  const normVariant = normalizeKana(surnameVariant);
+  const remainder = sourceKana.slice(normVariant.length);
+  const carrier = remainder[0] || "";
+  const expectedCodas = KANA_CODA_CARRIER_MAP.get(carrier);
+  if (!expectedCodas) return 0;
+
+  const surnameLast = Array.from(surnameHangul || "").at(-1);
+  const surnameParts = decomposeHangulSyllable(surnameLast);
+  if (!surnameParts) return 0;
+
+  const totalLength = (surnameHangul || "").length + (givenUnits || []).length;
+  if (expectedCodas.has(surnameParts.coda)) {
+    return totalLength <= 3 ? 360 : 180;
+  }
+  if (!surnameParts.coda && totalLength > 3) {
+    return -1500;
+  }
+  if (totalLength > 3) {
+    return -900;
+  }
+  return -120;
+}
+
 function parseGivenHanja(text) {
   const norm = extractHanja(text);
   if (!norm) return [];
@@ -1368,7 +1449,15 @@ function searchKana(query, candidateMap) {
   for (const [variant, surnameCandidates] of Object.entries(state.data.surnameKanaIndex)) {
     if (!kana.startsWith(variant) || kana.length === variant.length) continue;
     const givenCandidates = parseGivenKanaTokens([kana.slice(variant.length)]);
-    combineSurnameAndGivenCandidates(surnameCandidates, givenCandidates, candidateMap, 0.96, "Kana joined-string parse");
+    for (const surnameCandidate of surnameCandidates.slice(0, 10)) {
+      for (const givenCandidate of givenCandidates.slice(0, 24)) {
+        const givenPrior = givenUnitsNamePrior(givenCandidate.units);
+        const boundaryAdjustment = kanaJoinedSurnameBoundaryAdjustment(kana, variant, surnameCandidate.hangul, givenCandidate.units);
+        const hangul = `${surnameCandidate.hangul}${givenCandidate.units.join("")}`;
+        const score = (Number(surnameCandidate.score) + Number(givenCandidate.score)) * 0.96 + givenPrior + boundaryAdjustment;
+        addCandidate(candidateMap, hangul, score, "Kana joined-string parse");
+      }
+    }
   }
 }
 
@@ -1603,17 +1692,18 @@ function buildResultCards(candidateMap) {
   const candidates = [...candidateMap.values()].sort((a, b) => b.score - a.score).slice(0, 16);
   if (!candidates.length) {
     resultsEl.innerHTML = `<div class="empty-state">No plausible candidates found. Try another spacing style, a different romanization, or a shorter query.</div>`;
+    showResultsSection();
     return;
   }
 
-  const maxScore = candidates[0].score || 1;
+  const candidatePercents = allocatePercentages(candidates, (candidate) => Number(candidate.score) || 0);
   resultsEl.innerHTML = "";
-  for (const candidate of candidates) {
+  for (const [index, candidate] of candidates.entries()) {
     const exactRows = gatherExactRowsForHangul(candidate.hangul, candidate);
     const romanOutputs = generateRomanOutputs(candidate.hangul, exactRows);
     const kanaOutputs = generateKanaOutputs(candidate.hangul, exactRows);
     const hanjaOutputs = hanjaOutputsForCandidate(candidate.hangul, exactRows);
-    const plausibility = Math.max(1, Math.round((candidate.score / maxScore) * 100));
+    const plausibility = candidatePercents[index] ?? 0;
     const { surname, given } = splitNameUnits(candidate.hangul, state.runtime.compoundSurnames);
 
     const fragment = resultTemplate.content.cloneNode(true);
@@ -1625,12 +1715,13 @@ function buildResultCards(candidateMap) {
     const romanList = fragment.querySelector(".roman-list");
     const kanaList = fragment.querySelector(".kana-list");
     const hanjaList = fragment.querySelector(".hanja-list");
-    fillVariantList(romanList, romanOutputs, maxScore);
-    fillVariantList(kanaList, kanaOutputs, maxScore);
-    fillVariantList(hanjaList, hanjaOutputs, maxScore, !hanjaOutputs.length ? "No observed Hanja reading in the dataset" : "");
+    fillVariantList(romanList, romanOutputs);
+    fillVariantList(kanaList, kanaOutputs);
+    fillVariantList(hanjaList, hanjaOutputs, !hanjaOutputs.length ? "No observed Hanja reading in the dataset" : "");
 
     resultsEl.appendChild(fragment);
   }
+  showResultsSection();
 }
 
 function pruneImplausibleCandidates(candidateMap) {
@@ -1656,10 +1747,12 @@ function pruneImplausibleCandidates(candidateMap) {
     const units = Array.from(given);
     const ultraRareCount = units.filter((syllable) => isUltraRareGivenSyllable(syllable)).length;
     const unsupportedCount = units.filter((syllable) => !isAllowedNameSyllable(syllable)).length;
+    const unsupportedLongGiven = units.length >= 3 && !hasSupportedWholeGivenName(units);
     const hasExactEvidence =
       (candidate.exactIds && candidate.exactIds.size > 0) ||
       [...candidate.evidence].some((item) => /Exact|Supplemental|Hangul form parsed directly/.test(item));
     const kanaDerivedOnly = !hasExactEvidence && [...candidate.evidence].some((item) => /Kana/.test(item));
+    if (!hasExactEvidence && unsupportedLongGiven) continue;
     if (!hasExactEvidence && bestAllowed && unsupportedCount >= 1) continue;
     if (
       kanaDerivedOnly &&
@@ -1677,7 +1770,24 @@ function pruneImplausibleCandidates(candidateMap) {
   return filtered;
 }
 
-function fillVariantList(listEl, items, maxScore, emptyText = "No output") {
+function allocatePercentages(items, getWeight = (item) => Number(item.score) || 0) {
+  if (!items.length) return [];
+  const rawWeights = items.map((item) => Math.max(0, getWeight(item)));
+  const total = rawWeights.reduce((sum, weight) => sum + weight, 0);
+  const normalized = total > 0 ? rawWeights.map((weight) => (weight / total) * 100) : items.map(() => 100 / items.length);
+  const base = normalized.map((value) => Math.floor(value));
+  let remainder = 100 - base.reduce((sum, value) => sum + value, 0);
+  const rankedRemainders = normalized
+    .map((value, index) => ({ index, remainder: value - base[index], weight: rawWeights[index] }))
+    .sort((a, b) => b.remainder - a.remainder || b.weight - a.weight || a.index - b.index);
+  for (let i = 0; i < rankedRemainders.length && remainder > 0; i += 1) {
+    base[rankedRemainders[i].index] += 1;
+    remainder -= 1;
+  }
+  return base;
+}
+
+function fillVariantList(listEl, items, emptyText = "No output") {
   listEl.innerHTML = "";
   if (!items.length) {
     const li = document.createElement("li");
@@ -1685,24 +1795,152 @@ function fillVariantList(listEl, items, maxScore, emptyText = "No output") {
     listEl.appendChild(li);
     return;
   }
-  const localMax = items[0].score || maxScore || 1;
+  const computedPercents = items.some((item) => item.percent != null) ? [] : allocatePercentages(items, (item) => Number(item.score) || 0);
   for (const item of items) {
     const li = document.createElement("li");
     const value = document.createElement("span");
     value.textContent = item.text;
     const score = document.createElement("span");
     score.className = "variant-score";
-    score.textContent = item.percent != null ? ` ${item.percent.toFixed(2)}%` : ` ${Math.round((item.score / localMax) * 100)}%`;
+    const percent = item.percent != null ? item.percent.toFixed(2) : computedPercents.shift();
+    score.textContent = ` ${percent}%`;
     li.append(value, score);
     listEl.appendChild(li);
   }
 }
 
+function shuffled(items) {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+function pickRandom(items) {
+  if (!items?.length) return null;
+  return items[Math.floor(Math.random() * items.length)] || null;
+}
+
+function generateRomanExampleText(row) {
+  const roman = pickRandom((row.romanizations || []).map((item) => item.text).filter(Boolean));
+  if (!roman) return null;
+  const parts = roman.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return null;
+  const surname = parts[0];
+  const given = parts.slice(1);
+  const styles = [roman];
+  if (given.length) {
+    styles.push(`${surname}.${given.join("-")}`);
+    styles.push(`${surname}, ${given.join("")}`);
+    styles.push(`${surname} ${given.join("-")}`);
+    styles.push(`${surname} ${given.join(" ")}`);
+  } else {
+    styles.push(roman.replace(/\s+/g, "."));
+  }
+  return pickRandom(shuffled([...new Set(styles)]).filter(Boolean));
+}
+
+function generateKanaExampleText(row) {
+  const kana = pickRandom((row.kana || []).map((item) => item.text).filter(Boolean));
+  if (!kana) return null;
+  const compact = kana.replace(/\s+/g, "");
+  const dotted = kana.replace(/\s+/g, "・");
+  return pickRandom(shuffled([...new Set([kana, compact, dotted])]).filter(Boolean));
+}
+
+function generateHanjaExampleText(row) {
+  return row.hanja?.trim() || null;
+}
+
+function buildRandomExamplePool() {
+  const pool = [];
+  const seen = new Set();
+  for (const row of state.data?.fullNames || []) {
+    const generatedExamples = [
+      { text: row.hangul?.trim(), type: "hangul" },
+      { text: generateRomanExampleText(row), type: "roman" },
+      { text: generateKanaExampleText(row), type: "kana" },
+      { text: generateHanjaExampleText(row), type: "hanja" },
+    ];
+    for (const item of generatedExamples) {
+      const text = item.text?.trim();
+      if (!text) continue;
+      const key = `${item.type}:${text}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      pool.push({ text, type: item.type });
+    }
+  }
+  return pool;
+}
+
+function hydrateRandomExamples() {
+  if (!exampleChipEls.length) return;
+  const pool = buildRandomExamplePool();
+  if (!pool.length) return;
+
+  const typeBuckets = {
+    hangul: pool.filter((item) => item.type === "hangul"),
+    roman: pool.filter((item) => item.type === "roman"),
+    kana: pool.filter((item) => item.type === "kana"),
+    hanja: pool.filter((item) => item.type === "hanja"),
+  };
+  const picks = [];
+  const used = new Set();
+
+  for (const type of ["hangul", "roman", "kana", "hanja"]) {
+    const options = shuffled(typeBuckets[type] || []);
+    const choice = options.find((item) => !used.has(item.text));
+    if (!choice) continue;
+    used.add(choice.text);
+    picks.push(choice);
+  }
+
+  for (const item of shuffled(pool)) {
+    if (picks.length >= exampleChipEls.length) break;
+    if (used.has(item.text)) continue;
+    used.add(item.text);
+    picks.push(item);
+  }
+
+  exampleChipEls.forEach((button, index) => {
+    const item = picks[index];
+    if (!item) {
+      button.hidden = true;
+      return;
+    }
+    button.hidden = false;
+    button.dataset.example = item.text;
+    button.textContent = item.text;
+  });
+}
+
+function hideResultsSection() {
+  resultsSectionEl.classList.remove("is-entering", "is-visible");
+  resultsSectionEl.classList.add("is-hidden");
+  resultsSectionEl.setAttribute("aria-hidden", "true");
+}
+
+function showResultsSection() {
+  const alreadyVisible = resultsSectionEl.classList.contains("is-visible");
+  resultsSectionEl.classList.remove("is-hidden");
+  resultsSectionEl.setAttribute("aria-hidden", "false");
+  if (alreadyVisible) return;
+  resultsSectionEl.classList.add("is-entering");
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      resultsSectionEl.classList.remove("is-entering");
+      resultsSectionEl.classList.add("is-visible");
+    });
+  });
+}
+
 function search(query) {
-  const scripts = detectScripts(query);
-  detectedScriptsEl.textContent = scripts.length ? scripts.join(" · ") : "Unknown";
   if (!query.trim()) {
-    resultsEl.innerHTML = `<div class="empty-state">Enter a Korean name in Hangul, romanization, kana, Hanja, or a mixed form.</div>`;
+    resultsEl.innerHTML = "";
+    hideResultsSection();
     return;
   }
 
@@ -1735,7 +1973,9 @@ async function init() {
   const response = await fetch(dataUrl);
   state.data = await response.json();
   state.runtime = buildRuntime(state.data);
-  resultsEl.innerHTML = `<div class="empty-state">Search is ready. Try one of the example names above.</div>`;
+  hydrateRandomExamples();
+  resultsEl.innerHTML = "";
+  hideResultsSection();
 }
 
 formEl.addEventListener("submit", (event) => {
@@ -1743,7 +1983,7 @@ formEl.addEventListener("submit", (event) => {
   search(queryEl.value);
 });
 
-document.querySelectorAll(".example-chip").forEach((button) => {
+exampleChipEls.forEach((button) => {
   button.addEventListener("click", () => {
     queryEl.value = button.dataset.example || "";
     search(queryEl.value);
@@ -1753,4 +1993,5 @@ document.querySelectorAll(".example-chip").forEach((button) => {
 init().catch((error) => {
   console.error(error);
   resultsEl.innerHTML = `<div class="empty-state">Failed to load the search index. Serve the folder over HTTP and reload.</div>`;
+  showResultsSection();
 });
