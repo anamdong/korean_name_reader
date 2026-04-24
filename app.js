@@ -94,6 +94,19 @@ function splitRomanTokens(text) {
   return splitRomanGroups(text).flat();
 }
 
+function isLeeSurnameCue(token) {
+  return normalizeLatin(token) === "lee";
+}
+
+function forcedRomanHangulCandidates(token) {
+  const norm = normalizeLatin(token);
+  if (!norm) return null;
+  if (norm === "joong") {
+    return [{ hangul: "중", score: 100000 }];
+  }
+  return null;
+}
+
 function hasRomanVowel(text) {
   return /[aeiouy]/.test(text);
 }
@@ -105,8 +118,12 @@ function expandRomanTokenVariants(token) {
   const replacements = [
     ["kyoung", "kyung", 6],
     ["jeoun", "jeon", 5],
+    ["yeu", "yu", 3],
     ["yeoun", "yeon", 5],
     ["yea", "ye", 5],
+    ["yae", "ye", 2],
+    ["sunghyun", "sunghyeon", 2],
+    ["junghyun", "junghyeon", 2],
     ["june", "jun", 2],
     ["joon", "jun", 2],
     ["choon", "chun", 2],
@@ -838,6 +855,100 @@ function hasOddInitialHCluster(text) {
   return /^(?:nh|rh|lh|mh|bh|dh|gh|zh)/.test(text);
 }
 
+function buildObservedGivenRomanIndex(data) {
+  const surnameByHangul = new Map((data.surnames || []).map((item) => [item.hangul, item]));
+  const index = new Map();
+
+  for (const row of data.fullNames || []) {
+    const surnameData = surnameByHangul.get(row.surname);
+    const surnameVariants = new Set(
+      ((surnameData?.latin || []).map((item) => normalizeLatin(item.text)).filter(Boolean)).concat(normalizeLatin(row.surname)),
+    );
+
+    for (const item of row.romanizations || []) {
+      const groups = splitRomanGroups(item.text);
+      if (groups.length < 2) continue;
+
+      const firstGroup = groups[0].join("");
+      const lastGroup = groups[groups.length - 1].join("");
+      let givenToken = "";
+
+      if (surnameVariants.has(firstGroup)) {
+        givenToken = groups.slice(1).flat().join("");
+      } else if (surnameVariants.has(lastGroup)) {
+        givenToken = groups.slice(0, -1).flat().join("");
+      }
+
+      if (!givenToken) continue;
+      const bucket = index.get(givenToken) || new Map();
+      bucket.set(row.given, Math.max(Number(item.score || 0) + Number(row.weight || 0), bucket.get(row.given) || 0));
+      index.set(givenToken, bucket);
+    }
+  }
+
+  return index;
+}
+
+function buildKnownGivenRomanIndex(data) {
+  const index = buildObservedGivenRomanIndex(data);
+
+  for (const [given, meta] of Object.entries(data.givenNames || {})) {
+    const units = Array.from(given);
+    if (!units.length || units.length > 3) continue;
+
+    let combos = [{ text: "", score: 0 }];
+    let viable = true;
+    for (const [syllableIndex, syllable] of units.entries()) {
+      const syllableData = data.syllables?.[syllable];
+      let variants = (syllableData?.latin || [])
+        .map((item) => ({
+          text: normalizeLatin(item.text),
+          score: Number(item.score) || 0,
+        }))
+        .filter((item) => item.text)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 4);
+
+      if (syllable === "이" && syllableIndex > 0) {
+        const filtered = variants.filter((item) => item.text !== "lee");
+        if (filtered.length) variants = filtered;
+      }
+
+      if (!variants.length) {
+        viable = false;
+        break;
+      }
+
+      const next = [];
+      for (const combo of combos) {
+        for (const variant of variants) {
+          next.push({
+            text: `${combo.text}${variant.text}`,
+            score: combo.score + variant.score,
+          });
+        }
+      }
+      combos = next.sort((a, b) => b.score - a.score).slice(0, 24);
+    }
+
+    if (!viable) continue;
+
+    const weightBoost =
+      Math.log1p(Number(meta.totalWeight || 0)) * 8 +
+      Number(meta.periodsPresentCount || 0) * 10 +
+      Math.log1p(Number(meta.datasetCount || 0) + Number(meta.rowOccurrences || 0)) * 12;
+
+    for (const combo of combos) {
+      if (!combo.text) continue;
+      const bucket = index.get(combo.text) || new Map();
+      bucket.set(given, Math.max(combo.score + weightBoost, bucket.get(given) || 0));
+      index.set(combo.text, bucket);
+    }
+  }
+
+  return index;
+}
+
 function buildRuntime(data) {
   const latinVariantLengths = [...new Set(Object.keys(data.syllableLatinIndex).map((key) => key.length))].sort((a, b) => b - a);
   const kanaVariantLengths = [...new Set(Object.keys(data.syllableKanaIndex).map((key) => key.length))].sort((a, b) => b - a);
@@ -874,6 +985,7 @@ function buildRuntime(data) {
     compoundSurnames,
     surnameByHangul: new Map(data.surnames.map((item) => [item.hangul, item])),
     fullNameByIndex: data.fullNames,
+    givenRomanIndex: buildKnownGivenRomanIndex(data),
   };
 }
 
@@ -942,6 +1054,7 @@ function surnameLatinShapeAllowed(token, hangul) {
     }))
     .filter((item) => item.norm);
   if (!aliases.length) return true;
+  if (aliases.some((item) => item.norm === norm)) return true;
 
   const bestAlias = aliases.reduce((best, item) => (item.score > best.score ? item : best), aliases[0]);
   if (preservesCoreVowels(norm, bestAlias.norm) && preservesTrailingCoda(norm, bestAlias.norm)) {
@@ -1093,7 +1206,9 @@ function parseSyllablesLatin(norm, maxUnits = 3) {
       const chunk = norm.slice(pos, pos + len);
       if (!chunk) continue;
       if (!hasRomanVowel(chunk)) continue;
-      const exact = pruneWeakExactSyllableMatches(data.syllableLatinIndex[chunk] || [], chunk);
+      const forced = forcedRomanHangulCandidates(chunk);
+      const exactSource = forced || data.syllableLatinIndex[chunk] || [];
+      const exact = pruneWeakExactSyllableMatches(exactSource, chunk);
       for (const item of exact) {
         for (const tail of dfs(pos + len, used + 1)) {
           results.push({
@@ -1172,11 +1287,30 @@ function parseGivenLatinTokens(tokens) {
   if (!tokens.length) return [];
   if (tokens.length === 1) {
     const results = [];
+    const observed = state.runtime?.givenRomanIndex?.get(normalizeLatin(tokens[0]));
+    if (observed) {
+      for (const [given, score] of observed.entries()) {
+        results.push({
+          units: Array.from(given),
+          score: Number(score) + 220,
+          chunks: [normalizeLatin(tokens[0])],
+          observedGiven: true,
+        });
+      }
+    }
     for (const variant of expandRomanTokenVariants(tokens[0])) {
       for (const candidate of parseSyllablesLatin(variant.token, 3)) {
+        const knownWholeGivenBoost =
+          candidate.units.length <= 2 && hasSupportedWholeGivenName(candidate.units)
+            ? 140 + Math.min(80, givenWholeNamePrior(candidate.units) * 0.18)
+            : 0;
         results.push({
           units: candidate.units,
-          score: candidate.score - variant.penalty + singleTokenRomanChunkAdjustment(variant.token, candidate.chunks || [], candidate.units),
+          score:
+            candidate.score -
+            variant.penalty +
+            singleTokenRomanChunkAdjustment(variant.token, candidate.chunks || [], candidate.units) +
+            knownWholeGivenBoost,
           chunks: candidate.chunks || [],
         });
       }
@@ -1186,7 +1320,8 @@ function parseGivenLatinTokens(tokens) {
   const perToken = tokens.map((token) => {
     const candidates = [];
     for (const variant of expandRomanTokenVariants(token)) {
-      const exact = pruneWeakExactSyllableMatches(state.data.syllableLatinIndex[variant.token], variant.token);
+      const forced = forcedRomanHangulCandidates(variant.token);
+      const exact = pruneWeakExactSyllableMatches(forced || state.data.syllableLatinIndex[variant.token], variant.token);
       if (exact?.length) {
         for (const item of exact) {
           candidates.push({ units: [item.hangul], score: Number(item.score) - variant.penalty, chunks: [variant.token] });
@@ -1217,6 +1352,22 @@ function parseGivenLatinTokens(tokens) {
     combos = next.sort((a, b) => b.score - a.score).slice(0, 20);
   }
   return filterEvidenceBackedGivenCandidates(combos);
+}
+
+function knownGivenCandidatesFromRomanTokens(tokens) {
+  const joined = normalizeLatin((tokens || []).join(""));
+  if (!joined) return [];
+  const observed = state.runtime?.givenRomanIndex?.get(joined);
+  if (!observed) return [];
+  return [...observed.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 16)
+    .map(([given, score]) => ({
+      units: Array.from(given),
+      score: Number(score) + 240,
+      chunks: [joined],
+      observedGiven: true,
+    }));
 }
 
 function pruneRomanSingleTokenGivenCandidates(candidates) {
@@ -1375,18 +1526,28 @@ function searchLatin(query, candidateMap) {
   }
 
   if (groups.length >= 2) {
-    const hypotheses = [
-      { surnameToken: groups[0].join(""), givenTokens: groups.slice(1).flat(), boost: 1.0, label: "Latin surname-first parse" },
-    ];
-    if (groups[groups.length - 1].length === 1) {
+    const firstGroupToken = groups[0].join("");
+    const lastGroupToken = groups[groups.length - 1].join("");
+    const firstLeeCue = isLeeSurnameCue(firstGroupToken);
+    const lastLeeCue = isLeeSurnameCue(lastGroupToken);
+    const hypotheses = [];
+    if (!lastLeeCue || firstLeeCue) {
+      hypotheses.push({
+        surnameToken: firstGroupToken,
+        givenTokens: groups.slice(1).flat(),
+        boost: firstLeeCue ? 1.2 : lastLeeCue ? 0.54 : 1.0,
+        label: "Latin surname-first parse",
+      });
+    }
+    if ((!firstLeeCue || lastLeeCue) && groups[groups.length - 1].length === 1) {
       hypotheses.push({
         surnameToken: groups[groups.length - 1][0],
         givenTokens: groups.slice(0, -1).flat(),
-        boost: 0.84,
+        boost: lastLeeCue ? 1.24 : firstLeeCue ? 0.42 : 0.84,
         label: "Latin surname-last parse",
       });
     }
-    if (groups.length >= 3 && groups[0].length === 1 && groups[1].length === 1) {
+    if (!lastLeeCue && groups.length >= 3 && groups[0].length === 1 && groups[1].length === 1) {
       hypotheses.push({
         surnameToken: `${groups[0][0]}${groups[1][0]}`,
         givenTokens: groups.slice(2).flat(),
@@ -1395,7 +1556,7 @@ function searchLatin(query, candidateMap) {
         requireCompoundSurname: true,
       });
     }
-    if (groups.length >= 3 && groups[groups.length - 2].length === 1 && groups[groups.length - 1].length === 1) {
+    if (!firstLeeCue && groups.length >= 3 && groups[groups.length - 2].length === 1 && groups[groups.length - 1].length === 1) {
       hypotheses.push({
         surnameToken: `${groups[groups.length - 2][0]}${groups[groups.length - 1][0]}`,
         givenTokens: groups.slice(0, -2).flat(),
@@ -1410,7 +1571,9 @@ function searchLatin(query, candidateMap) {
         surnameCandidates = surnameCandidates.filter((item) => (item.hangul || "").length === 2 && state.runtime.compoundSurnames.has(item.hangul));
       }
       if (!surnameCandidates.length || !hypothesis.givenTokens.length) continue;
-      let givenCandidates = parseGivenLatinTokens(hypothesis.givenTokens);
+      let givenCandidates = knownGivenCandidatesFromRomanTokens(hypothesis.givenTokens);
+      const parsedGivenCandidates = parseGivenLatinTokens(hypothesis.givenTokens);
+      givenCandidates = dedupeCandidateUnits(givenCandidates.concat(parsedGivenCandidates), 24);
       if (hypothesis.givenTokens.length === 1) {
         givenCandidates = pruneRomanSingleTokenGivenCandidates(givenCandidates);
       }
