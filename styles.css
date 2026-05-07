@@ -99,6 +99,7 @@ body::before {
 .intro,
 .intro-note,
 .section-head p,
+.query-interpretation,
 .result-subtitle,
 .status-value,
 .empty-state,
@@ -272,6 +273,10 @@ body::before {
   margin: 0;
   max-width: 76ch;
   line-height: 1.65;
+}
+
+.query-interpretation {
+  font-size: 0.95rem;
 }
 
 .results-list {

@@ -3,6 +3,7 @@ const dataUrl = "./data/name_index.json";
 const state = {
   data: null,
   runtime: null,
+  queryMeta: null,
 };
 
 const scriptPatterns = {
@@ -15,6 +16,7 @@ const scriptPatterns = {
 const resultTemplate = document.querySelector("#result-template");
 const resultsSectionEl = document.querySelector(".results-section");
 const resultsEl = document.querySelector("#results");
+const interpretationEl = document.querySelector("#query-interpretation");
 const queryEl = document.querySelector("#query");
 const formEl = document.querySelector("#search-form");
 const exampleChipEls = Array.from(document.querySelectorAll(".example-chip"));
@@ -120,6 +122,10 @@ function expandRomanTokenVariants(token) {
     ["jeoun", "jeon", 5],
     ["yeu", "yu", 3],
     ["yeoun", "yeon", 5],
+    ["ryeon", "yeon", 180],
+    ["ryun", "yun", 180],
+    ["lyeon", "yeon", 180],
+    ["lyun", "yun", 180],
     ["yea", "ye", 5],
     ["yae", "ye", 2],
     ["sunghyun", "sunghyeon", 2],
@@ -208,6 +214,78 @@ function splitNameUnits(name, compoundSurnames) {
     given: name.slice(surnameLength),
     units: Array.from(name.slice(0, surnameLength)).concat(Array.from(name.slice(surnameLength))),
   };
+}
+
+function analyzeQueryMeta(query) {
+  const groups = tokenizeByScript(query);
+  const romanGroups = splitRomanGroups(query);
+  const romanTokens = romanGroups.flat();
+  const singleRomanToken = groups.length === 1 && groups[0]?.type === "latin" && romanGroups.length === 1 && romanTokens.length === 1;
+  const normalizedSingleRoman = singleRomanToken ? normalizeLatin(romanTokens[0]) : "";
+  return {
+    isSingleRomanToken: singleRomanToken,
+    explicitMedialRomanLateralCue: !!normalizedSingleRoman && /[a-z][rl]y(?:a|e|o|u|i)/.test(normalizedSingleRoman),
+  };
+}
+
+function candidateKey(hangul, kind = "full") {
+  return `${kind}:${hangul}`;
+}
+
+function candidateKindLabel(kind) {
+  if (kind === "surname") return "surname";
+  if (kind === "given") return "given name";
+  return "full name";
+}
+
+function candidateGivenUnits(candidate) {
+  if (candidate.kind === "given") return Array.from(candidate.hangul);
+  if (candidate.kind === "surname") return [];
+  return Array.from(splitNameUnits(candidate.hangul, state.runtime?.compoundSurnames).given);
+}
+
+function isLikelyFullNameMisparsedAsGiven(candidate, candidateMap) {
+  if (!candidate || candidate.kind !== "given") return false;
+  const units = Array.from(candidate.hangul || "");
+  if (units.length < 3 || units.length > 4) return false;
+  const { surname, given } = splitNameUnits(candidate.hangul, state.runtime?.compoundSurnames);
+  if (!surname || !given) return false;
+  if (!state.runtime?.surnameByHangul?.has(surname)) return false;
+  const givenUnits = Array.from(given);
+  const supportedGiven =
+    hasSupportedWholeGivenName(givenUnits) ||
+    givenUnits.every((syllable) => hasGivenSyllableEvidence(syllable) || isSinoLikeGivenSyllable(syllable));
+  if (!supportedGiven) return false;
+  if (!candidateMap) return true;
+  return candidateMap.has(candidateKey(candidate.hangul, "full"));
+}
+
+function candidateRankingScore(candidate) {
+  let score = Number(candidate?.score);
+  if (!Number.isFinite(score)) score = 0;
+  const units = candidateGivenUnits(candidate);
+  if (candidate?.kind !== "surname" && units.length) {
+    if (hasSupportedWholeGivenName(units)) {
+      score += 900 + Math.min(1600, givenWholeNamePrior(units) * 0.4);
+    } else if (units.length >= 2) {
+      score -= 420;
+      if (units.some((syllable) => isUltraRareGivenSyllable(syllable))) {
+        score -= 260;
+      }
+    }
+  }
+  const liveNormalizedQuery = normalizeLatin(queryEl?.value || "");
+  const explicitMedialRomanLateralCue =
+    state.queryMeta?.explicitMedialRomanLateralCue ||
+    (!!liveNormalizedQuery && /[a-z][rl]y(?:a|e|o|u|i)/.test(liveNormalizedQuery));
+  if (explicitMedialRomanLateralCue && candidate?.kind === "given" && units.length === 2) {
+    const secondParts = decomposeHangulSyllable(units[1]);
+    if (secondParts && DUUM_RECOVERY_VOWELS.has(secondParts.vowel)) {
+      if (secondParts.onset === "ㄹ" && isPlausibleRecoveredDuumSyllable(units[1])) score += 100000;
+      else if (secondParts.onset === "ㅇ") score -= 100000;
+    }
+  }
+  return Number.isFinite(score) ? score : 0;
 }
 
 function decomposeHangulSyllable(syllable) {
@@ -588,12 +666,26 @@ function isFullyAllowedGivenCandidate(candidate) {
   return candidate.units.every((syllable) => isAllowedNameSyllable(syllable));
 }
 
+function isSinoLikeGivenSyllable(syllable) {
+  return isSinoAllowedSyllable(syllable) || hasHanjaGivenSupport(syllable) || isPlausibleRecoveredDuumSyllable(syllable);
+}
+
+function isSinoLikeRomanGivenCandidate(candidate) {
+  return candidate.units.every((syllable) => isSinoLikeGivenSyllable(syllable));
+}
+
+function isSinoBackedGivenCandidate(candidate) {
+  return candidate.units.every((syllable) => isSinoAllowedSyllable(syllable) || hasHanjaGivenSupport(syllable));
+}
+
 function filterEvidenceBackedGivenCandidates(candidates) {
   const filteredComplexCoda = candidates.filter(
     (candidate) => candidate.units.every((syllable) => !isBlockedUnsupportedComplexCodaSyllable(syllable)),
   );
   const pool = filteredComplexCoda.length ? filteredComplexCoda : candidates;
-  const evidenceBacked = pool.filter((candidate) => candidate.units.every((syllable) => hasGivenSyllableEvidence(syllable)));
+  const evidenceBacked = pool.filter((candidate) =>
+    candidate.units.every((syllable) => hasGivenSyllableEvidence(syllable) || isSinoLikeGivenSyllable(syllable)),
+  );
   return evidenceBacked.length ? evidenceBacked : pool;
 }
 
@@ -685,6 +777,44 @@ function recoverPronouncedSinoGivenCandidates(candidates) {
     (candidate) => candidate.units.every((syllable) => isAllowedNameSyllable(syllable)),
   );
   return allowedPool.length ? allowedPool : (withoutBlockedComplexCoda.length ? withoutBlockedComplexCoda : deduped);
+}
+
+function recoverRomanDuumGivenCandidates(candidates) {
+  const recovered = [...(candidates || [])];
+  for (const candidate of candidates || []) {
+    const units = candidate.units || [];
+    const chunks = candidate.chunks || [];
+      for (let index = 0; index < Math.min(units.length, chunks.length); index += 1) {
+        const chunk = chunks[index] || "";
+        if (!/^[rl]y(?:a|e|o|u|i)/.test(chunk)) continue;
+        const current = decomposeHangulSyllable(units[index]);
+        if (!current || !DUUM_RECOVERY_VOWELS.has(current.vowel)) continue;
+
+      if (current.onset === "ㅇ") {
+        const restored = composeHangulSyllable("ㄹ", current.vowel, current.coda);
+        if (!restored || !isPlausibleRecoveredDuumSyllable(restored)) continue;
+        const nextUnits = units.slice();
+        nextUnits[index] = restored;
+        recovered.push({
+          units: nextUnits,
+          chunks: chunks.slice(),
+          score: Number(candidate.score) + 260,
+          recoveredRomanDuum: true,
+        });
+        continue;
+      }
+
+      if (current.onset === "ㄹ" && isPlausibleRecoveredDuumSyllable(units[index])) {
+        recovered.push({
+          units: units.slice(),
+          chunks: chunks.slice(),
+          score: Number(candidate.score) + 180,
+          recoveredRomanDuum: true,
+        });
+      }
+    }
+  }
+  return dedupeCandidateUnits(recovered, 24);
 }
 
 function pruneKanaSingleTokenGivenCandidates(candidates) {
@@ -976,6 +1106,17 @@ function buildRuntime(data) {
     syllableKanaKeysByFirst.set(first, list);
   }
 
+  const fullNameRowsByGiven = new Map();
+  const fullNameRowsBySurname = new Map();
+  for (const row of data.fullNames || []) {
+    const givenList = fullNameRowsByGiven.get(row.given) || [];
+    givenList.push(row);
+    fullNameRowsByGiven.set(row.given, givenList);
+    const surnameList = fullNameRowsBySurname.get(row.surname) || [];
+    surnameList.push(row);
+    fullNameRowsBySurname.set(row.surname, surnameList);
+  }
+
   return {
     latinVariantLengths,
     kanaVariantLengths,
@@ -986,15 +1127,19 @@ function buildRuntime(data) {
     surnameByHangul: new Map(data.surnames.map((item) => [item.hangul, item])),
     fullNameByIndex: data.fullNames,
     givenRomanIndex: buildKnownGivenRomanIndex(data),
+    fullNameRowsByGiven,
+    fullNameRowsBySurname,
   };
 }
 
-function addCandidate(candidateMap, hangul, score, evidence) {
+function addCandidate(candidateMap, hangul, score, evidence, meta = {}) {
   if (!hangul) return;
-  const current = candidateMap.get(hangul) || { hangul, score: -Infinity, evidence: new Set(), exactIds: new Set() };
+  const kind = meta.kind || "full";
+  const key = candidateKey(hangul, kind);
+  const current = candidateMap.get(key) || { hangul, kind, score: -Infinity, evidence: new Set(), exactIds: new Set() };
   current.score = Math.max(current.score, score);
   if (evidence) current.evidence.add(evidence);
-  candidateMap.set(hangul, current);
+  candidateMap.set(key, current);
 }
 
 function addExactNameCandidates(query, candidateMap) {
@@ -1004,7 +1149,7 @@ function addExactNameCandidates(query, candidateMap) {
     for (const index of data.fullNameExactHangul[hangul]) {
       const row = data.fullNames[index];
       addCandidate(candidateMap, row.hangul, 48 + row.weight, "Exact Hangul name match");
-      candidateMap.get(row.hangul).exactIds.add(index);
+      candidateMap.get(candidateKey(row.hangul, "full")).exactIds.add(index);
     }
   }
 
@@ -1013,21 +1158,26 @@ function addExactNameCandidates(query, candidateMap) {
     for (const index of data.fullNameExactHanja[hanja]) {
       const row = data.fullNames[index];
       addCandidate(candidateMap, row.hangul, 45 + row.weight, "Exact Hanja name match");
-      candidateMap.get(row.hangul).exactIds.add(index);
+      candidateMap.get(candidateKey(row.hangul, "full")).exactIds.add(index);
     }
   }
 
   const latin = normalizeLatin(query);
   if (latin && data.supplementalRomanIndex?.[latin]) {
     for (const item of data.supplementalRomanIndex[latin]) {
-      addCandidate(candidateMap, item.hangul, 50000 + Number(item.score), "Supplemental attested Roman query match");
+      addCandidate(
+        candidateMap,
+        item.hangul,
+        24 + Math.log1p(Number(item.score) || 0) * 8,
+        "Supplemental attested Roman query match",
+      );
     }
   }
   if (latin && data.fullNameRomanIndex[latin]) {
     for (const item of data.fullNameRomanIndex[latin]) {
       const row = data.fullNames[item.index];
-      addCandidate(candidateMap, row.hangul, 42 + Number(item.score) + row.weight, "Exact Romanized name match");
-      candidateMap.get(row.hangul).exactIds.add(item.index);
+      addCandidate(candidateMap, row.hangul, 24 + Number(item.score) + row.weight, "Exact Romanized name match");
+      candidateMap.get(candidateKey(row.hangul, "full")).exactIds.add(item.index);
     }
   }
 
@@ -1035,8 +1185,8 @@ function addExactNameCandidates(query, candidateMap) {
   if (kana && data.fullNameKanaIndex[kana]) {
     for (const item of data.fullNameKanaIndex[kana]) {
       const row = data.fullNames[item.index];
-      addCandidate(candidateMap, row.hangul, 42 + Number(item.score) + row.weight, "Exact kana name match");
-      candidateMap.get(row.hangul).exactIds.add(item.index);
+      addCandidate(candidateMap, row.hangul, 24 + Number(item.score) + row.weight, "Exact kana name match");
+      candidateMap.get(candidateKey(row.hangul, "full")).exactIds.add(item.index);
     }
   }
 }
@@ -1186,6 +1336,20 @@ function singleTokenRomanChunkAdjustment(token, chunks, units) {
     if (misaligned) adjustment -= 75;
   }
 
+  for (let index = 0; index < Math.min(chunks.length, units.length); index += 1) {
+    const chunk = chunks[index] || "";
+    const syllable = units[index];
+    const parts = decomposeHangulSyllable(syllable);
+    if (!parts) continue;
+    if (/^[rl]y(?:e|u|o|a)/.test(chunk)) {
+      if (isPlausibleRecoveredDuumSyllable(syllable)) {
+        adjustment += 920;
+      } else if (parts.onset === "ㅇ") {
+        adjustment -= 180;
+      }
+    }
+  }
+
   return adjustment;
 }
 
@@ -1315,7 +1479,7 @@ function parseGivenLatinTokens(tokens) {
         });
       }
     }
-    return filterEvidenceBackedGivenCandidates(dedupeCandidateUnits(results, 24));
+    return filterEvidenceBackedGivenCandidates(recoverRomanDuumGivenCandidates(dedupeCandidateUnits(results, 24)));
   }
   const perToken = tokens.map((token) => {
     const candidates = [];
@@ -1332,10 +1496,10 @@ function parseGivenLatinTokens(tokens) {
         }
       }
     }
-    return filterEvidenceBackedGivenCandidates(dedupeCandidateUnits(candidates, 12));
+    return filterEvidenceBackedGivenCandidates(recoverRomanDuumGivenCandidates(dedupeCandidateUnits(candidates, 12)));
   });
   if (perToken.some((items) => !items.length)) {
-    return parseSyllablesLatin(tokens.join(""), 3);
+    return recoverRomanDuumGivenCandidates(parseSyllablesLatin(tokens.join(""), 3));
   }
   let combos = [{ units: [], score: 0 }];
   for (const items of perToken) {
@@ -1351,7 +1515,7 @@ function parseGivenLatinTokens(tokens) {
     }
     combos = next.sort((a, b) => b.score - a.score).slice(0, 20);
   }
-  return filterEvidenceBackedGivenCandidates(combos);
+  return filterEvidenceBackedGivenCandidates(recoverRomanDuumGivenCandidates(combos));
 }
 
 function knownGivenCandidatesFromRomanTokens(tokens) {
@@ -1375,11 +1539,27 @@ function pruneRomanSingleTokenGivenCandidates(candidates) {
   const topCandidate = candidates[0];
   const topTwoUnit = candidates.find((candidate) => candidate.units.length <= 2);
   const topAllowed = candidates.find((candidate) => isFullyAllowedGivenCandidate(candidate));
+  const topCompactSinoLike = candidates.find(
+    (candidate) => candidate.units.length <= 2 && isSinoLikeRomanGivenCandidate(candidate),
+  );
+  const topCompactSinoBacked = candidates.find(
+    (candidate) => candidate.units.length <= 2 && isSinoBackedGivenCandidate(candidate),
+  );
   const topHanjaBackedCompact = candidates.find(
     (candidate) => candidate.units.length <= 2 && candidate.units.every((syllable) => hasHanjaGivenSupport(syllable)),
   );
   if (!topTwoUnit) return candidates;
   return candidates.filter((candidate) => {
+    if (topCompactSinoLike && candidate.units.some((syllable) => !isSinoLikeGivenSyllable(syllable))) {
+      return false;
+    }
+    if (
+      topCompactSinoBacked &&
+      !isSinoBackedGivenCandidate(candidate) &&
+      topCompactSinoBacked.score >= candidate.score * 0.6
+    ) {
+      return false;
+    }
     if (topAllowed) {
       if (!isFullyAllowedGivenCandidate(candidate)) return false;
       const shorterAllowed = candidates.find(
@@ -1408,6 +1588,54 @@ function pruneRomanSingleTokenGivenCandidates(candidates) {
     }
     return candidate.score >= topTwoUnit.score * 0.4;
   });
+}
+
+function generateRomanDuumWholeGivenCandidates(norm) {
+  const text = normalizeLatin(norm);
+  if (!text) return [];
+  const matches = [];
+  for (const [roman, items] of Object.entries(state.data.syllableLatinIndex || {})) {
+    if (!/^[rl]y(?:a|e|o|u|i)/.test(roman)) continue;
+    const syllables = (items || []).filter((item) => isPlausibleRecoveredDuumSyllable(item.hangul));
+    if (!syllables.length) continue;
+    let fromIndex = 0;
+    while (fromIndex < text.length) {
+      const start = text.indexOf(roman, fromIndex);
+      if (start < 0) break;
+      const end = start + roman.length;
+      const prefix = text.slice(0, start);
+      const suffix = text.slice(end);
+      const prefixCandidates = prefix ? parseSyllablesLatin(prefix, 2) : [{ units: [], score: 0, chunks: [] }];
+      const suffixCandidates = suffix ? parseSyllablesLatin(suffix, 2) : [{ units: [], score: 0, chunks: [] }];
+      for (const prefixCandidate of prefixCandidates.slice(0, 8)) {
+        for (const syllable of syllables.slice(0, 4)) {
+          for (const suffixCandidate of suffixCandidates.slice(0, 8)) {
+            const units = [...(prefixCandidate.units || []), syllable.hangul, ...(suffixCandidate.units || [])];
+            if (!units.length || units.length > 3) continue;
+            const explicitLateralCueBoost =
+              start > 0 && units.length <= 2
+                ? 680
+                : start > 0
+                  ? 420
+                  : 180;
+            matches.push({
+              units,
+              chunks: [...(prefixCandidate.chunks || []), roman, ...(suffixCandidate.chunks || [])],
+              score:
+                Number(prefixCandidate.score || 0) +
+                Number(syllable.score || 0) +
+                Number(suffixCandidate.score || 0) +
+                320 +
+                explicitLateralCueBoost,
+              recoveredRomanDuum: true,
+            });
+          }
+        }
+      }
+      fromIndex = start + 1;
+    }
+  }
+  return dedupeCandidateUnits(matches, 24);
 }
 
 function parseGivenKanaTokens(tokens) {
@@ -1483,6 +1711,14 @@ function parseGivenHanja(text) {
     combos = next.sort((a, b) => b.score - a.score).slice(0, 30);
   }
   return combos;
+}
+
+function parseJoinedRomanGivenToken(token) {
+  const joined = normalizeLatin(token);
+  if (!joined) return [];
+  const knownCandidates = knownGivenCandidatesFromRomanTokens([joined]);
+  const parsedCandidates = parseGivenLatinTokens([joined]);
+  return dedupeCandidateUnits(knownCandidates.concat(parsedCandidates), 24);
 }
 
 function hasNonLatinScript(groups) {
@@ -1584,11 +1820,11 @@ function searchLatin(query, candidateMap) {
   if (tokens.length <= 1) {
     for (const [variant, surnameCandidates] of Object.entries(state.data.surnameLatinIndex)) {
       if (latin.startsWith(variant) && latin.length !== variant.length) {
-        const givenCandidates = parseSyllablesLatin(latin.slice(variant.length), 3);
+        const givenCandidates = parseJoinedRomanGivenToken(latin.slice(variant.length));
         combineSurnameAndGivenCandidates(surnameCandidates, givenCandidates, candidateMap, 0.96, "Latin joined-string parse");
       }
       if (latin.endsWith(variant) && latin.length !== variant.length) {
-        const givenCandidates = parseSyllablesLatin(latin.slice(0, -variant.length), 3);
+        const givenCandidates = parseJoinedRomanGivenToken(latin.slice(0, -variant.length));
         combineSurnameAndGivenCandidates(surnameCandidates, givenCandidates, candidateMap, 0.94, "Latin suffix-surname parse");
       }
     }
@@ -1690,6 +1926,117 @@ function parseGivenGroup(group) {
   }
 }
 
+function addStandaloneSurnameCandidates(candidateMap, surnameCandidates, evidence, boost = 180) {
+  for (const candidate of surnameCandidates.slice(0, 10)) {
+    const surnameData = state.runtime?.surnameByHangul?.get(candidate.hangul);
+    const score = Number(candidate.score) + boost + Math.log1p(Number(surnameData?.population || 0)) * 8;
+    addCandidate(candidateMap, candidate.hangul, score, evidence, { kind: "surname" });
+  }
+}
+
+function addStandaloneGivenCandidates(candidateMap, givenCandidates, evidence, boost = 180) {
+  for (const candidate of givenCandidates.slice(0, 24)) {
+    if (!candidate?.units?.length) continue;
+    const hangul = candidate.units.join("");
+    const score = Number(candidate.score) + boost + givenUnitsNamePrior(candidate.units);
+    addCandidate(candidateMap, hangul, score, evidence, { kind: "given" });
+  }
+}
+
+function searchStandaloneHangul(query, candidateMap) {
+  const groups = tokenizeByScript(query);
+  if (groups.length !== 1 || groups[0].type !== "hangul") return;
+  const hangul = extractHangul(query);
+  if (!hangul) return;
+
+  const surnameCandidates = findSurnameCandidatesFromHangul(hangul).filter((item) => item.hangul === hangul);
+  if (surnameCandidates.length) {
+    addStandaloneSurnameCandidates(candidateMap, surnameCandidates, "Standalone Hangul surname search", 220);
+  }
+
+  const wholeGivenCandidates = [];
+  if (state.data.givenNames?.[hangul]) {
+    wholeGivenCandidates.push({
+      units: Array.from(hangul),
+      score: givenWholeNamePrior(Array.from(hangul)) + 120,
+    });
+  } else if (hangul.length <= 3 && Array.from(hangul).every((syllable) => hasGivenSyllableEvidence(syllable))) {
+    wholeGivenCandidates.push({
+      units: Array.from(hangul),
+      score: givenUnitsNamePrior(Array.from(hangul)),
+    });
+  }
+  if (wholeGivenCandidates.length) {
+    addStandaloneGivenCandidates(candidateMap, wholeGivenCandidates, "Standalone Hangul given-name search", 220);
+  }
+}
+
+function searchStandaloneLatin(query, candidateMap) {
+  const groups = tokenizeByScript(query);
+  if (!groups.length || groups.some((group) => group.type !== "latin")) return;
+  const romanGroups = splitRomanGroups(query);
+  const tokens = romanGroups.flat();
+  if (!tokens.length) return;
+
+  const joined = tokens.join("");
+  if (tokens.length <= 2) {
+    const surnameCandidates = findSurnameCandidatesFromLatin(joined);
+    if (surnameCandidates.length) {
+      addStandaloneSurnameCandidates(candidateMap, surnameCandidates, "Standalone Roman surname search", 220);
+    }
+  }
+
+  let givenCandidates = knownGivenCandidatesFromRomanTokens(tokens);
+  const parsedGivenCandidates = parseGivenLatinTokens(tokens);
+  const romanDuumCandidates = tokens.length === 1 ? generateRomanDuumWholeGivenCandidates(tokens[0]) : [];
+  if (romanDuumCandidates.length) {
+    addStandaloneGivenCandidates(candidateMap, romanDuumCandidates, "Standalone Roman duum given-name search", 260);
+  }
+  givenCandidates = dedupeCandidateUnits(givenCandidates.concat(parsedGivenCandidates, romanDuumCandidates), 24);
+  if (tokens.length === 1) {
+    givenCandidates = pruneRomanSingleTokenGivenCandidates(givenCandidates);
+  }
+  if (givenCandidates.length) {
+    addStandaloneGivenCandidates(candidateMap, givenCandidates, "Standalone Roman given-name search", 220);
+  }
+}
+
+function searchStandaloneKana(query, candidateMap) {
+  const groups = tokenizeByScript(query);
+  if (!groups.length || groups.some((group) => group.type !== "kana")) return;
+  const tokens = splitKanaTokens(query);
+  if (!tokens.length) return;
+
+  if (tokens.length <= 2) {
+    const surnameCandidates = findSurnameCandidatesFromKana(tokens.join(""));
+    if (surnameCandidates.length) {
+      addStandaloneSurnameCandidates(candidateMap, surnameCandidates, "Standalone Kana surname search", 210);
+    }
+  }
+
+  const givenCandidates = parseGivenKanaTokens(tokens);
+  if (givenCandidates.length) {
+    addStandaloneGivenCandidates(candidateMap, givenCandidates, "Standalone Kana given-name search", 210);
+  }
+}
+
+function searchStandaloneHanja(query, candidateMap) {
+  const groups = tokenizeByScript(query);
+  if (groups.length !== 1 || groups[0].type !== "hanja") return;
+  const hanja = extractHanja(query);
+  if (!hanja) return;
+
+  const surnameCandidates = findSurnameCandidatesFromHanja(hanja);
+  if (surnameCandidates.length) {
+    addStandaloneSurnameCandidates(candidateMap, surnameCandidates, "Standalone Hanja surname search", 210);
+  }
+
+  const givenCandidates = parseGivenHanja(hanja);
+  if (givenCandidates.length) {
+    addStandaloneGivenCandidates(candidateMap, givenCandidates, "Standalone Hanja given-name search", 210);
+  }
+}
+
 function combineSurnameAndGivenCandidates(surnameCandidates, givenCandidates, candidateMap, boost, label) {
   for (const surnameCandidate of surnameCandidates.slice(0, 10)) {
     for (const givenCandidate of givenCandidates.slice(0, 24)) {
@@ -1702,10 +2049,157 @@ function combineSurnameAndGivenCandidates(surnameCandidates, givenCandidates, ca
 }
 
 function gatherExactRowsForHangul(hangul, candidate) {
+  if (candidate.kind === "given") {
+    return state.runtime?.fullNameRowsByGiven?.get(hangul) || [];
+  }
+  if (candidate.kind === "surname") {
+    return state.runtime?.fullNameRowsBySurname?.get(hangul) || [];
+  }
   const ids = new Set(candidate.exactIds || []);
   const exact = state.data.fullNameExactHangul[hangul] || [];
   for (const id of exact) ids.add(id);
   return [...ids].map((id) => state.data.fullNames[id]);
+}
+
+function generateGivenRomanOutputs(hangul) {
+  const givenUnits = Array.from(hangul);
+  const counter = new Map();
+  const add = (text, score) => {
+    if (!text) return;
+    counter.set(text, Math.max(score, counter.get(text) || 0));
+  };
+
+  let givenCombos = [{ text: "", score: 0, parts: [] }];
+  for (const [syllableIndex, syllable] of givenUnits.entries()) {
+    const syllableData = state.data.syllables[syllable];
+    let variants = (syllableData?.latin || [{ text: syllable, score: 1 }]).slice(0, 4);
+    if (syllable === "이" && syllableIndex > 0) {
+      const filtered = variants.filter((variant) => normalizeLatin(variant.text) !== "lee");
+      if (filtered.length) variants = filtered;
+    }
+    const next = [];
+    for (const combo of givenCombos) {
+      for (const variant of variants) {
+        next.push({
+          text: `${combo.text}${variant.text}`,
+          score: combo.score + Number(variant.score),
+          parts: combo.parts.concat(variant.text),
+        });
+      }
+    }
+    givenCombos = next.sort((a, b) => b.score - a.score).slice(0, 18);
+  }
+
+  for (const givenCombo of givenCombos) {
+    if (!givenCombo.parts.length) continue;
+    add(givenCombo.parts.join(" "), givenCombo.score * 0.74);
+    add(givenCombo.parts.join("-"), givenCombo.score);
+    add(givenCombo.text, givenCombo.score * 0.9);
+  }
+
+  return [...counter.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([text, score]) => ({ text, score }));
+}
+
+function generateSurnameRomanOutputs(hangul) {
+  const surnameData = state.runtime?.surnameByHangul?.get(hangul);
+  return (surnameData?.latin || [])
+    .slice(0, 8)
+    .map((item) => ({ text: item.text, score: Number(item.score) || 0 }));
+}
+
+function generateGivenKanaOutputs(hangul) {
+  const givenUnits = Array.from(hangul);
+  const counter = new Map();
+  const add = (text, score) => {
+    if (!text) return;
+    counter.set(text, Math.max(score, counter.get(text) || 0));
+  };
+  const givenCombos = buildKanaGivenCombosForUnits(givenUnits);
+  for (const combo of givenCombos) {
+    const normalizedParts = normalizeKanaPartsForJoin(combo.parts || [], givenUnits);
+    for (const surface of generateLiaisonKanaVariants(normalizedParts, givenUnits)) {
+      add(surface.text, combo.score * surface.scoreScale);
+    }
+    for (const voicedSurface of generateVoicedGiyeokKanaVariants(normalizedParts, givenUnits)) {
+      add(voicedSurface.parts.join(""), combo.score * voicedSurface.scoreScale);
+    }
+  }
+  for (const pronouncedSurface of generatePronouncedGivenSurfaceVariants(givenUnits)) {
+    const pronouncedCombos = buildKanaGivenCombosForUnits(pronouncedSurface.units);
+    for (const combo of pronouncedCombos) {
+      const normalizedParts = normalizeKanaPartsForJoin(combo.parts || [], pronouncedSurface.units);
+      for (const surface of generateLiaisonKanaVariants(normalizedParts, pronouncedSurface.units)) {
+        add(surface.text, combo.score * surface.scoreScale * pronouncedSurface.scoreScale);
+      }
+    }
+  }
+  return [...counter.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([text, score]) => ({ text, score }));
+}
+
+function generateSurnameKanaOutputs(hangul) {
+  const surnameData = state.runtime?.surnameByHangul?.get(hangul);
+  return (surnameData?.kana || [])
+    .slice(0, 8)
+    .map((item) => ({ text: item.text, score: Number(item.score) || 0 }));
+}
+
+function generateOutputsForCandidate(candidate, exactRows) {
+  if (candidate.kind === "surname") {
+    return {
+      romanOutputs: generateSurnameRomanOutputs(candidate.hangul),
+      kanaOutputs: generateSurnameKanaOutputs(candidate.hangul),
+      hanjaOutputs: hanjaOutputsForCandidate(candidate.hangul, exactRows),
+    };
+  }
+  if (candidate.kind === "given") {
+    return {
+      romanOutputs: generateGivenRomanOutputs(candidate.hangul),
+      kanaOutputs: generateGivenKanaOutputs(candidate.hangul),
+      hanjaOutputs: [],
+    };
+  }
+  return {
+    romanOutputs: generateRomanOutputs(candidate.hangul, exactRows),
+    kanaOutputs: generateKanaOutputs(candidate.hangul, exactRows),
+    hanjaOutputs: hanjaOutputsForCandidate(candidate.hangul, exactRows),
+  };
+}
+
+function candidateSubtitle(candidate, exactRows) {
+  if (candidate.kind === "surname") {
+    const surnameData = state.runtime?.surnameByHangul?.get(candidate.hangul);
+    return `Surname match · population ${Number(surnameData?.population || 0).toLocaleString()} · ${exactRows.length} supporting dataset row(s)`;
+  }
+  if (candidate.kind === "given") {
+    return `${candidate.hangul.length}-syllable given name · ${exactRows.length ? `${exactRows.length} supporting dataset row(s)` : "generated from given-name evidence"}`;
+  }
+  const { surname, given } = splitNameUnits(candidate.hangul, state.runtime.compoundSurnames);
+  return `Surname ${surname} · Given ${given || "—"} · ${exactRows.length ? `${exactRows.length} supporting dataset row(s)` : "synthetic from surname and syllable evidence"}`;
+}
+
+function deriveInterpretationText(query, candidateMap) {
+  const candidates = [...candidateMap.values()].sort((a, b) => b.score - a.score);
+  if (!candidates.length) return `Interpretation: likely neither a surname, given name, nor full name.`;
+  const topScore = Number(candidates[0].score) || 0;
+  const activeKinds = [...new Set(
+    candidates
+      .filter((candidate) => Number(candidate.score) >= topScore * 0.7)
+      .slice(0, 5)
+      .map((candidate) => candidate.kind || "full"),
+  )];
+  if (!activeKinds.length) {
+    return `Interpretation: likely neither a surname, given name, nor full name.`;
+  }
+  if (activeKinds.length === 1) {
+    return `Interpretation: likely ${candidateKindLabel(activeKinds[0])}.`;
+  }
+  return `Interpretation: ambiguous between ${activeKinds.map(candidateKindLabel).join(", ")}.`;
 }
 
 function generateRomanOutputs(hangul, exactRows) {
@@ -1852,26 +2346,23 @@ function hanjaOutputsForCandidate(hangul, exactRows) {
 }
 
 function buildResultCards(candidateMap) {
-  const candidates = [...candidateMap.values()].sort((a, b) => b.score - a.score).slice(0, 16);
+  const candidates = [...candidateMap.values()].sort((a, b) => candidateRankingScore(b) - candidateRankingScore(a)).slice(0, 16);
   if (!candidates.length) {
     resultsEl.innerHTML = `<div class="empty-state">No plausible candidates found. Try another spacing style, a different romanization, or a shorter query.</div>`;
     showResultsSection();
     return;
   }
 
-  const candidatePercents = allocatePercentages(candidates, (candidate) => Number(candidate.score) || 0);
+  const candidatePercents = allocatePercentages(candidates, (candidate) => candidateRankingScore(candidate));
   resultsEl.innerHTML = "";
   for (const [index, candidate] of candidates.entries()) {
     const exactRows = gatherExactRowsForHangul(candidate.hangul, candidate);
-    const romanOutputs = generateRomanOutputs(candidate.hangul, exactRows);
-    const kanaOutputs = generateKanaOutputs(candidate.hangul, exactRows);
-    const hanjaOutputs = hanjaOutputsForCandidate(candidate.hangul, exactRows);
+    const { romanOutputs, kanaOutputs, hanjaOutputs } = generateOutputsForCandidate(candidate, exactRows);
     const plausibility = candidatePercents[index] ?? 0;
-    const { surname, given } = splitNameUnits(candidate.hangul, state.runtime.compoundSurnames);
 
     const fragment = resultTemplate.content.cloneNode(true);
     fragment.querySelector(".result-hangul").textContent = candidate.hangul;
-    fragment.querySelector(".result-subtitle").textContent = `Surname ${surname} · Given ${given || "—"} · ${exactRows.length ? `${exactRows.length} supporting dataset row(s)` : "synthetic from surname and syllable evidence"}`;
+    fragment.querySelector(".result-subtitle").textContent = candidateSubtitle(candidate, exactRows);
     fragment.querySelector(".score-value").textContent = `${plausibility}%`;
     fragment.querySelector(".score-bar span").style.width = `${plausibility}%`;
 
@@ -1890,15 +2381,23 @@ function buildResultCards(candidateMap) {
 function pruneImplausibleCandidates(candidateMap) {
   const candidates = [...candidateMap.values()].sort((a, b) => b.score - a.score);
   if (candidates.length < 2) return candidateMap;
+  const bestStandaloneGiven = candidates.find((candidate) => {
+    if (candidate.kind !== "given") return false;
+    if (isLikelyFullNameMisparsedAsGiven(candidate, candidateMap)) return false;
+    const units = candidateGivenUnits(candidate);
+    return units.length <= 2 || hasSupportedWholeGivenName(units);
+  });
+  const bestStandaloneGivenUnits = bestStandaloneGiven ? candidateGivenUnits(bestStandaloneGiven) : [];
+  const bestStandaloneGivenWholeSupported = bestStandaloneGiven ? hasSupportedWholeGivenName(bestStandaloneGivenUnits) : false;
 
   const bestAllowed = candidates.find((candidate) => {
-    const { given } = splitNameUnits(candidate.hangul, state.runtime.compoundSurnames);
-    return Array.from(given).every((syllable) => isAllowedNameSyllable(syllable));
+    if (candidate.kind === "surname") return true;
+    return candidateGivenUnits(candidate).every((syllable) => isAllowedNameSyllable(syllable));
   });
 
   const bestPlausible = candidates.find((candidate) => {
-    const { given } = splitNameUnits(candidate.hangul, state.runtime.compoundSurnames);
-    const units = Array.from(given);
+    const units = candidateGivenUnits(candidate);
+    if (candidate.kind === "surname") return true;
     return units.length && units.every((syllable) => !isUltraRareGivenSyllable(syllable));
   });
   const plausibilityBaseline = bestPlausible || bestAllowed || candidates[0];
@@ -1906,16 +2405,64 @@ function pruneImplausibleCandidates(candidateMap) {
 
   const filtered = new Map();
   for (const candidate of candidates) {
-    const { given } = splitNameUnits(candidate.hangul, state.runtime.compoundSurnames);
-    const units = Array.from(given);
+    if (isLikelyFullNameMisparsedAsGiven(candidate, candidateMap)) continue;
+    const units = candidateGivenUnits(candidate);
+    if (
+      state.queryMeta?.explicitMedialRomanLateralCue &&
+      candidate.kind === "given" &&
+      units.length === 2
+    ) {
+      const secondParts = decomposeHangulSyllable(units[1]);
+      if (secondParts && DUUM_RECOVERY_VOWELS.has(secondParts.vowel)) {
+        if (secondParts.onset === "ㄹ" && isPlausibleRecoveredDuumSyllable(units[1])) {
+          candidate.score += 1800;
+        } else if (secondParts.onset === "ㅇ") {
+          candidate.score -= 1200;
+        }
+      }
+    }
     const ultraRareCount = units.filter((syllable) => isUltraRareGivenSyllable(syllable)).length;
     const unsupportedCount = units.filter((syllable) => !isAllowedNameSyllable(syllable)).length;
-    const unsupportedLongGiven = units.length >= 3 && !hasSupportedWholeGivenName(units);
+    const unsupportedLongGiven = candidate.kind !== "surname" && units.length >= 3 && !hasSupportedWholeGivenName(units);
     const hasExactEvidence =
       (candidate.exactIds && candidate.exactIds.size > 0) ||
       [...candidate.evidence].some((item) => /Exact|Supplemental|Hangul form parsed directly/.test(item));
     const kanaDerivedOnly = !hasExactEvidence && [...candidate.evidence].some((item) => /Kana/.test(item));
+    const singleRomanSyntheticFull =
+      state.queryMeta?.isSingleRomanToken &&
+      candidate.kind === "full" &&
+      !hasExactEvidence &&
+      [...candidate.evidence].every((item) => /Latin (joined-string|suffix-surname) parse/.test(item));
+    const nonSinoLikeGivenCount = units.filter((syllable) => !isSinoLikeGivenSyllable(syllable)).length;
+    if (
+      singleRomanSyntheticFull &&
+      bestStandaloneGiven &&
+      bestStandaloneGivenWholeSupported &&
+      nonSinoLikeGivenCount > 0
+    ) {
+      continue;
+    }
+    if (
+      singleRomanSyntheticFull &&
+      bestStandaloneGiven &&
+      bestStandaloneGivenWholeSupported
+    ) {
+      const candidateWholeSupported = hasSupportedWholeGivenName(units);
+      const unitDelta = Math.max(0, units.length - bestStandaloneGivenUnits.length);
+      let singleTokenPenalty = 120 + Math.min(120, givenWholeNamePrior(bestStandaloneGivenUnits) * 0.16);
+      if (!candidateWholeSupported) singleTokenPenalty += 140;
+      if (nonSinoLikeGivenCount) singleTokenPenalty += 220 * nonSinoLikeGivenCount;
+      if (unitDelta) singleTokenPenalty += unitDelta * 90;
+      candidate.score -= singleTokenPenalty;
+    }
     if (!hasExactEvidence && unsupportedLongGiven) continue;
+    if (
+      singleRomanSyntheticFull &&
+      bestStandaloneGiven &&
+      candidate.score < bestStandaloneGiven.score * (nonSinoLikeGivenCount ? 1.35 : 1.12)
+    ) {
+      continue;
+    }
     if (!hasExactEvidence && bestAllowed && unsupportedCount >= 1) continue;
     if (
       kanaDerivedOnly &&
@@ -1923,12 +2470,12 @@ function pruneImplausibleCandidates(candidateMap) {
       ultraRareCount <= 1 &&
       candidate.score >= plausibilityBaseline.score * 0.12
     ) {
-      filtered.set(candidate.hangul, candidate);
+      filtered.set(candidateKey(candidate.hangul, candidate.kind), candidate);
       continue;
     }
     if (!hasExactEvidence && ultraRareCount >= 2 && candidate.score < plausibilityBaseline.score * 0.45) continue;
     if (!hasExactEvidence && ultraRareCount >= 1 && candidate.score < plausibilityBaseline.score * 0.28) continue;
-    filtered.set(candidate.hangul, candidate);
+    filtered.set(candidateKey(candidate.hangul, candidate.kind), candidate);
   }
   return filtered;
 }
@@ -2084,6 +2631,7 @@ function hideResultsSection() {
   resultsSectionEl.classList.remove("is-entering", "is-visible");
   resultsSectionEl.classList.add("is-hidden");
   resultsSectionEl.setAttribute("aria-hidden", "true");
+  if (interpretationEl) interpretationEl.textContent = "";
 }
 
 function showResultsSection() {
@@ -2103,18 +2651,27 @@ function showResultsSection() {
 function search(query) {
   if (!query.trim()) {
     resultsEl.innerHTML = "";
+    state.queryMeta = null;
     hideResultsSection();
     return;
   }
 
+  state.queryMeta = analyzeQueryMeta(query);
   const candidateMap = new Map();
   addExactNameCandidates(query, candidateMap);
+  searchStandaloneHangul(query, candidateMap);
+  searchStandaloneLatin(query, candidateMap);
+  searchStandaloneKana(query, candidateMap);
+  searchStandaloneHanja(query, candidateMap);
   searchHangul(query, candidateMap);
   searchLatin(query, candidateMap);
   searchKana(query, candidateMap);
   searchHanja(query, candidateMap);
   searchMixedGroups(query, candidateMap);
   const prunedCandidateMap = pruneImplausibleCandidates(candidateMap);
+  if (interpretationEl) {
+    interpretationEl.textContent = deriveInterpretationText(query, prunedCandidateMap.size ? prunedCandidateMap : candidateMap);
+  }
   buildResultCards(prunedCandidateMap);
 }
 
