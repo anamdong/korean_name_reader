@@ -120,6 +120,7 @@ function expandRomanTokenVariants(token) {
   const replacements = [
     ["kyoung", "kyung", 6],
     ["jeoun", "jeon", 5],
+    ["guen", "gyun", 3],
     ["yeu", "yu", 3],
     ["yeoun", "yeon", 5],
     ["ryeon", "yeon", 180],
@@ -147,6 +148,18 @@ function expandRomanTokenVariants(token) {
     variants.push({
       token: norm.replace(/^eu/, "yu"),
       penalty: 3,
+    });
+  }
+  if (/[aeiouy]ll(?=[bcdfghjklmnpqrstvwxyz]|$)/.test(norm)) {
+    variants.push({
+      token: norm.replace(/([aeiouy])ll(?=[bcdfghjklmnpqrstvwxyz]|$)/g, "$1l"),
+      penalty: 2,
+    });
+  }
+  if (/[aeiouy]c(?=[bcdfghjklmnpqrstvwxyz]|$)/.test(norm)) {
+    variants.push({
+      token: norm.replace(/([aeiouy])c(?=[bcdfghjklmnpqrstvwxyz]|$)/g, "$1k"),
+      penalty: 2,
     });
   }
   if (/[aeiou]h(?=[bcdfghjklmnpqrstvwxyz]|$)/.test(norm)) {
@@ -263,6 +276,13 @@ function isLikelyFullNameMisparsedAsGiven(candidate, candidateMap) {
 function candidateRankingScore(candidate) {
   let score = Number(candidate?.score);
   if (!Number.isFinite(score)) score = 0;
+  const evidenceList = candidate?.evidence ? [...candidate.evidence] : [];
+  if (
+    candidate?.kind === "full" &&
+    evidenceList.some((item) => /Supplemental attested Roman query match|Exact Romanized name match/.test(item))
+  ) {
+    score += 180;
+  }
   const units = candidateGivenUnits(candidate);
   if (candidate?.kind !== "surname" && units.length) {
     if (hasSupportedWholeGivenName(units)) {
@@ -964,6 +984,7 @@ function trailingCodaClass(text) {
   if (text.endsWith("m")) return "m";
   if (text.endsWith("n")) return "n";
   if (text.endsWith("l") || text.endsWith("r")) return "l";
+  if (text.endsWith("k") || text.endsWith("g") || text.endsWith("c")) return "k";
   return "";
 }
 
@@ -976,6 +997,7 @@ function preservesTrailingCoda(norm, key) {
   if (!normCoda) return true;
   const keyCoda = trailingCodaClass(key);
   if (normCoda === "n") return keyCoda === "n" || keyCoda === "ng";
+  if (normCoda === "k") return keyCoda === "k";
   return keyCoda === normCoda;
 }
 
