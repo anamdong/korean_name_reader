@@ -162,6 +162,12 @@ function expandRomanTokenVariants(token) {
       penalty: 2,
     });
   }
+  if (norm.includes("v")) {
+    variants.push({
+      token: norm.replaceAll("v", "b"),
+      penalty: 3,
+    });
+  }
   if (/[aeiou]h(?=[bcdfghjklmnpqrstvwxyz]|$)/.test(norm)) {
     variants.push({
       token: norm.replace(/([aeiou])h(?=[bcdfghjklmnpqrstvwxyz]|$)/g, "$1"),
