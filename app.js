@@ -266,11 +266,11 @@ function candidateRankingScore(candidate) {
   const units = candidateGivenUnits(candidate);
   if (candidate?.kind !== "surname" && units.length) {
     if (hasSupportedWholeGivenName(units)) {
-      score += 900 + Math.min(1600, givenWholeNamePrior(units) * 0.4);
+      score += 900 + Math.min(1600, givenWholeNamePrior(units) * 0.4) + givenWholeNameRankingBoost(units);
     } else if (units.length >= 2) {
-      score -= 420;
+      score -= 780;
       if (units.some((syllable) => isUltraRareGivenSyllable(syllable))) {
-        score -= 260;
+        score -= 360;
       }
     }
   }
@@ -615,6 +615,23 @@ function givenWholeNamePrior(units) {
   if (datasetCount > 0) prior += Math.log1p(datasetCount) * 35;
   if (rowOccurrences > 0) prior += Math.log1p(rowOccurrences) * 8;
   return prior;
+}
+
+function givenWholeNameRankingBoost(units) {
+  const name = units.join("");
+  if (!name) return 0;
+  const data = state.data?.givenNames?.[name];
+  if (!data) return 0;
+  const totalWeight = Number(data.totalWeight || 0);
+  const periodsPresentCount = Number(data.periodsPresentCount || 0);
+  const datasetCount = Number(data.datasetCount || 0);
+  const rowOccurrences = Number(data.rowOccurrences || 0);
+  let boost = 0;
+  if (totalWeight > 0) boost += Math.pow(Math.log1p(totalWeight), 3) * 10;
+  if (periodsPresentCount > 0) boost += periodsPresentCount * 120;
+  if (datasetCount > 0) boost += datasetCount * 260;
+  if (rowOccurrences > 0) boost += rowOccurrences * 45;
+  return boost;
 }
 
 function hasSupportedWholeGivenName(units) {
