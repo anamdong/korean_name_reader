@@ -283,6 +283,10 @@ function candidateRankingScore(candidate) {
   ) {
     score += 180;
   }
+  if (candidate?.kind === "full" && state.queryMeta?.isSingleRomanToken) {
+    const { surname } = splitNameUnits(candidate.hangul, state.runtime?.compoundSurnames);
+    score += surnamePopulationPrior(surname);
+  }
   const units = candidateGivenUnits(candidate);
   if (candidate?.kind !== "surname" && units.length) {
     if (hasSupportedWholeGivenName(units)) {
@@ -652,6 +656,21 @@ function givenWholeNameRankingBoost(units) {
   if (datasetCount > 0) boost += datasetCount * 260;
   if (rowOccurrences > 0) boost += rowOccurrences * 45;
   return boost;
+}
+
+function surnamePopulationPrior(hangul) {
+  const surnameData = state.runtime?.surnameByHangul?.get(hangul);
+  const population = Number(surnameData?.population || 0);
+  if (!population) return -2200;
+
+  let prior = Math.log1p(population) * 115;
+  if (population < 50) prior -= 2600;
+  else if (population < 200) prior -= 1850;
+  else if (population < 1000) prior -= 1100;
+  else if (population < 10000) prior -= 520;
+  else if (population < 50000) prior -= 140;
+
+  return prior;
 }
 
 function hasSupportedWholeGivenName(units) {
