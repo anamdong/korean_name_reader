@@ -2453,6 +2453,12 @@ function pruneImplausibleCandidates(candidateMap) {
   });
   const bestStandaloneGivenUnits = bestStandaloneGiven ? candidateGivenUnits(bestStandaloneGiven) : [];
   const bestStandaloneGivenWholeSupported = bestStandaloneGiven ? hasSupportedWholeGivenName(bestStandaloneGivenUnits) : false;
+  const bestStandaloneCompactGiven =
+    bestStandaloneGiven &&
+    bestStandaloneGivenWholeSupported &&
+    bestStandaloneGivenUnits.length <= 2
+      ? bestStandaloneGiven
+      : null;
 
   const bestAllowed = candidates.find((candidate) => {
     if (candidate.kind === "surname") return true;
@@ -2497,7 +2503,19 @@ function pruneImplausibleCandidates(candidateMap) {
       candidate.kind === "full" &&
       !hasExactEvidence &&
       [...candidate.evidence].every((item) => /Latin (joined-string|suffix-surname) parse/.test(item));
+    const { surname } = candidate.kind === "full"
+      ? splitNameUnits(candidate.hangul, state.runtime?.compoundSurnames)
+      : { surname: "" };
+    const surnamePopulation = Number(state.runtime?.surnameByHangul?.get(surname)?.population || 0);
     const nonSinoLikeGivenCount = units.filter((syllable) => !isSinoLikeGivenSyllable(syllable)).length;
+    if (
+      singleRomanSyntheticFull &&
+      bestStandaloneCompactGiven &&
+      surnamePopulation < 50000 &&
+      candidate.score <= bestStandaloneCompactGiven.score * 1.4
+    ) {
+      continue;
+    }
     if (
       singleRomanSyntheticFull &&
       bestStandaloneGiven &&
