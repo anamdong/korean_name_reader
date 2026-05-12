@@ -121,6 +121,8 @@ function expandRomanTokenVariants(token) {
     ["kyoung", "kyung", 6],
     ["jeoun", "jeon", 5],
     ["guen", "gyun", 3],
+    ["kwi", "gwi", 2],
+    ["heun", "heon", 2],
     ["yeu", "yu", 3],
     ["yeoun", "yeon", 5],
     ["ryeon", "yeon", 180],
