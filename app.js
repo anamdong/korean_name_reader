@@ -119,6 +119,7 @@ function expandRomanTokenVariants(token) {
   const variants = [{ token: norm, penalty: 0 }];
   const replacements = [
     ["kyoung", "kyung", 6],
+    ["kyeng", "kyung", 2],
     ["jeoun", "jeon", 5],
     ["guen", "gyun", 3],
     ["kwi", "gwi", 2],
