@@ -106,6 +106,9 @@ function forcedRomanHangulCandidates(token) {
   if (norm === "joong") {
     return [{ hangul: "중", score: 100000 }];
   }
+  if (norm === "yon") {
+    return [{ hangul: "연", score: 100000 }];
+  }
   return null;
 }
 
@@ -120,6 +123,7 @@ function expandRomanTokenVariants(token) {
   const replacements = [
     ["kyoung", "kyung", 6],
     ["kyeng", "kyung", 2],
+    ["hayon", "hayeon", 2],
     ["jeoun", "jeon", 5],
     ["guen", "gyun", 3],
     ["kwi", "gwi", 2],
@@ -785,7 +789,17 @@ function isPlausibleRecoveredDuumSyllable(syllable) {
   if (!parts) return false;
   if (isBlockedUnsupportedComplexCodaSyllable(syllable)) return false;
   if (!["ㅇ", "ㄹ"].includes(parts.onset)) return false;
-  return DUUM_RECOVERY_VOWELS.has(parts.vowel);
+  if (!DUUM_RECOVERY_VOWELS.has(parts.vowel)) return false;
+  if (isAllowedNameSyllable(syllable) || hasGivenSyllableEvidence(syllable) || hasHanjaGivenSupport(syllable)) {
+    return true;
+  }
+  const recoveredSurface = composeHangulSyllable("ㄴ", parts.vowel, parts.coda);
+  if (!recoveredSurface) return false;
+  return (
+    isAllowedNameSyllable(recoveredSurface) ||
+    hasGivenSyllableEvidence(recoveredSurface) ||
+    hasHanjaGivenSupport(recoveredSurface)
+  );
 }
 
 function recoverPronouncedSinoGivenCandidates(candidates) {
