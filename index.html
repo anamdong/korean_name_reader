@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Korean Name Converter</title>
+    <title>Korean Name Reader</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -13,12 +13,14 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="app-shell">
-      <section class="hero">
-        <form id="search-form" class="search-panel">
-          <div class="search-panel-head">
-            <label class="search-label" for="query">Search</label>
-          </div>
+    <main class="screen app-shell">
+      <div class="screen-content">
+        <section class="top">
+          <h1 class="top-eyebrow text" data-typography="t1" data-color="brand" data-weight="700">Korean Name Reader</h1>
+        </section>
+
+        <form id="search-form" class="search-panel" aria-label="Korean name search">
+          <label class="visually-hidden" for="query">Korean name</label>
           <div class="search-row">
             <input
               id="query"
@@ -26,35 +28,43 @@
               type="text"
               autocomplete="off"
               spellcheck="false"
-              placeholder="Spaces, commas, hyphens, and mixed scripts are all accepted."
+              placeholder="Search a Korean name"
             />
-            <button type="submit">Convert</button>
+            <button class="button" type="submit" data-size="medium" data-variant="fill" data-color="primary" data-display="inline">
+              <span class="button-content">Convert</span>
+            </button>
           </div>
-          <div class="example-row">
-            <button type="button" class="example-chip" data-example="정준">정준</button>
-            <button type="button" class="example-chip" data-example="Jung Joon">Jung Joon</button>
-            <button type="button" class="example-chip" data-example="チョンジュン">チョンジュン</button>
-            <button type="button" class="example-chip" data-example="鄭俊">鄭俊</button>
-            <button type="button" class="example-chip" data-example="Seo Taiji">Seo Taiji</button>
+          <div class="examples-line">
+            <span id="example-label" class="list-header-title example-label">Examples</span>
+            <div class="example-row">
+              <button type="button" class="example-chip" hidden></button>
+              <button type="button" class="example-chip" hidden></button>
+              <button type="button" class="example-chip" hidden></button>
+              <button type="button" class="example-chip" hidden></button>
+              <button type="button" class="example-chip" hidden></button>
+            </div>
           </div>
         </form>
-      </section>
 
-      <section class="results-section is-hidden" aria-hidden="true">
-        <div class="section-head">
-          <h2>Ranked Results</h2>
-          <p id="query-interpretation" class="query-interpretation"></p>
-        </div>
-        <div id="results" class="results-list"></div>
-      </section>
+        <section class="results-section is-hidden" aria-hidden="true">
+          <div class="list-header section-head">
+            <div class="list-header-main">
+              <h2 class="list-header-title">Ranked results</h2>
+            </div>
+            <p id="query-interpretation" class="list-header-description query-interpretation"></p>
+          </div>
+          <div id="results" class="results-list"></div>
+        </section>
+      </div>
     </main>
 
     <template id="result-template">
       <article class="result-card">
-        <div class="result-top">
-          <div>
-            <div class="result-hangul"></div>
-            <div class="result-subtitle"></div>
+        <div class="result-top list-row">
+          <div class="result-rank badge" data-tone="primary" aria-hidden="true"></div>
+          <div class="list-row-content">
+            <h3 class="result-hangul list-row-title"></h3>
+            <p class="result-subtitle list-row-description"></p>
           </div>
           <div class="score-box">
             <span class="score-label">Plausibility</span>
@@ -63,16 +73,16 @@
         </div>
         <div class="score-bar"><span></span></div>
         <div class="result-grid">
-          <section>
-            <h3>Roman Alphabet</h3>
+          <section class="output-section">
+            <h4>Roman alphabet</h4>
             <ol class="variant-list roman-list"></ol>
           </section>
-          <section>
-            <h3>Japanese Kana</h3>
+          <section class="output-section">
+            <h4>Japanese kana</h4>
             <ol class="variant-list kana-list"></ol>
           </section>
-          <section>
-            <h3>Hanja</h3>
+          <section class="output-section">
+            <h4>Hanja</h4>
             <ol class="variant-list hanja-list"></ol>
           </section>
         </div>

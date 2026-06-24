@@ -2429,7 +2429,7 @@ function hanjaOutputsForCandidate(hangul, exactRows) {
 function buildResultCards(candidateMap) {
   const candidates = [...candidateMap.values()].sort((a, b) => candidateRankingScore(b) - candidateRankingScore(a)).slice(0, 16);
   if (!candidates.length) {
-    resultsEl.innerHTML = `<div class="empty-state">No plausible candidates found. Try another spacing style, a different romanization, or a shorter query.</div>`;
+    resultsEl.innerHTML = `<div class="empty-state" role="status">No plausible candidates found. Try another spacing style, a different romanization, or a shorter query.</div>`;
     showResultsSection();
     return;
   }
@@ -2632,79 +2632,103 @@ function pickRandom(items) {
   return items[Math.floor(Math.random() * items.length)] || null;
 }
 
-function generateRomanExampleText(row) {
-  const roman = pickRandom((row.romanizations || []).map((item) => item.text).filter(Boolean));
-  if (!roman) return null;
-  const parts = roman.trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return null;
-  const surname = parts[0];
-  const given = parts.slice(1);
-  const styles = [roman];
-  if (given.length) {
-    styles.push(`${surname}.${given.join("-")}`);
-    styles.push(`${surname}, ${given.join("")}`);
-    styles.push(`${surname} ${given.join("-")}`);
-    styles.push(`${surname} ${given.join(" ")}`);
-  } else {
-    styles.push(roman.replace(/\s+/g, "."));
+function pickWeightedRandom(items, getWeight) {
+  const weighted = (items || [])
+    .map((item) => ({ item, weight: Math.max(0, Number(getWeight(item)) || 0) }))
+    .filter((entry) => entry.weight > 0);
+  if (!weighted.length) return pickRandom(items || []);
+  const total = weighted.reduce((sum, entry) => sum + entry.weight, 0);
+  let cursor = Math.random() * total;
+  for (const entry of weighted) {
+    cursor -= entry.weight;
+    if (cursor <= 0) return entry.item;
   }
-  return pickRandom(shuffled([...new Set(styles)]).filter(Boolean));
+  return weighted[weighted.length - 1].item;
 }
 
-function generateKanaExampleText(row) {
-  const kana = pickRandom((row.kana || []).map((item) => item.text).filter(Boolean));
-  if (!kana) return null;
-  const compact = kana.replace(/\s+/g, "");
-  const dotted = kana.replace(/\s+/g, "・");
-  return pickRandom(shuffled([...new Set([kana, compact, dotted])]).filter(Boolean));
+function addExample(pool, seen, text, type) {
+  const normalized = text?.trim();
+  if (!normalized) return;
+  const key = `${type}:${normalized}`;
+  if (seen.has(key)) return;
+  seen.add(key);
+  pool.push({ text: normalized, type });
 }
 
-function generateHanjaExampleText(row) {
-  return row.hanja?.trim() || null;
-}
-
-function buildRandomExamplePool() {
+function buildHangulExamplePool() {
   const pool = [];
   const seen = new Set();
-  for (const row of state.data?.fullNames || []) {
-    const generatedExamples = [
-      { text: row.hangul?.trim(), type: "hangul" },
-      { text: generateRomanExampleText(row), type: "roman" },
-      { text: generateKanaExampleText(row), type: "kana" },
-      { text: generateHanjaExampleText(row), type: "hanja" },
-    ];
-    for (const item of generatedExamples) {
-      const text = item.text?.trim();
-      if (!text) continue;
-      const key = `${item.type}:${text}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      pool.push({ text, type: item.type });
-    }
+  const surnames = (state.data?.surnames || []).filter((item) => item.hangul && Number(item.population || 0) >= 50000);
+  const givenNames = Object.entries(state.data?.givenNames || {})
+    .map(([hangul, meta]) => ({
+      hangul,
+      weight: Number(meta?.totalWeight || 0) + Number(meta?.rowOccurrences || 0) * 25,
+    }))
+    .filter((item) => item.hangul && Array.from(item.hangul).length === 2 && item.weight >= 1000);
+
+  if (!surnames.length || !givenNames.length) {
+    return (state.data?.fullNames || [])
+      .map((row) => row.hangul?.trim())
+      .filter(Boolean)
+      .map((text) => ({ text, type: "hangul" }));
+  }
+
+  const targetCount = Math.max(exampleChipEls.length * 6, 24);
+  let attempts = 0;
+  while (pool.length < targetCount && attempts < targetCount * 12) {
+    attempts += 1;
+    const surname = pickWeightedRandom(surnames, (item) => Math.log1p(Number(item.population || 0)));
+    const given = pickWeightedRandom(givenNames, (item) => Math.log1p(item.weight));
+    const text = `${surname?.hangul || ""}${given?.hangul || ""}`.trim();
+    addExample(pool, seen, text, "hangul");
   }
   return pool;
 }
 
+function buildRomanExamplePool() {
+  const pool = [];
+  const seen = new Set();
+  for (const row of shuffled(state.data?.fullNames || [])) {
+    const variants = (row.romanizations || []).filter((item) => item.text);
+    const variant = pickWeightedRandom(variants, (item) => Number(item.score) || 1);
+    addExample(pool, seen, variant?.text, "roman");
+  }
+  return pool;
+}
+
+function buildKanaExamplePool() {
+  const pool = [];
+  const seen = new Set();
+  for (const row of shuffled(state.data?.fullNames || [])) {
+    const variants = (row.kana || []).filter((item) => item.text);
+    const variant = pickWeightedRandom(variants, (item) => Number(item.score) || 1);
+    addExample(pool, seen, variant?.text, "kana");
+  }
+  return pool;
+}
+
+function buildRandomExamplePool() {
+  return [...buildHangulExamplePool(), ...buildRomanExamplePool(), ...buildKanaExamplePool()];
+}
+
 function hydrateRandomExamples() {
   if (!exampleChipEls.length) return;
-  const pool = buildRandomExamplePool();
+  const poolsByType = {
+    hangul: shuffled(buildHangulExamplePool()),
+    roman: shuffled(buildRomanExamplePool()),
+    kana: shuffled(buildKanaExamplePool()),
+  };
+  const pool = shuffled([...poolsByType.hangul, ...poolsByType.roman, ...poolsByType.kana]);
   if (!pool.length) return;
 
-  const typeBuckets = {
-    hangul: pool.filter((item) => item.type === "hangul"),
-    roman: pool.filter((item) => item.type === "roman"),
-    kana: pool.filter((item) => item.type === "kana"),
-    hanja: pool.filter((item) => item.type === "hanja"),
-  };
   const picks = [];
   const used = new Set();
 
-  for (const type of ["hangul", "roman", "kana", "hanja"]) {
-    const options = shuffled(typeBuckets[type] || []);
-    const choice = options.find((item) => !used.has(item.text));
-    if (!choice) continue;
-    used.add(choice.text);
-    picks.push(choice);
+  for (const type of ["hangul", "roman", "kana"]) {
+    const item = poolsByType[type].find((candidate) => !used.has(candidate.text));
+    if (!item) continue;
+    used.add(item.text);
+    picks.push(item);
   }
 
   for (const item of shuffled(pool)) {
@@ -2714,8 +2738,9 @@ function hydrateRandomExamples() {
     picks.push(item);
   }
 
+  const displayPicks = shuffled(picks);
   exampleChipEls.forEach((button, index) => {
-    const item = picks[index];
+    const item = displayPicks[index];
     if (!item) {
       button.hidden = true;
       return;
@@ -2811,6 +2836,6 @@ exampleChipEls.forEach((button) => {
 
 init().catch((error) => {
   console.error(error);
-  resultsEl.innerHTML = `<div class="empty-state">Failed to load the search index. Serve the folder over HTTP and reload.</div>`;
+  resultsEl.innerHTML = `<div class="empty-state" role="status">Failed to load the search index. Serve the folder over HTTP and reload.</div>`;
   showResultsSection();
 });
