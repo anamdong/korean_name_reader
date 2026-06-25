@@ -44,6 +44,131 @@ function normalizeLatin(text) {
   return stripDiacritics(text).toLowerCase().replace(/[^a-z]/g, "");
 }
 
+const MODERN_KOREAN_SURNAME_ROMAN_ALLOWLIST = new Map(Object.entries({
+  김: ["kim", "gim"],
+  이: ["lee", "yi", "i", "rhee"],
+  박: ["park", "bak", "pak"],
+  최: ["choi", "choe"],
+  정: ["jung", "jeong", "chung"],
+  조: ["cho", "jo", "joh"],
+  강: ["kang", "gang"],
+  윤: ["yoon", "yun"],
+  장: ["jang", "chang"],
+  임: ["im", "yim", "lim"],
+  한: ["han", "hahn"],
+  오: ["oh", "o"],
+  서: ["seo", "so", "suh"],
+  신: ["shin", "sin"],
+  권: ["kwon", "gwon", "kweon"],
+  황: ["hwang"],
+  안: ["ahn", "an"],
+  송: ["song"],
+  전: ["jeon", "jun", "chun", "cheon"],
+  홍: ["hong"],
+  유: ["yoo", "yu", "you", "ryu", "ryoo", "lyu"],
+  류: ["ryu", "ryoo", "yoo", "you", "lyu", "yu"],
+  노: ["noh", "no", "roh", "ro", "rho"],
+  차: ["cha"],
+  후: ["hu"],
+  흥: ["heung"],
+}).map(([hangul, variants]) => [hangul, new Set(variants)]));
+
+const BLOCKED_SURNAME_ROMAN_BY_HANGUL = new Map(Object.entries({
+  후: ["hong", "hoo", "hou", "huu", "who"],
+  흥: ["hong", "huynh", "khuong", "hung"],
+  홍: ["heong", "heung", "hohng", "houng", "whong"],
+  황: ["hang", "hoang", "huang", "hyang"],
+  안: ["anh"],
+  장: ["zhang", "zang"],
+  권: ["guan"],
+  한: ["hwan", "khan"],
+}).map(([hangul, variants]) => [hangul, new Set(variants)]));
+
+const MODERN_GIVEN_SYLLABLE_ROMAN_OUTPUT_ALLOWLIST = new Map(Object.entries({
+  도: ["do"],
+  언: ["eon"],
+  헌: ["hun", "heon"],
+  후: ["hu"],
+  홍: ["hong"],
+  흥: ["heung"],
+}).map(([hangul, variants]) => [hangul, new Set(variants)]));
+
+function isModernRomanText(text) {
+  return /^[A-Za-z][A-Za-z -]*$/.test(text || "");
+}
+
+function modernGivenRomanVariantsForOutput(syllable, variants) {
+  const modernVariants = (variants || []).filter((item) => isModernRomanText(item.text));
+  const allowlist = MODERN_GIVEN_SYLLABLE_ROMAN_OUTPUT_ALLOWLIST.get(syllable);
+  if (allowlist) {
+    const filtered = modernVariants.filter((item) => allowlist.has(normalizeLatin(item.text)));
+    if (filtered.length) return filtered;
+  }
+  const filtered = modernVariants.filter((item) => !/(?:uh|aeu)/.test(normalizeLatin(item.text)));
+  return filtered.length ? filtered : modernVariants;
+}
+
+function isModernKoreanSurnameRomanVariant(hangul, item, index = 0) {
+  const text = item?.text || "";
+  if (!isModernRomanText(text)) return false;
+  const norm = normalizeLatin(text);
+  if (!norm) return false;
+  if (BLOCKED_SURNAME_ROMAN_BY_HANGUL.get(hangul)?.has(norm)) return false;
+  if (MODERN_KOREAN_SURNAME_ROMAN_ALLOWLIST.get(hangul)?.has(norm)) return true;
+  const score = Number(item?.score || 0);
+  return score >= 5.5 || (index === 0 && score >= 4.5);
+}
+
+function sanitizeModernKoreanRomanData(data) {
+  if (!data) return data;
+  const allowedSurnameRomanByHangul = new Map();
+
+  data.surnames = (data.surnames || []).map((surname) => {
+    const filteredLatin = (surname.latin || []).filter((item, index) =>
+      isModernKoreanSurnameRomanVariant(surname.hangul, item, index),
+    );
+    const fallbackLatin = filteredLatin.length
+      ? filteredLatin
+      : (surname.latin || []).filter((item) => isModernRomanText(item.text)).slice(0, 1);
+    allowedSurnameRomanByHangul.set(
+      surname.hangul,
+      new Set(fallbackLatin.map((item) => normalizeLatin(item.text)).filter(Boolean)),
+    );
+    return { ...surname, latin: fallbackLatin };
+  });
+
+  if (data.surnameLatinIndex) {
+    const filteredIndex = {};
+    for (const [key, items] of Object.entries(data.surnameLatinIndex)) {
+      const norm = normalizeLatin(key);
+      const kept = (items || []).filter((item) => allowedSurnameRomanByHangul.get(item.hangul)?.has(norm));
+      if (kept.length) filteredIndex[norm] = kept;
+    }
+    data.surnameLatinIndex = filteredIndex;
+  }
+
+  data.fullNames = (data.fullNames || []).map((row) => ({
+    ...row,
+    romanizations: (row.romanizations || []).filter((item) => isModernRomanText(item.text)),
+  }));
+
+  if (data.fullNameRomanIndex) {
+    const filteredIndex = {};
+    for (const [index, row] of (data.fullNames || []).entries()) {
+      for (const item of row.romanizations || []) {
+        const norm = normalizeLatin(item.text);
+        if (!norm) continue;
+        const bucket = filteredIndex[norm] || [];
+        bucket.push({ index: String(index), score: Number(item.score) || 0 });
+        filteredIndex[norm] = bucket;
+      }
+    }
+    data.fullNameRomanIndex = filteredIndex;
+  }
+
+  return data;
+}
+
 function normalizeKana(text) {
   return Array.from(text)
     .map((char) => {
@@ -463,6 +588,30 @@ function applyNieunLiaison(nextKana) {
     }
   }
   return null;
+}
+
+const REVERSE_NIEUN_LIAISON_PREFIXES = [
+  ["ニャ", ["ヤ", "ヒャ"]],
+  ["ニュ", ["ユ", "ヒュ"]],
+  ["ニョ", ["ヨ", "ヒョ"]],
+  ["ニェ", ["イェ", "ヒェ"]],
+  ["ナ", ["ア", "ハ", "ファ"]],
+  ["ニ", ["イ", "ヒ", "フィ"]],
+  ["ヌ", ["ウ", "フ"]],
+  ["ネ", ["エ", "ヘ", "フェ"]],
+  ["ノ", ["オ", "ホ", "フォ"]],
+];
+
+function reverseNieunLiaisonSurfaces(text) {
+  const norm = normalizeKana(text);
+  const surfaces = [];
+  for (const [from, originals] of REVERSE_NIEUN_LIAISON_PREFIXES) {
+    if (!norm.startsWith(from)) continue;
+    for (const original of originals) {
+      surfaces.push(`${original}${norm.slice(from.length)}`);
+    }
+  }
+  return surfaces;
 }
 
 function generateLiaisonKanaVariants(parts, syllables) {
@@ -1528,6 +1677,40 @@ function parseSyllablesKana(norm, maxUnits = 3) {
   return dfs(0, 0);
 }
 
+function parseKanaReverseNieunLiaison(norm, maxUnits = 3) {
+  const text = normalizeKana(norm);
+  if (!text || maxUnits < 2) return [];
+  const results = [];
+
+  for (let split = 1; split < text.length; split += 1) {
+    const leftSurface = text.slice(0, split);
+    const rightSurface = text.slice(split);
+    const restoredRightSurfaces = reverseNieunLiaisonSurfaces(rightSurface);
+    if (!restoredRightSurfaces.length) continue;
+
+    const restoredLeftCandidates = lookupKanaChunkCandidates(`${leftSurface}ン`).filter((item) => {
+      const parts = decomposeHangulSyllable(item.hangul);
+      return parts?.coda === "ㄴ";
+    });
+    if (!restoredLeftCandidates.length) continue;
+
+    for (const leftCandidate of restoredLeftCandidates.slice(0, 8)) {
+      for (const restoredRightSurface of restoredRightSurfaces) {
+        for (const tailCandidate of parseSyllablesKana(restoredRightSurface, maxUnits - 1).slice(0, 12)) {
+          const units = [leftCandidate.hangul, ...(tailCandidate.units || [])];
+          if (units.length < 2 || units.length > maxUnits) continue;
+          results.push({
+            units,
+            score: Number(leftCandidate.score || 0) + Number(tailCandidate.score || 0) * 0.92 + 36,
+          });
+        }
+      }
+    }
+  }
+
+  return filterEvidenceBackedGivenCandidates(dedupeCandidateUnits(results, 24));
+}
+
 function parseGivenLatinTokens(tokens) {
   if (!tokens.length) return [];
   if (tokens.length === 1) {
@@ -1730,14 +1913,16 @@ function parseGivenKanaTokens(tokens) {
     return pruneKanaSingleTokenGivenCandidates(recoverPronouncedSinoGivenCandidates(dedupeCandidateUnits(exactGiven, 24)));
   }
   if (tokens.length === 1) {
-    return pruneKanaSingleTokenGivenCandidates(recoverPronouncedSinoGivenCandidates(dedupeCandidateUnits(parseSyllablesKana(tokens[0], 3), 24)));
+    const parsed = parseSyllablesKana(tokens[0], 3).concat(parseKanaReverseNieunLiaison(tokens[0], 3));
+    return pruneKanaSingleTokenGivenCandidates(recoverPronouncedSinoGivenCandidates(dedupeCandidateUnits(parsed, 24)));
   }
   const perToken = tokens.map((token) => lookupKanaChunkCandidates(token).map((item) => ({
     units: [item.hangul],
     score: Number(item.score),
   })));
   if (perToken.some((items) => !items.length)) {
-    return pruneKanaSingleTokenGivenCandidates(recoverPronouncedSinoGivenCandidates(dedupeCandidateUnits(parseSyllablesKana(tokens.join(""), 3), 24)));
+    const joinedParsed = parseSyllablesKana(tokens.join(""), 3).concat(parseKanaReverseNieunLiaison(tokens.join(""), 3));
+    return pruneKanaSingleTokenGivenCandidates(recoverPronouncedSinoGivenCandidates(dedupeCandidateUnits(joinedParsed, 24)));
   }
   let combos = [{ units: [], score: 0 }];
   for (const items of perToken) {
@@ -2153,7 +2338,7 @@ function generateGivenRomanOutputs(hangul) {
   let givenCombos = [{ text: "", score: 0, parts: [] }];
   for (const [syllableIndex, syllable] of givenUnits.entries()) {
     const syllableData = state.data.syllables[syllable];
-    let variants = (syllableData?.latin || [{ text: syllable, score: 1 }]).slice(0, 4);
+    let variants = modernGivenRomanVariantsForOutput(syllable, syllableData?.latin || [{ text: syllable, score: 1 }]).slice(0, 4);
     if (syllable === "이" && syllableIndex > 0) {
       const filtered = variants.filter((variant) => normalizeLatin(variant.text) !== "lee");
       if (filtered.length) variants = filtered;
@@ -2302,7 +2487,7 @@ function generateRomanOutputs(hangul, exactRows) {
   let givenCombos = [{ text: "", score: 0, parts: [] }];
   for (const [syllableIndex, syllable] of givenUnits.entries()) {
     const syllableData = state.data.syllables[syllable];
-    let variants = (syllableData?.latin || [{ text: syllable, score: 1 }]).slice(0, 4);
+    let variants = modernGivenRomanVariantsForOutput(syllable, syllableData?.latin || [{ text: syllable, score: 1 }]).slice(0, 4);
     if (syllable === "이" && syllableIndex > 0) {
       const filtered = variants.filter((variant) => normalizeLatin(variant.text) !== "lee");
       if (filtered.length) variants = filtered;
@@ -2655,7 +2840,7 @@ function addExample(pool, seen, text, type) {
   pool.push({ text: normalized, type });
 }
 
-function buildHangulExamplePool() {
+function buildGeneratedExampleNames() {
   const pool = [];
   const seen = new Set();
   const surnames = (state.data?.surnames || []).filter((item) => item.hangul && Number(item.population || 0) >= 50000);
@@ -2664,59 +2849,79 @@ function buildHangulExamplePool() {
       hangul,
       weight: Number(meta?.totalWeight || 0) + Number(meta?.rowOccurrences || 0) * 25,
     }))
-    .filter((item) => item.hangul && Array.from(item.hangul).length === 2 && item.weight >= 1000);
+    .filter((item) => item.hangul && Array.from(item.hangul).length === 2 && item.weight > 0)
+    .sort((a, b) => b.weight - a.weight)
+    .map((item, index) => ({ ...item, rank: index + 1 }));
 
   if (!surnames.length || !givenNames.length) {
     return (state.data?.fullNames || [])
       .map((row) => row.hangul?.trim())
       .filter(Boolean)
-      .map((text) => ({ text, type: "hangul" }));
+      .map((hangul) => ({ hangul, givenRank: null }));
   }
 
-  const targetCount = Math.max(exampleChipEls.length * 6, 24);
+  const highRankedGivenNames = givenNames.slice(0, 800);
+  const broaderGivenNames = givenNames.slice(800, 2500);
+  const targetCount = Math.max(exampleChipEls.length * 12, 60);
   let attempts = 0;
   while (pool.length < targetCount && attempts < targetCount * 12) {
     attempts += 1;
     const surname = pickWeightedRandom(surnames, (item) => Math.log1p(Number(item.population || 0)));
-    const given = pickWeightedRandom(givenNames, (item) => Math.log1p(item.weight));
-    const text = `${surname?.hangul || ""}${given?.hangul || ""}`.trim();
-    addExample(pool, seen, text, "hangul");
+    const givenSource =
+      Math.random() < 0.82 || !broaderGivenNames.length
+        ? highRankedGivenNames
+        : broaderGivenNames;
+    const given = pickWeightedRandom(givenSource, (item) => Math.log1p(item.weight));
+    const hangul = `${surname?.hangul || ""}${given?.hangul || ""}`.trim();
+    if (!hangul || seen.has(hangul)) continue;
+    const romanOutputs = generateRomanOutputs(hangul, []);
+    const kanaOutputs = generateKanaOutputs(hangul, []);
+    if (!romanOutputs.length || !kanaOutputs.length) continue;
+    seen.add(hangul);
+    pool.push({
+      hangul,
+      givenRank: given?.rank || null,
+      roman: pickWeightedRandom(romanOutputs.slice(0, 4), (item) => Number(item.score) || 1)?.text,
+      kana: pickWeightedRandom(kanaOutputs.slice(0, 4), (item) => Number(item.score) || 1)?.text?.replace(/\s+/g, "・"),
+    });
   }
   return pool;
 }
 
-function buildRomanExamplePool() {
+function buildHangulExamplePool(generatedNames) {
   const pool = [];
   const seen = new Set();
-  for (const row of shuffled(state.data?.fullNames || [])) {
-    const variants = (row.romanizations || []).filter((item) => item.text);
-    const variant = pickWeightedRandom(variants, (item) => Number(item.score) || 1);
-    addExample(pool, seen, variant?.text, "roman");
+  for (const item of generatedNames || []) {
+    addExample(pool, seen, item.hangul, "hangul");
   }
   return pool;
 }
 
-function buildKanaExamplePool() {
+function buildRomanExamplePool(generatedNames) {
   const pool = [];
   const seen = new Set();
-  for (const row of shuffled(state.data?.fullNames || [])) {
-    const variants = (row.kana || []).filter((item) => item.text);
-    const variant = pickWeightedRandom(variants, (item) => Number(item.score) || 1);
-    addExample(pool, seen, variant?.text, "kana");
+  for (const item of generatedNames || []) {
+    addExample(pool, seen, item.roman, "roman");
   }
   return pool;
 }
 
-function buildRandomExamplePool() {
-  return [...buildHangulExamplePool(), ...buildRomanExamplePool(), ...buildKanaExamplePool()];
+function buildKanaExamplePool(generatedNames) {
+  const pool = [];
+  const seen = new Set();
+  for (const item of generatedNames || []) {
+    addExample(pool, seen, item.kana, "kana");
+  }
+  return pool;
 }
 
 function hydrateRandomExamples() {
   if (!exampleChipEls.length) return;
+  const generatedNames = shuffled(buildGeneratedExampleNames());
   const poolsByType = {
-    hangul: shuffled(buildHangulExamplePool()),
-    roman: shuffled(buildRomanExamplePool()),
-    kana: shuffled(buildKanaExamplePool()),
+    hangul: shuffled(buildHangulExamplePool(generatedNames)),
+    roman: shuffled(buildRomanExamplePool(generatedNames)),
+    kana: shuffled(buildKanaExamplePool(generatedNames)),
   };
   const pool = shuffled([...poolsByType.hangul, ...poolsByType.roman, ...poolsByType.kana]);
   if (!pool.length) return;
@@ -2816,6 +3021,7 @@ function levenshtein(a, b) {
 async function init() {
   const response = await fetch(dataUrl);
   state.data = await response.json();
+  sanitizeModernKoreanRomanData(state.data);
   state.runtime = buildRuntime(state.data);
   hydrateRandomExamples();
   resultsEl.innerHTML = "";
