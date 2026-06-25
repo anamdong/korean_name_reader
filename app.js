@@ -20,6 +20,9 @@ const interpretationEl = document.querySelector("#query-interpretation");
 const queryEl = document.querySelector("#query");
 const formEl = document.querySelector("#search-form");
 const exampleChipEls = Array.from(document.querySelectorAll(".example-chip"));
+let activePronunciationButton = null;
+let activePronunciationAudio = null;
+let activePronunciationUtterance = null;
 
 const compoundSurnamesFallback = new Set(["남궁", "황보", "선우", "제갈", "사공", "서문", "독고", "동방", "어금", "망절"]);
 const HANGUL_BASE = 0xac00;
@@ -199,6 +202,166 @@ function detectScripts(text) {
   if ((text.match(scriptPatterns.kana) || []).length) labels.push("Kana");
   if ((text.match(scriptPatterns.hanja) || []).length) labels.push("Hanja");
   return labels;
+}
+
+function configuredTtsEndpoint() {
+  if (typeof window === "undefined") return "";
+  const endpoint = window.KOREAN_NAME_TTS_ENDPOINT;
+  return typeof endpoint === "string" ? endpoint.trim() : "";
+}
+
+function supportsSpeechSynthesis() {
+  return typeof window !== "undefined" && "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+}
+
+function supportsAudioPlayback() {
+  return typeof Audio !== "undefined";
+}
+
+function koreanSpeechVoice() {
+  if (!supportsSpeechSynthesis()) return null;
+  const voices = window.speechSynthesis.getVoices();
+  return (
+    voices.find((voice) => /^ko(?:[-_]|$)/i.test(voice.lang || "")) ||
+    voices.find((voice) => /korean|한국|yuna|sora/i.test(`${voice.name || ""} ${voice.lang || ""}`)) ||
+    null
+  );
+}
+
+function setPronunciationButtonState(button, state) {
+  if (!button) return;
+  button.dataset.state = state;
+  button.disabled = state === "loading";
+}
+
+function resetPronunciationButton(button) {
+  if (!button) return;
+  button.dataset.state = "idle";
+  button.disabled = false;
+}
+
+function stopActivePronunciation() {
+  if (activePronunciationAudio) {
+    activePronunciationAudio.pause();
+    activePronunciationAudio.removeAttribute("src");
+    activePronunciationAudio.load();
+    activePronunciationAudio = null;
+  }
+  if (supportsSpeechSynthesis()) {
+    window.speechSynthesis.cancel();
+  }
+  if (activePronunciationButton) {
+    resetPronunciationButton(activePronunciationButton);
+  }
+  activePronunciationButton = null;
+  activePronunciationUtterance = null;
+}
+
+function ttsEndpointUrl(endpoint, text) {
+  const url = new URL(endpoint, window.location.href);
+  url.searchParams.set("text", text);
+  url.searchParams.set("lang", "ko");
+  return url.toString();
+}
+
+function naverTtsAudioUrl(text) {
+  const url = new URL("https://dict.naver.com/api/nvoice");
+  url.searchParams.set("service", "dictionary");
+  url.searchParams.set("speech_fmt", "mp3");
+  url.searchParams.set("text", text);
+  url.searchParams.set("speaker", "kyuri");
+  url.searchParams.set("speed", "0");
+  return url.toString();
+}
+
+function ttsAudioCandidates(text) {
+  const endpoint = configuredTtsEndpoint();
+  return [
+    endpoint ? ttsEndpointUrl(endpoint, text) : "",
+    naverTtsAudioUrl(text),
+  ].filter(Boolean);
+}
+
+function playTtsAudioUrl(url) {
+  return new Promise((resolve, reject) => {
+    if (!supportsAudioPlayback()) {
+      reject(new Error("Audio playback unavailable"));
+      return;
+    }
+    const audio = new Audio(url);
+    let finished = false;
+    let started = false;
+    const startTimeout = window.setTimeout(() => {
+      if (started || finished) return;
+      finished = true;
+      audio.pause();
+      reject(new Error("TTS audio did not start"));
+    }, 2500);
+    const finish = (callback) => {
+      if (finished) return;
+      finished = true;
+      window.clearTimeout(startTimeout);
+      callback();
+    };
+    const markStarted = () => {
+      started = true;
+      window.clearTimeout(startTimeout);
+    };
+    activePronunciationAudio = audio;
+    audio.addEventListener("playing", markStarted, { once: true });
+    audio.addEventListener("ended", () => finish(resolve), { once: true });
+    audio.addEventListener("error", () => finish(() => reject(new Error("TTS audio failed"))), { once: true });
+    audio.play().then(markStarted).catch((error) => finish(() => reject(error)));
+  });
+}
+
+async function playKoreanPronunciation(text, button) {
+  if (!text) return;
+  if (button === activePronunciationButton && button.dataset.state === "playing") {
+    stopActivePronunciation();
+    return;
+  }
+
+  stopActivePronunciation();
+  activePronunciationButton = button;
+  setPronunciationButtonState(button, "loading");
+
+  for (const audioUrl of ttsAudioCandidates(text)) {
+    try {
+      setPronunciationButtonState(button, "playing");
+      await playTtsAudioUrl(audioUrl);
+      activePronunciationAudio = null;
+      resetPronunciationButton(button);
+      activePronunciationButton = null;
+      return;
+    } catch {
+      activePronunciationAudio = null;
+      setPronunciationButtonState(button, "loading");
+    }
+  }
+
+  if (!supportsSpeechSynthesis()) {
+    button.disabled = true;
+    button.dataset.state = "unavailable";
+    activePronunciationButton = null;
+    return;
+  }
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  const voice = koreanSpeechVoice();
+  utterance.lang = "ko-KR";
+  utterance.rate = 0.88;
+  utterance.pitch = 1;
+  if (voice) utterance.voice = voice;
+  utterance.onstart = () => setPronunciationButtonState(button, "playing");
+  utterance.onend = () => {
+    resetPronunciationButton(button);
+    activePronunciationButton = null;
+    activePronunciationUtterance = null;
+  };
+  utterance.onerror = utterance.onend;
+  activePronunciationUtterance = utterance;
+  window.speechSynthesis.speak(utterance);
 }
 
 function romanTextToTokenish(text) {
@@ -2628,6 +2791,24 @@ function buildResultCards(candidateMap) {
 
     const fragment = resultTemplate.content.cloneNode(true);
     fragment.querySelector(".result-hangul").textContent = candidate.hangul;
+    const pronunciationButton = fragment.querySelector(".pronunciation-button");
+    const pronunciationLabel = fragment.querySelector(".pronunciation-label");
+    if (pronunciationButton && pronunciationLabel) {
+      const pronunciationText = candidate.hangul;
+      const pronunciationLabelText = `Play Korean pronunciation for ${pronunciationText}`;
+      pronunciationButton.dataset.name = pronunciationText;
+      pronunciationButton.dataset.state = "idle";
+      pronunciationButton.setAttribute("aria-label", pronunciationLabelText);
+      pronunciationButton.title = "Play pronunciation";
+      pronunciationLabel.textContent = pronunciationLabelText;
+      if (supportsAudioPlayback() || supportsSpeechSynthesis()) {
+        pronunciationButton.addEventListener("click", () => playKoreanPronunciation(pronunciationText, pronunciationButton));
+      } else {
+        pronunciationButton.disabled = true;
+        pronunciationButton.dataset.state = "unavailable";
+        pronunciationButton.title = "Pronunciation unavailable";
+      }
+    }
     fragment.querySelector(".result-subtitle").textContent = candidateSubtitle(candidate, exactRows);
     fragment.querySelector(".score-value").textContent = `${plausibility}%`;
     fragment.querySelector(".score-bar span").style.width = `${plausibility}%`;
