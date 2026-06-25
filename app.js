@@ -122,6 +122,68 @@ function isModernKoreanSurnameRomanVariant(hangul, item, index = 0) {
   return score >= 5.5 || (index === 0 && score >= 4.5);
 }
 
+function isUnsupportedComplexCodaInData(syllable, data) {
+  const parts = decomposeHangulSyllable(syllable);
+  if (!parts?.coda || !COMPLEX_CODAS.has(parts.coda)) return false;
+  return !data?.syllables?.[syllable]?.sinoAllowed;
+}
+
+function hasIndexNameEvidence(syllable, data) {
+  const item = data?.syllables?.[syllable];
+  if (!item || isUnsupportedComplexCodaInData(syllable, data)) return false;
+  return (
+    Number(item.nameCount || 0) > 0 ||
+    Number(item.givenCount || 0) > 0 ||
+    Number(item.initialCount || 0) > 0 ||
+    Number(item.surnamePopulation || 0) > 0 ||
+    Number(item.hanjaGivenCount || 0) > 0 ||
+    Number(item.decadeWeight || 0) > 0 ||
+    Number(item.decadePeriods || 0) > 0 ||
+    item.sinoAllowed === true ||
+    item.nonSinoException === true
+  );
+}
+
+function hasGivenNameEvidenceInData(syllable, data) {
+  const item = data?.syllables?.[syllable];
+  if (!item || isUnsupportedComplexCodaInData(syllable, data)) return false;
+  return (
+    Number(item.givenCount || 0) > 0 ||
+    Number(item.hanjaGivenCount || 0) > 0 ||
+    Number(item.decadeWeight || 0) > 0 ||
+    Number(item.decadePeriods || 0) > 0 ||
+    item.sinoAllowed === true ||
+    item.nonSinoException === true
+  );
+}
+
+function sanitizeModernNameEvidenceData(data) {
+  if (!data?.syllables) return data;
+  const supportedSyllables = new Set(
+    Object.entries(data.syllables)
+      .filter(([syllable]) => hasIndexNameEvidence(syllable, data))
+      .map(([syllable]) => syllable),
+  );
+  const filterSyllableItems = (items) => (items || []).filter((item) => supportedSyllables.has(item.hangul));
+  const filterIndex = (index) => {
+    const filtered = {};
+    for (const [key, items] of Object.entries(index || {})) {
+      const kept = filterSyllableItems(items);
+      if (kept.length) filtered[key] = kept;
+    }
+    return filtered;
+  };
+
+  data.syllables = Object.fromEntries(
+    Object.entries(data.syllables).filter(([syllable]) => supportedSyllables.has(syllable)),
+  );
+  data.syllableLatinIndex = filterIndex(data.syllableLatinIndex);
+  data.syllableKanaIndex = filterIndex(data.syllableKanaIndex);
+  data.hanjaGivenIndex = filterIndex(data.hanjaGivenIndex);
+  if (data.meta) data.meta.syllableCount = supportedSyllables.size;
+  return data;
+}
+
 function sanitizeModernKoreanRomanData(data) {
   if (!data) return data;
   const allowedSurnameRomanByHangul = new Map();
@@ -169,7 +231,7 @@ function sanitizeModernKoreanRomanData(data) {
     data.fullNameRomanIndex = filteredIndex;
   }
 
-  return data;
+  return sanitizeModernNameEvidenceData(data);
 }
 
 function normalizeKana(text) {
@@ -671,9 +733,7 @@ function mergeKanaCandidateLists(primary, synthetic, targetField = "hangul", lim
 }
 
 function isBlockedUnsupportedComplexCodaSyllable(syllable) {
-  const parts = decomposeHangulSyllable(syllable);
-  if (!parts?.coda || !COMPLEX_CODAS.has(parts.coda)) return false;
-  return !isSinoAllowedSyllable(syllable);
+  return isUnsupportedComplexCodaInData(syllable, state.data);
 }
 
 function kanaSyllableAliases(chunk) {
@@ -1012,9 +1072,7 @@ function givenUnitsNamePrior(units) {
 }
 
 function hasGivenSyllableEvidence(syllable) {
-  if (isBlockedUnsupportedComplexCodaSyllable(syllable)) return false;
-  const data = state.data?.syllables?.[syllable];
-  return Number(data?.givenCount || 0) + Number(data?.nameCount || 0) > 0;
+  return hasGivenNameEvidenceInData(syllable, state.data);
 }
 
 function isUltraRareGivenSyllable(syllable) {
@@ -1041,6 +1099,35 @@ function isNonSinoExceptionSyllable(syllable) {
 function isAllowedNameSyllable(syllable) {
   if (isBlockedUnsupportedComplexCodaSyllable(syllable)) return false;
   return isSinoAllowedSyllable(syllable) || isNonSinoExceptionSyllable(syllable);
+}
+
+function isNameLikeGivenSyllable(syllable) {
+  return hasGivenNameEvidenceInData(syllable, state.data);
+}
+
+function isNameLikeGivenUnits(units) {
+  if (!units?.length) return false;
+  if (hasSupportedWholeGivenName(units)) return true;
+  return units.every((syllable) => isNameLikeGivenSyllable(syllable));
+}
+
+function isNameLikeCandidate(candidate) {
+  if (!candidate?.hangul) return false;
+  if (candidate.kind === "surname") {
+    return !!state.runtime?.surnameByHangul?.has(candidate.hangul);
+  }
+  const units = candidateGivenUnits(candidate);
+  if (!isNameLikeGivenUnits(units)) return false;
+  if (candidate.kind === "given") return true;
+  const { surname, given } = splitNameUnits(candidate.hangul, state.runtime?.compoundSurnames);
+  return !!given && !!state.runtime?.surnameByHangul?.has(surname);
+}
+
+function hasCandidateExactEvidence(candidate) {
+  return (
+    (candidate?.exactIds && candidate.exactIds.size > 0) ||
+    [...(candidate?.evidence || [])].some((item) => /Exact|Supplemental/.test(item))
+  );
 }
 
 function isFullyAllowedGivenCandidate(candidate) {
@@ -2158,16 +2245,18 @@ function searchHangul(query, candidateMap) {
   const hangul = extractHangul(query);
   if (!hangul || hangul.length < 2) return;
   const { surname, given } = splitNameUnits(hangul, state.runtime.compoundSurnames);
+  const givenUnits = Array.from(given);
+  if (!state.runtime.surnameByHangul.has(surname) || !isNameLikeGivenUnits(givenUnits)) return;
   let score = 20;
   const surnameData = state.runtime.surnameByHangul.get(surname);
   if (surnameData) score += Math.log1p(Number(surnameData.population || 0));
-  for (const syllable of Array.from(given)) {
+  for (const syllable of givenUnits) {
     const syllableData = state.data.syllables[syllable];
     if (syllableData) {
       score += Math.log1p(Number(syllableData.givenCount || 0) + Number(syllableData.nameCount || 0));
     }
   }
-  addCandidate(candidateMap, hangul, score, "Hangul form parsed directly");
+  addCandidate(candidateMap, hangul, score, "Name-like Hangul parse");
 }
 
 function searchLatin(query, candidateMap) {
@@ -2366,6 +2455,7 @@ function addStandaloneSurnameCandidates(candidateMap, surnameCandidates, evidenc
 function addStandaloneGivenCandidates(candidateMap, givenCandidates, evidence, boost = 180) {
   for (const candidate of givenCandidates.slice(0, 24)) {
     if (!candidate?.units?.length) continue;
+    if (!isNameLikeGivenUnits(candidate.units)) continue;
     const hangul = candidate.units.join("");
     const score = Number(candidate.score) + boost + givenUnitsNamePrior(candidate.units);
     addCandidate(candidateMap, hangul, score, evidence, { kind: "given" });
@@ -2469,6 +2559,7 @@ function searchStandaloneHanja(query, candidateMap) {
 function combineSurnameAndGivenCandidates(surnameCandidates, givenCandidates, candidateMap, boost, label) {
   for (const surnameCandidate of surnameCandidates.slice(0, 10)) {
     for (const givenCandidate of givenCandidates.slice(0, 24)) {
+      if (!isNameLikeGivenUnits(givenCandidate.units)) continue;
       const givenPrior = givenUnitsNamePrior(givenCandidate.units);
       const hangul = `${surnameCandidate.hangul}${givenCandidate.units.join("")}`;
       const score = (Number(surnameCandidate.score) + Number(givenCandidate.score)) * boost + givenPrior;
@@ -2827,7 +2918,7 @@ function buildResultCards(candidateMap) {
 
 function pruneImplausibleCandidates(candidateMap) {
   const candidates = [...candidateMap.values()].sort((a, b) => b.score - a.score);
-  if (candidates.length < 2) return candidateMap;
+  if (!candidates.length) return candidateMap;
   const bestStandaloneGiven = candidates.find((candidate) => {
     if (candidate.kind !== "given") return false;
     if (isLikelyFullNameMisparsedAsGiven(candidate, candidateMap)) return false;
@@ -2877,9 +2968,8 @@ function pruneImplausibleCandidates(candidateMap) {
     const ultraRareCount = units.filter((syllable) => isUltraRareGivenSyllable(syllable)).length;
     const unsupportedCount = units.filter((syllable) => !isAllowedNameSyllable(syllable)).length;
     const unsupportedLongGiven = candidate.kind !== "surname" && units.length >= 3 && !hasSupportedWholeGivenName(units);
-    const hasExactEvidence =
-      (candidate.exactIds && candidate.exactIds.size > 0) ||
-      [...candidate.evidence].some((item) => /Exact|Supplemental|Hangul form parsed directly/.test(item));
+    const hasExactEvidence = hasCandidateExactEvidence(candidate);
+    if (!hasExactEvidence && !isNameLikeCandidate(candidate)) continue;
     const kanaDerivedOnly = !hasExactEvidence && [...candidate.evidence].some((item) => /Kana/.test(item));
     const singleRomanSyntheticFull =
       state.queryMeta?.isSingleRomanToken &&
@@ -3180,7 +3270,7 @@ function search(query) {
   searchMixedGroups(query, candidateMap);
   const prunedCandidateMap = pruneImplausibleCandidates(candidateMap);
   if (interpretationEl) {
-    interpretationEl.textContent = deriveInterpretationText(query, prunedCandidateMap.size ? prunedCandidateMap : candidateMap);
+    interpretationEl.textContent = deriveInterpretationText(query, prunedCandidateMap);
   }
   buildResultCards(prunedCandidateMap);
 }
