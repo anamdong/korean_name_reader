@@ -1,4 +1,4 @@
-const dataUrl = "./data/name_index.json";
+const dataUrl = "./data/name_index.json?v=20260626-gye-ge-kana";
 
 const state = {
   data: null,
@@ -515,6 +515,10 @@ function splitRomanGroups(text) {
     .split(/\s+/)
     .map((group) => (group.match(/[A-Za-z]+/g) || []).map((token) => token.toLowerCase()).filter(Boolean))
     .filter((group) => group.length);
+}
+
+function hasRomanHyphenBoundary(text) {
+  return /[A-Za-z]-+[A-Za-z]/.test(romanTextToTokenish(text));
 }
 
 function splitRomanTokens(text) {
@@ -2195,6 +2199,11 @@ function knownGivenCandidatesFromRomanTokens(tokens) {
     }));
 }
 
+function hasKnownRomanGivenTokens(tokens) {
+  const joined = normalizeLatin((tokens || []).join(""));
+  return !!joined && !!state.runtime?.givenRomanIndex?.has(joined);
+}
+
 function pruneRomanSingleTokenGivenCandidates(candidates) {
   if (!candidates.length) return candidates;
   const topCandidate = candidates[0];
@@ -2397,6 +2406,23 @@ function hasNonLatinScript(groups) {
   return groups.some((group) => group.type !== "latin");
 }
 
+function addLatinFullNameHypotheses(hypotheses, candidateMap) {
+  for (const hypothesis of hypotheses) {
+    let surnameCandidates = findSurnameCandidatesFromLatin(hypothesis.surnameToken);
+    if (hypothesis.requireCompoundSurname) {
+      surnameCandidates = surnameCandidates.filter((item) => (item.hangul || "").length === 2 && state.runtime.compoundSurnames.has(item.hangul));
+    }
+    if (!surnameCandidates.length || !hypothesis.givenTokens.length) continue;
+    let givenCandidates = knownGivenCandidatesFromRomanTokens(hypothesis.givenTokens);
+    const parsedGivenCandidates = parseGivenLatinTokens(hypothesis.givenTokens);
+    givenCandidates = dedupeCandidateUnits(givenCandidates.concat(parsedGivenCandidates), 24);
+    if (hypothesis.givenTokens.length === 1) {
+      givenCandidates = pruneRomanSingleTokenGivenCandidates(givenCandidates);
+    }
+    combineSurnameAndGivenCandidates(surnameCandidates, givenCandidates, candidateMap, hypothesis.boost, hypothesis.label);
+  }
+}
+
 function searchHangul(query, candidateMap) {
   const hangul = extractHangul(query);
   if (!hangul || hangul.length < 2) return;
@@ -2440,13 +2466,19 @@ function searchLatin(query, candidateMap) {
     const lastGroupToken = groups[groups.length - 1].join("");
     const firstLeeCue = isLeeSurnameCue(firstGroupToken);
     const lastLeeCue = isLeeSurnameCue(lastGroupToken);
+    const surnameFirstGivenTokens = groups.slice(1).flat();
+    const knownSurnameFirstGivenWithLee =
+      lastLeeCue &&
+      !firstLeeCue &&
+      surnameFirstGivenTokens.length >= 2 &&
+      hasKnownRomanGivenTokens(surnameFirstGivenTokens);
     const hypotheses = [];
-    if (!lastLeeCue || firstLeeCue) {
+    if (!lastLeeCue || firstLeeCue || knownSurnameFirstGivenWithLee) {
       hypotheses.push({
         surnameToken: firstGroupToken,
-        givenTokens: groups.slice(1).flat(),
-        boost: firstLeeCue ? 1.2 : lastLeeCue ? 0.54 : 1.0,
-        label: "Latin surname-first parse",
+        givenTokens: surnameFirstGivenTokens,
+        boost: firstLeeCue ? 1.2 : lastLeeCue ? 0.72 : 1.0,
+        label: knownSurnameFirstGivenWithLee ? "Latin surname-first parse with ranked Lee-final given name" : "Latin surname-first parse",
       });
     }
     if ((!firstLeeCue || lastLeeCue) && groups[groups.length - 1].length === 1) {
@@ -2475,20 +2507,49 @@ function searchLatin(query, candidateMap) {
         requireCompoundSurname: true,
       });
     }
-    for (const hypothesis of hypotheses) {
-      let surnameCandidates = findSurnameCandidatesFromLatin(hypothesis.surnameToken);
-      if (hypothesis.requireCompoundSurname) {
-        surnameCandidates = surnameCandidates.filter((item) => (item.hangul || "").length === 2 && state.runtime.compoundSurnames.has(item.hangul));
-      }
-      if (!surnameCandidates.length || !hypothesis.givenTokens.length) continue;
-      let givenCandidates = knownGivenCandidatesFromRomanTokens(hypothesis.givenTokens);
-      const parsedGivenCandidates = parseGivenLatinTokens(hypothesis.givenTokens);
-      givenCandidates = dedupeCandidateUnits(givenCandidates.concat(parsedGivenCandidates), 24);
-      if (hypothesis.givenTokens.length === 1) {
-        givenCandidates = pruneRomanSingleTokenGivenCandidates(givenCandidates);
-      }
-      combineSurnameAndGivenCandidates(surnameCandidates, givenCandidates, candidateMap, hypothesis.boost, hypothesis.label);
+    addLatinFullNameHypotheses(hypotheses, candidateMap);
+  } else if (groups.length === 1 && tokens.length >= 2 && hasRomanHyphenBoundary(query)) {
+    const firstToken = tokens[0];
+    const lastToken = tokens[tokens.length - 1];
+    const firstLeeCue = isLeeSurnameCue(firstToken);
+    const lastLeeCue = isLeeSurnameCue(lastToken);
+    const hypotheses = [];
+
+    if (!lastLeeCue || firstLeeCue) {
+      hypotheses.push({
+        surnameToken: firstToken,
+        givenTokens: tokens.slice(1),
+        boost: firstLeeCue ? 1.08 : lastLeeCue ? 0.48 : 0.78,
+        label: "Latin hyphenated surname-first parse",
+      });
     }
+    if (!firstLeeCue || lastLeeCue) {
+      hypotheses.push({
+        surnameToken: lastToken,
+        givenTokens: tokens.slice(0, -1),
+        boost: lastLeeCue ? 1.16 : firstLeeCue ? 0.38 : 0.86,
+        label: "Latin hyphenated surname-last parse",
+      });
+    }
+    if (!lastLeeCue && tokens.length >= 3) {
+      hypotheses.push({
+        surnameToken: `${tokens[0]}${tokens[1]}`,
+        givenTokens: tokens.slice(2),
+        boost: 0.96,
+        label: "Latin hyphenated compound-surname parse",
+        requireCompoundSurname: true,
+      });
+    }
+    if (!firstLeeCue && tokens.length >= 3) {
+      hypotheses.push({
+        surnameToken: `${tokens[tokens.length - 2]}${tokens[tokens.length - 1]}`,
+        givenTokens: tokens.slice(0, -2),
+        boost: 0.82,
+        label: "Latin hyphenated compound-surname-last parse",
+        requireCompoundSurname: true,
+      });
+    }
+    addLatinFullNameHypotheses(hypotheses, candidateMap);
   }
 
   if (tokens.length <= 1) {
