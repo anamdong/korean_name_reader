@@ -739,6 +739,17 @@ function isBlockedUnsupportedComplexCodaSyllable(syllable) {
 function kanaSyllableAliases(chunk) {
   const norm = normalizeKana(chunk);
   const aliases = [];
+  const voicedGiyeok = voiceInitialGiyeokKana(norm);
+  if (voicedGiyeok && voicedGiyeok !== norm) {
+    const voicedMatches = state.data.syllableKanaIndex?.[voicedGiyeok] || [];
+    for (const item of voicedMatches) {
+      if (decomposeHangulSyllable(item.hangul)?.onset !== "ㄱ") continue;
+      aliases.push({
+        hangul: item.hangul,
+        score: Number(item.score || 0) * 0.64,
+      });
+    }
+  }
   if (norm === "ガン") {
     aliases.push(
       { hangul: "광", score: syntheticKanaCandidateScore("광", 0.88) },
@@ -908,6 +919,29 @@ function unvoiceInitialGiyeokKana(text) {
     ["グ", "ク"],
     ["ゲ", "ケ"],
     ["ゴ", "コ"],
+  ];
+  for (const [from, to] of replacements) {
+    if (text.startsWith(from)) return `${to}${text.slice(from.length)}`;
+  }
+  return text;
+}
+
+function voiceInitialGiyeokKana(text) {
+  if (!text) return text;
+  const replacements = [
+    ["キャ", "ギャ"],
+    ["キュ", "ギュ"],
+    ["キョ", "ギョ"],
+    ["キェ", "ギェ"],
+    ["クァ", "グァ"],
+    ["クェ", "グェ"],
+    ["クィ", "グィ"],
+    ["クォ", "グォ"],
+    ["カ", "ガ"],
+    ["キ", "ギ"],
+    ["ク", "グ"],
+    ["ケ", "ゲ"],
+    ["コ", "ゴ"],
   ];
   for (const [from, to] of replacements) {
     if (text.startsWith(from)) return `${to}${text.slice(from.length)}`;
@@ -1152,6 +1186,7 @@ function filterEvidenceBackedGivenCandidates(candidates) {
   );
   const pool = filteredComplexCoda.length ? filteredComplexCoda : candidates;
   const evidenceBacked = pool.filter((candidate) =>
+    hasSupportedWholeGivenName(candidate.units) ||
     candidate.units.every((syllable) => hasGivenSyllableEvidence(syllable) || isSinoLikeGivenSyllable(syllable)),
   );
   return evidenceBacked.length ? evidenceBacked : pool;
@@ -1251,10 +1286,15 @@ function recoverPronouncedSinoGivenCandidates(candidates) {
   const withoutBlockedComplexCoda = deduped.filter(
     (candidate) => candidate.units.every((syllable) => !isBlockedUnsupportedComplexCodaSyllable(syllable)),
   );
-  const allowedPool = (withoutBlockedComplexCoda.length ? withoutBlockedComplexCoda : deduped).filter(
+  const recoveryPool = withoutBlockedComplexCoda.length ? withoutBlockedComplexCoda : deduped;
+  const rankedWholeGivenPool = recoveryPool.filter((candidate) => hasSupportedWholeGivenName(candidate.units));
+  const allowedPool = recoveryPool.filter(
     (candidate) => candidate.units.every((syllable) => isAllowedNameSyllable(syllable)),
   );
-  return allowedPool.length ? allowedPool : (withoutBlockedComplexCoda.length ? withoutBlockedComplexCoda : deduped);
+  if (rankedWholeGivenPool.length) {
+    return dedupeCandidateUnits(rankedWholeGivenPool.concat(allowedPool), 24);
+  }
+  return allowedPool.length ? allowedPool : recoveryPool;
 }
 
 function recoverRomanDuumGivenCandidates(candidates) {
@@ -1559,6 +1599,37 @@ function buildKnownGivenRomanIndex(data) {
   return index;
 }
 
+function buildKnownGivenKanaIndex(data) {
+  const index = new Map();
+  const add = (surface, given, score) => {
+    const key = normalizeKana(surface);
+    if (!key || !given) return;
+    const bucket = index.get(key) || new Map();
+    bucket.set(given, Math.max(Number(score) || 0, bucket.get(given) || 0));
+    index.set(key, bucket);
+  };
+
+  for (const [surface, items] of Object.entries(data.givenNameKanaIndex || {})) {
+    for (const item of items || []) {
+      add(surface, item.hangul, Number(item.score) || 0);
+    }
+  }
+
+  for (const [given, meta] of Object.entries(data.givenNames || {})) {
+    const units = Array.from(given);
+    if (!units.length || units.length > 3) continue;
+    const weightBoost =
+      Math.log1p(Number(meta.totalWeight || 0)) * 8 +
+      Number(meta.periodsPresentCount || 0) * 10 +
+      Math.log1p(Number(meta.datasetCount || 0) + Number(meta.rowOccurrences || 0)) * 12;
+    for (const item of generateGivenKanaOutputs(given)) {
+      add(item.text, given, Number(item.score || 0) + weightBoost);
+    }
+  }
+
+  return index;
+}
+
 function buildRuntime(data) {
   const latinVariantLengths = [...new Set(Object.keys(data.syllableLatinIndex).map((key) => key.length))].sort((a, b) => b - a);
   const kanaVariantLengths = [...new Set(Object.keys(data.syllableKanaIndex).map((key) => key.length))].sort((a, b) => b - a);
@@ -1607,6 +1678,7 @@ function buildRuntime(data) {
     surnameByHangul: new Map(data.surnames.map((item) => [item.hangul, item])),
     fullNameByIndex: data.fullNames,
     givenRomanIndex: buildKnownGivenRomanIndex(data),
+    givenKanaIndex: buildKnownGivenKanaIndex(data),
     fullNameRowsByGiven,
     fullNameRowsBySurname,
   };
@@ -2064,23 +2136,29 @@ function pruneRomanSingleTokenGivenCandidates(candidates) {
   );
   if (!topTwoUnit) return candidates;
   return candidates.filter((candidate) => {
-    if (topCompactSinoLike && candidate.units.some((syllable) => !isSinoLikeGivenSyllable(syllable))) {
+    const hasRankedWholeGivenName = hasSupportedWholeGivenName(candidate.units);
+    if (
+      topCompactSinoLike &&
+      !hasRankedWholeGivenName &&
+      candidate.units.some((syllable) => !isSinoLikeGivenSyllable(syllable))
+    ) {
       return false;
     }
     if (
       topCompactSinoBacked &&
+      !hasRankedWholeGivenName &&
       !isSinoBackedGivenCandidate(candidate) &&
       topCompactSinoBacked.score >= candidate.score * 0.6
     ) {
       return false;
     }
     if (topAllowed) {
-      if (!isFullyAllowedGivenCandidate(candidate)) return false;
+      if (!isFullyAllowedGivenCandidate(candidate) && !hasRankedWholeGivenName) return false;
       const shorterAllowed = candidates.find(
         (other) => isFullyAllowedGivenCandidate(other) && other.units.length < candidate.units.length,
       );
-      if (shorterAllowed && shorterAllowed.score >= candidate.score * 0.7) return false;
-      return candidate.score >= topAllowed.score * 0.18;
+      if (!hasRankedWholeGivenName && shorterAllowed && shorterAllowed.score >= candidate.score * 0.7) return false;
+      return hasRankedWholeGivenName || candidate.score >= topAllowed.score * 0.18;
     }
     if (
       topHanjaBackedCompact &&
@@ -2155,10 +2233,13 @@ function generateRomanDuumWholeGivenCandidates(norm) {
 function parseGivenKanaTokens(tokens) {
   if (!tokens.length) return [];
   const joined = normalizeKana(tokens.join(""));
-  const exactGiven = (state.data.givenNameKanaIndex?.[joined] || []).map((item) => ({
-    units: Array.from(item.hangul),
-    score: Number(item.score) + 180,
-  }));
+  const exactGivenIndex = state.runtime?.givenKanaIndex?.get(joined);
+  const exactGiven = exactGivenIndex
+    ? [...exactGivenIndex.entries()].map(([hangul, score]) => ({
+      units: Array.from(hangul),
+      score: Number(score) + 180,
+    }))
+    : [];
   if (exactGiven.length) {
     return pruneKanaSingleTokenGivenCandidates(recoverPronouncedSinoGivenCandidates(dedupeCandidateUnits(exactGiven, 24)));
   }
@@ -2368,6 +2449,7 @@ function searchKana(query, candidateMap) {
     const givenCandidates = parseGivenKanaTokens([kana.slice(variant.length)]);
     for (const surnameCandidate of surnameCandidates.slice(0, 10)) {
       for (const givenCandidate of givenCandidates.slice(0, 24)) {
+        if (!isNameLikeGivenUnits(givenCandidate.units)) continue;
         const givenPrior = givenUnitsNamePrior(givenCandidate.units);
         const boundaryAdjustment = kanaJoinedSurnameBoundaryAdjustment(kana, variant, surnameCandidate.hangul, givenCandidate.units);
         const hangul = `${surnameCandidate.hangul}${givenCandidate.units.join("")}`;
@@ -3018,7 +3100,7 @@ function pruneImplausibleCandidates(candidateMap) {
     ) {
       continue;
     }
-    if (!hasExactEvidence && bestAllowed && unsupportedCount >= 1) continue;
+    if (!hasExactEvidence && bestAllowed && unsupportedCount >= 1 && !hasSupportedWholeGivenName(units)) continue;
     if (
       kanaDerivedOnly &&
       unsupportedCount === 0 &&
@@ -3107,6 +3189,7 @@ function addExample(pool, seen, text, type) {
   if (!normalized) return;
   const key = `${type}:${normalized}`;
   if (seen.has(key)) return;
+  if (!hasSearchableResultsForExample(normalized)) return;
   seen.add(key);
   pool.push({ text: normalized, type });
 }
@@ -3248,14 +3331,7 @@ function showResultsSection() {
   });
 }
 
-function search(query) {
-  if (!query.trim()) {
-    resultsEl.innerHTML = "";
-    state.queryMeta = null;
-    hideResultsSection();
-    return;
-  }
-
+function collectCandidatesForQuery(query) {
   state.queryMeta = analyzeQueryMeta(query);
   const candidateMap = new Map();
   addExactNameCandidates(query, candidateMap);
@@ -3268,7 +3344,26 @@ function search(query) {
   searchKana(query, candidateMap);
   searchHanja(query, candidateMap);
   searchMixedGroups(query, candidateMap);
-  const prunedCandidateMap = pruneImplausibleCandidates(candidateMap);
+  return pruneImplausibleCandidates(candidateMap);
+}
+
+function hasSearchableResultsForExample(text) {
+  if (!text?.trim()) return false;
+  const previousQueryMeta = state.queryMeta;
+  const prunedCandidateMap = collectCandidatesForQuery(text);
+  state.queryMeta = previousQueryMeta;
+  return prunedCandidateMap.size > 0;
+}
+
+function search(query) {
+  if (!query.trim()) {
+    resultsEl.innerHTML = "";
+    state.queryMeta = null;
+    hideResultsSection();
+    return;
+  }
+
+  const prunedCandidateMap = collectCandidatesForQuery(query);
   if (interpretationEl) {
     interpretationEl.textContent = deriveInterpretationText(query, prunedCandidateMap);
   }
