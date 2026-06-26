@@ -280,6 +280,14 @@ function supportsAudioPlayback() {
   return typeof Audio !== "undefined";
 }
 
+function isLikelyMobileBrowser() {
+  if (typeof navigator === "undefined" || typeof window === "undefined") return false;
+  const userAgent = navigator.userAgent || "";
+  const touchCapable = Number(navigator.maxTouchPoints || 0) > 0;
+  const coarsePointer = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+  return /android|iphone|ipad|ipod|mobile/i.test(userAgent) || (touchCapable && coarsePointer);
+}
+
 function koreanSpeechVoice() {
   if (!supportsSpeechSynthesis()) return null;
   const voices = window.speechSynthesis.getVoices();
@@ -302,6 +310,12 @@ function resetPronunciationButton(button) {
   button.disabled = false;
 }
 
+function hasActiveSpeechSynthesisQueue() {
+  if (!supportsSpeechSynthesis()) return false;
+  const speechSynthesis = window.speechSynthesis;
+  return Boolean(activePronunciationUtterance || speechSynthesis.speaking || speechSynthesis.pending);
+}
+
 function stopActivePronunciation() {
   if (activePronunciationAudio) {
     activePronunciationAudio.pause();
@@ -309,7 +323,7 @@ function stopActivePronunciation() {
     activePronunciationAudio.load();
     activePronunciationAudio = null;
   }
-  if (supportsSpeechSynthesis()) {
+  if (hasActiveSpeechSynthesisQueue()) {
     window.speechSynthesis.cancel();
   }
   if (activePronunciationButton) {
@@ -377,6 +391,56 @@ function playTtsAudioUrl(url) {
   });
 }
 
+function estimatedSpeechDurationMs(text) {
+  const syllableCount = Array.from(text || "").length;
+  return Math.min(4200, Math.max(1400, 800 + syllableCount * 260));
+}
+
+function playSpeechSynthesisPronunciation(text, button, options = {}) {
+  return new Promise((resolve, reject) => {
+    if (!supportsSpeechSynthesis()) {
+      reject(new Error("Speech synthesis unavailable"));
+      return;
+    }
+
+    const { cancelExisting = true } = options;
+    if (cancelExisting && hasActiveSpeechSynthesisQueue()) {
+      window.speechSynthesis.cancel();
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voice = koreanSpeechVoice();
+    let settled = false;
+    const fallbackEndTimeout = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    }, estimatedSpeechDurationMs(text));
+    const finish = (callback) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(fallbackEndTimeout);
+      callback();
+    };
+
+    utterance.lang = "ko-KR";
+    utterance.rate = 0.88;
+    utterance.pitch = 1;
+    if (voice) utterance.voice = voice;
+    utterance.onstart = () => {
+      setPronunciationButtonState(button, "playing");
+    };
+    utterance.onend = () => finish(resolve);
+    utterance.onerror = (event) => finish(() => reject(event.error || new Error("Speech synthesis failed")));
+    activePronunciationUtterance = utterance;
+    setPronunciationButtonState(button, "playing");
+    window.speechSynthesis.speak(utterance);
+    if (typeof window.speechSynthesis.resume === "function") {
+      window.speechSynthesis.resume();
+    }
+  });
+}
+
 async function playKoreanPronunciation(text, button) {
   if (!text) return;
   if (button === activePronunciationButton && button.dataset.state === "playing") {
@@ -386,7 +450,22 @@ async function playKoreanPronunciation(text, button) {
 
   stopActivePronunciation();
   activePronunciationButton = button;
-  setPronunciationButtonState(button, "loading");
+  const shouldUseMobileSpeechFirst = isLikelyMobileBrowser() && supportsSpeechSynthesis();
+
+  if (shouldUseMobileSpeechFirst) {
+    try {
+      await playSpeechSynthesisPronunciation(text, button, { cancelExisting: false });
+      resetPronunciationButton(button);
+      activePronunciationButton = null;
+      activePronunciationUtterance = null;
+      return;
+    } catch {
+      activePronunciationUtterance = null;
+      setPronunciationButtonState(button, "loading");
+    }
+  } else {
+    setPronunciationButtonState(button, "loading");
+  }
 
   for (const audioUrl of ttsAudioCandidates(text)) {
     try {
@@ -402,28 +481,24 @@ async function playKoreanPronunciation(text, button) {
     }
   }
 
-  if (!supportsSpeechSynthesis()) {
+  if (!supportsSpeechSynthesis() || isLikelyMobileBrowser()) {
     button.disabled = true;
     button.dataset.state = "unavailable";
     activePronunciationButton = null;
     return;
   }
 
-  const utterance = new SpeechSynthesisUtterance(text);
-  const voice = koreanSpeechVoice();
-  utterance.lang = "ko-KR";
-  utterance.rate = 0.88;
-  utterance.pitch = 1;
-  if (voice) utterance.voice = voice;
-  utterance.onstart = () => setPronunciationButtonState(button, "playing");
-  utterance.onend = () => {
+  try {
+    await playSpeechSynthesisPronunciation(text, button);
     resetPronunciationButton(button);
     activePronunciationButton = null;
     activePronunciationUtterance = null;
-  };
-  utterance.onerror = utterance.onend;
-  activePronunciationUtterance = utterance;
-  window.speechSynthesis.speak(utterance);
+  } catch {
+    button.disabled = true;
+    button.dataset.state = "unavailable";
+    activePronunciationButton = null;
+    activePronunciationUtterance = null;
+  }
 }
 
 function romanTextToTokenish(text) {
