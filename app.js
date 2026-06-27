@@ -1984,6 +1984,85 @@ function singleTokenRomanChunkAdjustment(token, chunks, units) {
   return adjustment;
 }
 
+function romanChunkFitValue(chunk, syllable) {
+  const key = normalizeLatin(chunk);
+  if (!key || !syllable) return null;
+  const matches = state.data?.syllableLatinIndex?.[key] || [];
+  const matched = matches.find((item) => item.hangul === syllable);
+  if (!matched) return null;
+
+  const score = Number(matched.score || 0);
+  const topScore = Math.max(...matches.map((item) => Number(item.score || 0)), score);
+  let value = 0;
+  if (score >= 250) value += 1200;
+  else if (score >= 80) value += 850;
+  else if (score >= 20) value += 360;
+  else if (score >= 8) value += 80;
+  else value -= 220;
+
+  if (topScore > score * 2.5) value -= 520;
+  else if (topScore > score * 1.5) value -= 180;
+  return value;
+}
+
+function romanChunksFitAdjustment(chunks, units) {
+  if (!chunks?.length || !units?.length || chunks.length !== units.length) return null;
+  let adjustment = 0;
+  for (let index = 0; index < units.length; index += 1) {
+    const value = romanChunkFitValue(chunks[index], units[index]);
+    if (value == null) return null;
+    adjustment += value;
+  }
+  return adjustment;
+}
+
+function bestJoinedRomanFitAdjustment(surface, units) {
+  const target = normalizeLatin(surface);
+  if (!target || !units?.length) return null;
+  const memo = new Map();
+
+  function dfs(unitIndex, position) {
+    const key = `${unitIndex}:${position}`;
+    if (memo.has(key)) return memo.get(key);
+    if (unitIndex === units.length) return position === target.length ? 0 : null;
+
+    const syllable = units[unitIndex];
+    const variants = (state.data?.syllables?.[syllable]?.latin || [])
+      .map((item) => normalizeLatin(item.text))
+      .filter(Boolean);
+    let best = null;
+    for (const variant of variants) {
+      if (!target.startsWith(variant, position)) continue;
+      const value = romanChunkFitValue(variant, syllable);
+      if (value == null) continue;
+      const tail = dfs(unitIndex + 1, position + variant.length);
+      if (tail == null) continue;
+      const candidate = value + tail;
+      best = best == null ? candidate : Math.max(best, candidate);
+    }
+    memo.set(key, best);
+    return best;
+  }
+
+  return dfs(0, 0);
+}
+
+function romanGivenChunkFitAdjustment(candidate) {
+  const units = candidate?.units || [];
+  const chunks = (candidate?.chunks || []).map((chunk) => normalizeLatin(chunk)).filter(Boolean);
+  if (!units.length || !chunks.length) return 0;
+
+  const direct = romanChunksFitAdjustment(chunks, units);
+  if (direct != null) return direct;
+
+  if (chunks.length === 1 && units.length > 1) {
+    const joined = bestJoinedRomanFitAdjustment(chunks[0], units);
+    if (joined != null) return joined;
+  }
+
+  return 0;
+}
+
 function parseSyllablesLatin(norm, maxUnits = 3) {
   const { data, runtime } = state;
   if (!norm) return [];
@@ -2675,7 +2754,11 @@ function addStandaloneGivenCandidates(candidateMap, givenCandidates, evidence, b
     if (!candidate?.units?.length) continue;
     if (!isNameLikeGivenUnits(candidate.units)) continue;
     const hangul = candidate.units.join("");
-    const score = Number(candidate.score) + boost + givenUnitsNamePrior(candidate.units);
+    const score =
+      Number(candidate.score) +
+      boost +
+      givenUnitsNamePrior(candidate.units) +
+      romanGivenChunkFitAdjustment(candidate);
     addCandidate(candidateMap, hangul, score, evidence, { kind: "given" });
   }
 }
@@ -2780,7 +2863,10 @@ function combineSurnameAndGivenCandidates(surnameCandidates, givenCandidates, ca
       if (!isNameLikeGivenUnits(givenCandidate.units)) continue;
       const givenPrior = givenUnitsNamePrior(givenCandidate.units);
       const hangul = `${surnameCandidate.hangul}${givenCandidate.units.join("")}`;
-      const score = (Number(surnameCandidate.score) + Number(givenCandidate.score)) * boost + givenPrior;
+      const score =
+        (Number(surnameCandidate.score) + Number(givenCandidate.score)) * boost +
+        givenPrior +
+        romanGivenChunkFitAdjustment(givenCandidate);
       addCandidate(candidateMap, hangul, score, label);
     }
   }
