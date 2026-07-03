@@ -249,6 +249,14 @@ function normalizeKana(text) {
     .join("");
 }
 
+const BLOCKED_JAPANESE_KANA_SURFACES = ["ウンチ"];
+
+function isBlockedJapaneseKanaSurface(text) {
+  const norm = normalizeKana(text || "");
+  if (!norm) return false;
+  return BLOCKED_JAPANESE_KANA_SURFACES.some((surface) => norm.includes(surface));
+}
+
 function extractHangul(text) {
   return (text.match(/[가-힣]/g) || []).join("");
 }
@@ -1087,6 +1095,31 @@ function dedupeCandidateUnits(candidates, limit = 24) {
     .slice(0, limit);
 }
 
+function givenRomanContextScore(syllable, romanText, score) {
+  const parts = decomposeHangulSyllable(syllable);
+  const norm = normalizeLatin(romanText);
+  let value = Number(score) || 0;
+  if (!parts || !norm) return value;
+
+  if (parts.onset === "ㅈ" && norm.startsWith("ch")) {
+    value *= 0.08;
+  } else if (parts.onset === "ㅊ" && norm.startsWith("ch")) {
+    value = Math.max(value, 96);
+  }
+
+  return value;
+}
+
+function contextualGivenRomanCandidates(items, token) {
+  if (!items?.length) return [];
+  return items
+    .map((item) => ({
+      ...item,
+      score: givenRomanContextScore(item.hangul, token, item.score),
+    }))
+    .sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+}
+
 function pruneWeakExactSyllableMatches(items, token, threshold = 0.14) {
   if (!items?.length) return [];
   const topScore = Number(items[0].score) || 0;
@@ -1181,7 +1214,13 @@ function hasSupportedWholeGivenName(units) {
 
 function givenUnitsNamePrior(units) {
   const extraUnitPenalty = units.length <= 2 ? 0 : (units.length - 2) * 80;
-  return units.reduce((sum, syllable) => sum + givenSyllableNamePrior(syllable), 0) + givenWholeNamePrior(units) - extraUnitPenalty;
+  const wholePrior = givenWholeNamePrior(units);
+  const supportedWholeName = hasSupportedWholeGivenName(units);
+  const syllablePrior = units.reduce((sum, syllable) => {
+    const prior = givenSyllableNamePrior(syllable);
+    return sum + (supportedWholeName ? Math.max(prior, -60) : prior);
+  }, 0);
+  return syllablePrior + wholePrior - extraUnitPenalty;
 }
 
 function hasGivenSyllableEvidence(syllable) {
@@ -1632,7 +1671,7 @@ function buildKnownGivenRomanIndex(data) {
       let variants = (syllableData?.latin || [])
         .map((item) => ({
           text: normalizeLatin(item.text),
-          score: Number(item.score) || 0,
+          score: givenRomanContextScore(syllable, item.text, item.score),
         }))
         .filter((item) => item.text)
         .sort((a, b) => b.score - a.score)
@@ -1988,11 +2027,12 @@ function romanChunkFitValue(chunk, syllable) {
   const key = normalizeLatin(chunk);
   if (!key || !syllable) return null;
   const matches = state.data?.syllableLatinIndex?.[key] || [];
-  const matched = matches.find((item) => item.hangul === syllable);
+  const contextualMatches = contextualGivenRomanCandidates(matches, key);
+  const matched = contextualMatches.find((item) => item.hangul === syllable);
   if (!matched) return null;
 
   const score = Number(matched.score || 0);
-  const topScore = Math.max(...matches.map((item) => Number(item.score || 0)), score);
+  const topScore = Math.max(...contextualMatches.map((item) => Number(item.score || 0)), score);
   let value = 0;
   if (score >= 250) value += 1200;
   else if (score >= 80) value += 850;
@@ -2081,7 +2121,7 @@ function parseSyllablesLatin(norm, maxUnits = 3) {
       if (!chunk) continue;
       if (!hasRomanVowel(chunk)) continue;
       const forced = forcedRomanHangulCandidates(chunk);
-      const exactSource = forced || data.syllableLatinIndex[chunk] || [];
+      const exactSource = forced || contextualGivenRomanCandidates(data.syllableLatinIndex[chunk] || [], chunk);
       const exact = pruneWeakExactSyllableMatches(exactSource, chunk);
       for (const item of exact) {
         for (const tail of dfs(pos + len, used + 1)) {
@@ -2229,7 +2269,8 @@ function parseGivenLatinTokens(tokens) {
     const candidates = [];
     for (const variant of expandRomanTokenVariants(token)) {
       const forced = forcedRomanHangulCandidates(variant.token);
-      const exact = pruneWeakExactSyllableMatches(forced || state.data.syllableLatinIndex[variant.token], variant.token);
+      const exactSource = forced || contextualGivenRomanCandidates(state.data.syllableLatinIndex[variant.token] || [], variant.token);
+      const exact = pruneWeakExactSyllableMatches(exactSource, variant.token);
       if (exact?.length) {
         for (const item of exact) {
           candidates.push({ units: [item.hangul], score: Number(item.score) - variant.penalty, chunks: [variant.token] });
@@ -2939,6 +2980,7 @@ function generateGivenKanaOutputs(hangul) {
   const counter = new Map();
   const add = (text, score) => {
     if (!text) return;
+    if (isBlockedJapaneseKanaSurface(text)) return;
     counter.set(text, Math.max(score, counter.get(text) || 0));
   };
   const givenCombos = buildKanaGivenCombosForUnits(givenUnits);
@@ -3083,6 +3125,7 @@ function generateKanaOutputs(hangul, exactRows) {
   const counter = new Map();
   const add = (text, score) => {
     if (!text) return;
+    if (isBlockedJapaneseKanaSurface(text)) return;
     counter.set(text, Math.max(score, counter.get(text) || 0));
   };
   for (const row of exactRows) {
@@ -3409,6 +3452,7 @@ function pickWeightedRandom(items, getWeight) {
 function addExample(pool, seen, text, type) {
   const normalized = text?.trim();
   if (!normalized) return;
+  if (type === "kana" && isBlockedJapaneseKanaSurface(normalized)) return;
   const key = `${type}:${normalized}`;
   if (seen.has(key)) return;
   if (!hasSearchableResultsForExample(normalized)) return;
