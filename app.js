@@ -2,6 +2,7 @@ const dataUrl = "./data/name_index.json?v=20260626-gye-ge-kana";
 const hanjaReadingUrl = "./data/hanja_readings.json?v=20260721-unihan-khangul";
 const hanjaNameCharUrl = "./data/hanja_name_chars.json?v=20260721-top1000-name-hanja";
 const hanjaUsageRankUrl = "./data/hanja_usage_rank.json?v=20260721-ohmybaby-top50";
+const bonGwanDataUrl = "./data/bon_gwan_by_surname.json?v=20260721-kosis-2015-hanja";
 
 const LANGUAGE_STORAGE_KEY = "gildonghong.language";
 const LANGUAGE_CONFIG = {
@@ -13,9 +14,13 @@ const LANGUAGE_CONFIG = {
 const TRANSLATIONS = {
   en: {
     languageSelectorLabel: "Choose language",
+    siteSectionsLabel: "Site sections",
+    home: "Home",
+    about: "About",
     promptAriaLabel: "How do I read this Korean name?",
     promptPrefix: "How do I read",
     promptSuffix: "?",
+    typewriterSearchAria: ({ name }) => `Search for ${name}`,
     searchAriaLabel: "Korean name search",
     searchLabel: "Korean name",
     searchPlaceholder: "Search a Korean name",
@@ -34,6 +39,8 @@ const TRANSLATIONS = {
     syntheticFullEvidence: "synthetic from surname and syllable evidence",
     surnameSubtitle: ({ population, evidence }) => `Surname match · population ${population} · ${evidence}`,
     givenSubtitle: ({ count, evidence }) => `${count}-syllable given name · ${evidence}`,
+    ambiguousStandaloneSubtitle: ({ count, population }) =>
+      `Used as a ${count}-syllable given name or surname · surname population ${population}`,
     fullSubtitle: ({ surname, given, evidence }) => `Surname ${surname} · Given ${given} · ${evidence}`,
     interpretationNone: "Interpretation: likely neither a surname, given name, nor full name.",
     interpretationLikely: ({ kind }) => `Interpretation: likely ${kind}.`,
@@ -44,13 +51,58 @@ const TRANSLATIONS = {
     pronunciationUnavailable: "Pronunciation unavailable",
     noOutput: "No output",
     noHanjaObserved: "No observed Hanja reading in the dataset",
+    aboutTitle: "About gildonghong",
+    aboutDoesTitle: "What it does",
+    aboutDoesSearch: "Ranks plausible modern Korean names from several writing systems.",
+    aboutDoesOutputs: "Shows Roman-letter, Japanese-kana, and Hanja variants when evidence is available.",
+    aboutDoesAudio: "Plays Korean pronunciation for each result.",
+    aboutUseTitle: "How to search",
+    aboutUseStepOne: "Enter one surname, one given name, or a full name.",
+    aboutUseStepTwo: "Use spaces, hyphens, or familiar personal spellings in Roman letters.",
+    aboutUseStepThree: "Open a result to compare its scripts and evidence.",
+    aboutExamplesLabel: "Search examples",
+    formatHangul: "Hangul",
+    formatRoman: "Roman letters",
+    formatKana: "Japanese kana",
+    formatHanja: "Hanja",
+    aboutRankingTitle: "How ranking works",
+    aboutRankingEvidence: "Candidates combine surname population, modern given-name evidence, script readings, and observed spellings.",
+    aboutRankingMeaning: "Plausibility compares the candidates shown. It is not a population probability.",
+    aboutRankingLimit: "Personal spellings vary, so a lower-ranked result can still be correct.",
+    aboutBonGwanTitle: "Bon-gwan data",
+    aboutBonGwanCopy: "Bon-gwan means an ancestral clan seat. Shares are calculated within one exact Hangul-Hanja surname, so 유(柳) and 유(劉) use separate totals.",
+    aboutBonGwanYear: "The latest official surname and bon-gwan table available is the 2015 census.",
+    aboutBonGwanOther: "The source combines bon-gwan with fewer than 1,000 people as Other.",
+    aboutSourcesTitle: "Sources",
+    sourceKosisName: "KOSIS · 2015 Population and Housing Census",
+    sourceKosisDescription: "Surname, Hanja surname, population, and bon-gwan counts.",
+    sourceUnihanName: "Unicode Unihan Database",
+    sourceUnihanDescription: "kHangul readings used as a Hanja fallback.",
+    sourceRomanizationName: "National Institute of Korean Language",
+    sourceRomanizationDescription: "Revised Romanization reference.",
+    sourceNamesName: "2025-2026 baby-name rankings",
+    sourceNamesDescription: "Supplementary modern-name and representative Hanja prior, based on Supreme Court birth registrations.",
+    sourceMethodNote: "Additional spelling aliases and kana variants are curated compatibility rules. They widen search coverage without changing the cited source totals.",
+    bonGwanDistribution: "Bon-gwan distribution",
+    bonGwanEntryCount: ({ count }) => `${count} entr${count === 1 ? "y" : "ies"}`,
+    bonGwanScope: ({ surname, population, year }) => `Share within ${surname} · ${population} people · ${year} census`,
+    bonGwanNameLabel: "Bon-gwan",
+    bonGwanShareLabel: "Share",
+    bonGwanPeopleLabel: "People",
+    bonGwanOther: "Other (combined)",
+    bonGwanSource: ({ year }) => `Source: KOSIS ${year} census`,
+    bonGwanCombinedNote: "KOSIS combines bon-gwan with fewer than 1,000 people as Other.",
     loadFailed: "Could not load the search data. Reload the page and try again.",
   },
   ja: {
     languageSelectorLabel: "言語を選択",
+    siteSectionsLabel: "サイト内メニュー",
+    home: "ホーム",
+    about: "このツールについて",
     promptAriaLabel: "この韓国人名はどう読みますか？",
     promptPrefix: "「",
     promptSuffix: "」はどう読む？",
+    typewriterSearchAria: ({ name }) => `「${name}」を検索`,
     searchAriaLabel: "韓国人名を検索",
     searchLabel: "韓国人名",
     searchPlaceholder: "韓国人名を検索",
@@ -69,6 +121,8 @@ const TRANSLATIONS = {
     syntheticFullEvidence: "姓と各音節の用例から生成",
     surnameSubtitle: ({ population, evidence }) => `姓の一致 · 人口 ${population} · ${evidence}`,
     givenSubtitle: ({ count, evidence }) => `${count}音節の名 · ${evidence}`,
+    ambiguousStandaloneSubtitle: ({ count, population }) =>
+      `${count}音節の名、または姓として使用 · 姓の人口 ${population}`,
     fullSubtitle: ({ surname, given, evidence }) => `姓 ${surname} · 名 ${given} · ${evidence}`,
     interpretationNone: "判定：姓、名、姓名のいずれにも該当しない可能性があります。",
     interpretationLikely: ({ kind }) => `判定：${kind}の可能性が高いです。`,
@@ -79,13 +133,58 @@ const TRANSLATIONS = {
     pronunciationUnavailable: "発音を再生できません",
     noOutput: "出力なし",
     noHanjaObserved: "データセットに該当する漢字表記がありません",
+    aboutTitle: "gildonghongについて",
+    aboutDoesTitle: "できること",
+    aboutDoesSearch: "複数の表記から、現代韓国人名として確からしい候補を順位付けします。",
+    aboutDoesOutputs: "根拠がある場合は、ローマ字、日本語カナ、漢字の表記候補を表示します。",
+    aboutDoesAudio: "各候補の韓国語発音を再生します。",
+    aboutUseTitle: "検索方法",
+    aboutUseStepOne: "姓、名、または姓名を入力します。",
+    aboutUseStepTwo: "ローマ字では、空白、ハイフン、本人が使うつづりも検索できます。",
+    aboutUseStepThree: "結果を開き、表記と根拠を比較します。",
+    aboutExamplesLabel: "検索例",
+    formatHangul: "ハングル",
+    formatRoman: "ローマ字",
+    formatKana: "日本語カナ",
+    formatHanja: "漢字",
+    aboutRankingTitle: "順位の決め方",
+    aboutRankingEvidence: "姓の人口、近年の名の用例、各表記の読み、実際のつづりを組み合わせます。",
+    aboutRankingMeaning: "確からしさは表示候補どうしの比較です。人口における確率ではありません。",
+    aboutRankingLimit: "個人のつづりには幅があるため、下位の候補が正しい場合もあります。",
+    aboutBonGwanTitle: "本貫データ",
+    aboutBonGwanCopy: "本貫は一族の発祥地を示します。割合は同じハングル・漢字の姓ごとに計算するため、ユ（柳）とユ（劉）は別集計です。",
+    aboutBonGwanYear: "利用できる最新の公式な姓・本貫表は、2015年国勢調査です。",
+    aboutBonGwanOther: "人口1,000人未満の本貫は、出典では「その他」に合算されています。",
+    aboutSourcesTitle: "出典",
+    sourceKosisName: "KOSIS · 2015年人口住宅総調査",
+    sourceKosisDescription: "姓、姓の漢字、人口、本貫別人口。",
+    sourceUnihanName: "Unicode Unihan Database",
+    sourceUnihanDescription: "漢字検索の補助に用いるkHangul読み。",
+    sourceRomanizationName: "韓国国立国語院",
+    sourceRomanizationDescription: "韓国語ローマ字表記法の参照資料。",
+    sourceNamesName: "2025-2026年の出生名ランキング",
+    sourceNamesDescription: "大法院の出生届統計をもとに、近年の名と代表的な漢字の優先度を補います。",
+    sourceMethodNote: "一部のつづりとカナ表記は、検索範囲を広げるために整理した互換規則です。出典の統計値は変更しません。",
+    bonGwanDistribution: "本貫分布",
+    bonGwanEntryCount: ({ count }) => `${count}件`,
+    bonGwanScope: ({ surname, population, year }) => `${surname}内の割合 · ${population}人 · ${year}年調査`,
+    bonGwanNameLabel: "本貫",
+    bonGwanShareLabel: "割合",
+    bonGwanPeopleLabel: "人口",
+    bonGwanOther: "その他（合算）",
+    bonGwanSource: ({ year }) => `出典：KOSIS ${year}年人口住宅総調査`,
+    bonGwanCombinedNote: "KOSISでは人口1,000人未満の本貫を「その他」に合算しています。",
     loadFailed: "検索データを読み込めませんでした。ページを再読み込みしてください。",
   },
   zh: {
     languageSelectorLabel: "選擇語言",
+    siteSectionsLabel: "網站分頁",
+    home: "首頁",
+    about: "關於",
     promptAriaLabel: "這個韓國姓名怎麼讀？",
     promptPrefix: "“",
     promptSuffix: "”怎麼讀？",
+    typewriterSearchAria: ({ name }) => `搜尋${name}`,
     searchAriaLabel: "搜尋韓國姓名",
     searchLabel: "韓國姓名",
     searchPlaceholder: "搜尋韓國姓名",
@@ -104,6 +203,8 @@ const TRANSLATIONS = {
     syntheticFullEvidence: "根據姓氏和音節用例生成",
     surnameSubtitle: ({ population, evidence }) => `姓氏相符 · 人口 ${population} · ${evidence}`,
     givenSubtitle: ({ count, evidence }) => `${count} 音節名字 · ${evidence}`,
+    ambiguousStandaloneSubtitle: ({ count, population }) =>
+      `可作 ${count} 音節名字或姓氏 · 姓氏人口 ${population}`,
     fullSubtitle: ({ surname, given, evidence }) => `姓氏 ${surname} · 名字 ${given} · ${evidence}`,
     interpretationNone: "判斷：很可能不是姓氏、名字或完整姓名。",
     interpretationLikely: ({ kind }) => `判斷：很可能是${kind}。`,
@@ -114,6 +215,47 @@ const TRANSLATIONS = {
     pronunciationUnavailable: "無法播放發音",
     noOutput: "無輸出",
     noHanjaObserved: "資料集中沒有對應的漢字寫法",
+    aboutTitle: "關於 gildonghong",
+    aboutDoesTitle: "功能",
+    aboutDoesSearch: "依多種書寫方式，排列可能的現代韓國姓名。",
+    aboutDoesOutputs: "有資料依據時，顯示羅馬字母、日文假名與漢字寫法。",
+    aboutDoesAudio: "播放各結果的韓語發音。",
+    aboutUseTitle: "搜尋方式",
+    aboutUseStepOne: "輸入一個姓、名字或完整姓名。",
+    aboutUseStepTwo: "羅馬字母可使用空格、連字號或個人慣用拼法。",
+    aboutUseStepThree: "開啟結果，比較不同寫法與資料依據。",
+    aboutExamplesLabel: "搜尋範例",
+    formatHangul: "韓文",
+    formatRoman: "羅馬字母",
+    formatKana: "日文假名",
+    formatHanja: "漢字",
+    aboutRankingTitle: "排序方式",
+    aboutRankingEvidence: "候選結果綜合姓氏人口、現代名字資料、各文字讀音與實際拼法。",
+    aboutRankingMeaning: "可信度只比較目前顯示的候選結果，並非人口機率。",
+    aboutRankingLimit: "個人拼法不盡相同，因此較低順位也可能正確。",
+    aboutBonGwanTitle: "本貫資料",
+    aboutBonGwanCopy: "本貫代表宗族的發祥地。比例依完全相同的韓文與漢字姓氏分別計算，因此 유（柳）與 유（劉）採用不同總數。",
+    aboutBonGwanYear: "目前可用的最新官方姓氏與本貫資料表來自2015年人口住宅總調查。",
+    aboutBonGwanOther: "資料來源將人口少於1,000人的本貫合併為「其他」。",
+    aboutSourcesTitle: "資料來源",
+    sourceKosisName: "KOSIS · 2015年人口住宅總調查",
+    sourceKosisDescription: "姓氏、姓氏漢字、人口與各本貫人口。",
+    sourceUnihanName: "Unicode Unihan Database",
+    sourceUnihanDescription: "作為漢字搜尋後備資料的kHangul讀音。",
+    sourceRomanizationName: "韓國國立國語院",
+    sourceRomanizationDescription: "韓語羅馬字表記法參考。",
+    sourceNamesName: "2025-2026年新生兒姓名排行",
+    sourceNamesDescription: "依據韓國大法院出生登記統計，補充現代名字與代表漢字資料。",
+    sourceMethodNote: "部分拼寫別名與假名變體屬於人工整理的相容規則，用於擴大搜尋範圍，不會改變引用來源的統計總數。",
+    bonGwanDistribution: "本貫分布",
+    bonGwanEntryCount: ({ count }) => `${count}項`,
+    bonGwanScope: ({ surname, population, year }) => `${surname}內的比例 · ${population}人 · ${year}年調查`,
+    bonGwanNameLabel: "本貫",
+    bonGwanShareLabel: "比例",
+    bonGwanPeopleLabel: "人口",
+    bonGwanOther: "其他（合併）",
+    bonGwanSource: ({ year }) => `來源：KOSIS ${year}年人口普查`,
+    bonGwanCombinedNote: "KOSIS將人口少於1,000人的本貫合併為「其他」。",
     loadFailed: "無法載入搜尋資料。請重新整理頁面後再試。",
   },
 };
@@ -138,6 +280,7 @@ function resolveInitialLanguage() {
 const state = {
   data: null,
   runtime: null,
+  bonGwanData: null,
   queryMeta: null,
   language: resolveInitialLanguage(),
 };
@@ -162,12 +305,19 @@ const languageTriggerEl = document.querySelector("#language-trigger");
 const languageMenuEl = document.querySelector("#language-menu");
 const currentLanguageCodeEl = document.querySelector("#current-language-code");
 const languageOptionEls = Array.from(document.querySelectorAll("[data-language]"));
+const siteTabEls = Array.from(document.querySelectorAll("[data-tab]"));
+const sitePanelEls = Array.from(document.querySelectorAll("[data-panel]"));
+const aboutExampleEls = Array.from(document.querySelectorAll("[data-about-example]"));
 let activePronunciationButton = null;
 let activePronunciationAudio = null;
 let activePronunciationUtterance = null;
 let typewriterTimerId = null;
 
-const TYPEWRITER_EXAMPLE_COUNT = 24;
+const TYPEWRITER_EXAMPLE_COUNT = 40;
+const TYPEWRITER_HANJA_SOURCE_NAME_COUNT = 72;
+const TYPEWRITER_HANJA_VARIANTS_PER_NAME = 3;
+const TYPEWRITER_HANJA_SURNAME_LIMIT = 200;
+const TYPEWRITER_POOL_LIMITS = { hangul: 96, roman: 96, kana: 96, hanja: 144 };
 const TYPEWRITER_TYPE_DELAY_MS = 72;
 const TYPEWRITER_DELETE_DELAY_MS = 42;
 const TYPEWRITER_HOLD_DELAY_MS = 1280;
@@ -180,6 +330,15 @@ function t(key, params = {}) {
 
 function formatNumber(value) {
   return new Intl.NumberFormat(LANGUAGE_CONFIG[state.language]?.intlLocale || "en").format(Number(value || 0));
+}
+
+function formatPercentRatio(count, total) {
+  const value = total > 0 ? (Number(count || 0) / Number(total)) * 100 : 0;
+  const requiresThreeDecimals = value > 0 && value < 0.01;
+  return new Intl.NumberFormat(LANGUAGE_CONFIG[state.language]?.intlLocale || "en", {
+    maximumFractionDigits: requiresThreeDecimals ? 3 : 2,
+    minimumFractionDigits: requiresThreeDecimals ? 3 : 0,
+  }).format(value);
 }
 
 function applyTranslations() {
@@ -197,6 +356,13 @@ function applyTranslations() {
       element.setAttribute("aria-label", t(element.dataset.i18nAriaLabel));
     });
   }
+  updateTypewriterActionLabel();
+}
+
+function updateTypewriterActionLabel() {
+  if (!typewriterNameEl) return;
+  const name = typewriterNameEl.dataset.searchValue || typewriterNameEl.textContent?.trim();
+  if (name) typewriterNameEl.setAttribute("aria-label", t("typewriterSearchAria", { name }));
 }
 
 function updateLanguageSelector() {
@@ -206,8 +372,10 @@ function updateLanguageSelector() {
   for (const option of languageOptionEls) {
     if (option.dataset.language === state.language) {
       option.setAttribute("aria-current", "true");
+      option.setAttribute("aria-checked", "true");
     } else {
       option.removeAttribute("aria-current");
+      option.setAttribute("aria-checked", "false");
     }
   }
 }
@@ -248,6 +416,29 @@ function moveLanguageMenuFocus(direction) {
   const startIndex = activeIndex >= 0 ? activeIndex : Math.max(0, selectedIndex);
   const nextIndex = (startIndex + direction + languageOptionEls.length) % languageOptionEls.length;
   languageOptionEls[nextIndex].focus();
+}
+
+function setActiveSiteTab(name, options = {}) {
+  const { focus = false } = options;
+  const activeTab = siteTabEls.find((tab) => tab.dataset.tab === name) || siteTabEls[0];
+  if (!activeTab) return;
+  for (const tab of siteTabEls) {
+    const selected = tab === activeTab;
+    tab.setAttribute("aria-selected", String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+  }
+  for (const panel of sitePanelEls) {
+    panel.hidden = panel.dataset.panel !== activeTab.dataset.tab;
+  }
+  if (activeTab.dataset.tab !== "home") stopActivePronunciation();
+  if (focus) activeTab.focus();
+}
+
+function moveSiteTabFocus(currentTab, direction) {
+  const currentIndex = siteTabEls.indexOf(currentTab);
+  if (currentIndex < 0 || !siteTabEls.length) return;
+  const nextIndex = (currentIndex + direction + siteTabEls.length) % siteTabEls.length;
+  setActiveSiteTab(siteTabEls[nextIndex].dataset.tab, { focus: true });
 }
 
 const compoundSurnamesFallback = new Set(["남궁", "황보", "선우", "제갈", "사공", "서문", "독고", "동방", "어금", "망절"]);
@@ -326,8 +517,29 @@ const BLOCKED_GIVEN_ROMAN_BY_HANGUL = new Map(Object.entries({
   태: ["t"],
 }).map(([hangul, variants]) => [hangul, new Set(variants)]));
 
+const RARE_SURNAME_ROMAN_ALIASES = new Map(Object.entries({
+  궉: [{ text: "Kuck", score: 6, inputScore: 120 }],
+  지: [{ text: "Gee", score: 6, inputScore: 40 }],
+}));
+
 const RARE_GIVEN_ROMAN_ALIASES = new Map(Object.entries({
   용: [{ text: "yueng", score: 8 }],
+  채: [{ text: "chea", score: 8 }],
+  원: [{ text: "one", score: 6 }],
+  준: [{ text: "june", score: 8 }],
+  지: [{ text: "gee", score: 7 }],
+  백: [{ text: "back", score: 5 }],
+  학: [{ text: "hack", score: 5 }],
+  록: [{ text: "rock", score: 5 }],
+  길: [{ text: "gill", score: 5 }],
+  만: [{ text: "mann", score: 5 }],
+  필: [{ text: "phil", score: 5 }],
+}));
+
+const LEGACY_UCK_ROMAN_VOWELS = new Set(["ㅓ", "ㅕ"]);
+
+const ATTESTED_FULL_NAME_ROMAN_ALIASES = new Map(Object.entries({
+  궉채이: [{ text: "Kuck Cheayi", searchScore: 100, outputScore: 220 }],
 }));
 
 function isModernRomanText(text) {
@@ -444,6 +656,30 @@ function rebuildSyllableLatinIndex(data) {
   data.syllableLatinIndex = index;
 }
 
+function attachRareSurnameRomanAliases(data) {
+  for (const [hangul, aliases] of RARE_SURNAME_ROMAN_ALIASES) {
+    const surname = (data?.surnames || []).find((item) => item.hangul === hangul);
+    if (!surname) continue;
+
+    const latin = surname.latin || [];
+    const existing = new Set(latin.map((item) => normalizeLatin(item.text)).filter(Boolean));
+    for (const alias of aliases) {
+      const normalized = normalizeLatin(alias.text);
+      if (!normalized || existing.has(normalized)) continue;
+      const score = Number(alias.score) || 0;
+      latin.push({ text: alias.text, score });
+      existing.add(normalized);
+
+      const bucket = data.surnameLatinIndex?.[normalized] || [];
+      if (!bucket.some((item) => item.hangul === hangul)) {
+        bucket.push({ hangul, score: Number(alias.inputScore) || score });
+      }
+      if (data.surnameLatinIndex) data.surnameLatinIndex[normalized] = bucket;
+    }
+    surname.latin = latin.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+  }
+}
+
 function attachRareGivenRomanAliases(data) {
   for (const [hangul, aliases] of RARE_GIVEN_ROMAN_ALIASES) {
     const syllable = data?.syllables?.[hangul];
@@ -457,13 +693,57 @@ function attachRareGivenRomanAliases(data) {
       latin.push({ text: alias.text, score: Number(alias.score) || 0 });
       existing.add(normalized);
     }
-    syllable.latin = latin;
+    syllable.latin = latin.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+  }
+}
+
+function attachLegacyUckRomanAliases(data) {
+  for (const [hangul, syllable] of Object.entries(data?.syllables || {})) {
+    if (!hasGivenNameEvidenceInData(hangul, data)) continue;
+    const parts = decomposeHangulSyllable(hangul);
+    if (!parts || parts.coda !== "ㄱ" || !LEGACY_UCK_ROMAN_VOWELS.has(parts.vowel)) continue;
+
+    const latin = syllable.latin || [];
+    const existing = new Set(latin.map((item) => normalizeLatin(item.text)).filter(Boolean));
+    const sourceVariants = latin.filter((item) => {
+      const normalized = normalizeLatin(item.text);
+      return normalized.endsWith("eok") && Number(item.score || 0) >= 5;
+    });
+
+    for (const source of sourceVariants) {
+      const normalized = normalizeLatin(source.text);
+      const alias = `${normalized.slice(0, -3)}uck`;
+      if (!alias || existing.has(alias)) continue;
+      const score = Math.max(6, Math.min(12, Number(source.score || 0) * 0.45));
+      latin.push({ text: alias, score });
+      existing.add(alias);
+    }
+    syllable.latin = latin.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+  }
+}
+
+function attachAttestedFullNameRomanAliases(data) {
+  if (!data) return;
+  data.supplementalRomanIndex ||= {};
+  for (const [hangul, aliases] of ATTESTED_FULL_NAME_ROMAN_ALIASES) {
+    for (const alias of aliases) {
+      const normalized = normalizeLatin(alias.text);
+      if (!normalized) continue;
+      const bucket = data.supplementalRomanIndex[normalized] || [];
+      if (!bucket.some((item) => item.hangul === hangul)) {
+        bucket.push({ hangul, score: Number(alias.searchScore) || 0 });
+      }
+      data.supplementalRomanIndex[normalized] = bucket;
+    }
   }
 }
 
 function sanitizeModernKoreanRomanData(data) {
   if (!data) return data;
+  attachRareSurnameRomanAliases(data);
   attachRareGivenRomanAliases(data);
+  attachLegacyUckRomanAliases(data);
+  attachAttestedFullNameRomanAliases(data);
   const allowedSurnameRomanByHangul = new Map();
 
   data.surnames = (data.surnames || []).map((surname) => {
@@ -1027,6 +1307,11 @@ function candidateKindLabel(kind) {
   if (kind === "surname") return t("kindSurname");
   if (kind === "given") return t("kindGiven");
   return t("kindFull");
+}
+
+function candidateRoleKinds(candidate) {
+  if (candidate?.roleKinds instanceof Set && candidate.roleKinds.size) return candidate.roleKinds;
+  return new Set([candidate?.kind || "full"]);
 }
 
 function candidateGivenUnits(candidate) {
@@ -2199,6 +2484,42 @@ function addCandidate(candidateMap, hangul, score, evidence, meta = {}) {
   current.score = Math.max(current.score, score);
   if (evidence) current.evidence.add(evidence);
   candidateMap.set(key, current);
+}
+
+function collapseDuplicateStandaloneRoles(candidateMap) {
+  const output = new Map();
+  const standaloneByHangul = new Map();
+
+  for (const candidate of candidateMap.values()) {
+    if (candidate.kind === "full") {
+      output.set(candidateKey(candidate.hangul, candidate.kind), candidate);
+      continue;
+    }
+    const group = standaloneByHangul.get(candidate.hangul) || [];
+    group.push(candidate);
+    standaloneByHangul.set(candidate.hangul, group);
+  }
+
+  for (const candidates of standaloneByHangul.values()) {
+    if (candidates.length === 1) {
+      const [candidate] = candidates;
+      output.set(candidateKey(candidate.hangul, candidate.kind), candidate);
+      continue;
+    }
+
+    const ranked = [...candidates].sort((a, b) => candidateRankingScore(b) - candidateRankingScore(a));
+    const primary = ranked[0];
+    const merged = {
+      ...primary,
+      score: Math.max(...candidates.map((candidate) => Number(candidate.score) || 0)),
+      roleKinds: new Set(candidates.map((candidate) => candidate.kind)),
+      evidence: new Set(candidates.flatMap((candidate) => [...(candidate.evidence || [])])),
+      exactIds: new Set(candidates.flatMap((candidate) => [...(candidate.exactIds || [])])),
+    };
+    output.set(candidateKey(merged.hangul, merged.kind), merged);
+  }
+
+  return output;
 }
 
 function addExactNameCandidates(query, candidateMap) {
@@ -3448,12 +3769,57 @@ function generateSurnameKanaOutputs(hangul) {
     .map((item) => ({ text: item.text, score: Number(item.score) || 0 }));
 }
 
+function generateSurnameHanjaOutputs(hangul) {
+  const surnameData = state.runtime?.surnameByHangul?.get(hangul);
+  const entries = surnameData?.hanjaEntries || [];
+  if (entries.length) {
+    return entries.slice(0, 6).map((item) => ({
+      text: item.text,
+      score: Number(item.percent ?? item.count ?? 0),
+      percent: item.percent != null ? Number(item.percent) : null,
+      surnameKey: `${hangul}|${item.text}`,
+    }));
+  }
+  return (surnameData?.hanja || [])
+    .slice(0, 6)
+    .map((text) => ({ text, score: 1, surnameKey: `${hangul}|${text}` }));
+}
+
+function mergeVariantOutputs(groups, keyForText = (text) => text) {
+  const merged = new Map();
+  for (const item of groups.flat()) {
+    if (!item?.text) continue;
+    const key = keyForText(item.text);
+    const existing = merged.get(key);
+    if (!existing || Number(item.score || 0) > Number(existing.score || 0)) {
+      merged.set(key, item);
+    }
+  }
+  return [...merged.values()]
+    .sort((a, b) => Number(b.score || 0) - Number(a.score || 0))
+    .slice(0, 8);
+}
+
 function generateOutputsForCandidate(candidate, exactRows) {
+  const roleKinds = candidateRoleKinds(candidate);
+  if (roleKinds.has("surname") && roleKinds.has("given")) {
+    return {
+      romanOutputs: mergeVariantOutputs([
+        generateGivenRomanOutputs(candidate.hangul),
+        generateSurnameRomanOutputs(candidate.hangul),
+      ], normalizeLatin),
+      kanaOutputs: mergeVariantOutputs([
+        generateGivenKanaOutputs(candidate.hangul),
+        generateSurnameKanaOutputs(candidate.hangul),
+      ]),
+      hanjaOutputs: generateSurnameHanjaOutputs(candidate.hangul),
+    };
+  }
   if (candidate.kind === "surname") {
     return {
       romanOutputs: generateSurnameRomanOutputs(candidate.hangul),
       kanaOutputs: generateSurnameKanaOutputs(candidate.hangul),
-      hanjaOutputs: hanjaOutputsForCandidate(candidate.hangul, exactRows),
+      hanjaOutputs: generateSurnameHanjaOutputs(candidate.hangul),
     };
   }
   if (candidate.kind === "given") {
@@ -3476,6 +3842,14 @@ function candidateSubtitle(candidate, exactRows) {
     : candidate.kind === "given"
       ? t("generatedGivenEvidence")
       : t("syntheticFullEvidence");
+  const roleKinds = candidateRoleKinds(candidate);
+  if (roleKinds.has("surname") && roleKinds.has("given")) {
+    const surnameData = state.runtime?.surnameByHangul?.get(candidate.hangul);
+    return t("ambiguousStandaloneSubtitle", {
+      count: candidate.hangul.length,
+      population: formatNumber(surnameData?.population || 0),
+    });
+  }
   if (candidate.kind === "surname") {
     const surnameData = state.runtime?.surnameByHangul?.get(candidate.hangul);
     return t("surnameSubtitle", {
@@ -3498,7 +3872,7 @@ function deriveInterpretationText(query, candidateMap) {
     candidates
       .filter((candidate) => Number(candidate.score) >= topScore * 0.7)
       .slice(0, 5)
-      .map((candidate) => candidate.kind || "full"),
+      .flatMap((candidate) => [...candidateRoleKinds(candidate)]),
   )];
   if (!activeKinds.length) {
     return t("interpretationNone");
@@ -3524,6 +3898,9 @@ function generateRomanOutputs(hangul, exactRows) {
 
   for (const row of exactRows) {
     for (const item of row.romanizations || []) add(item.text, Number(item.score) + Number(row.weight || 0));
+  }
+  for (const alias of ATTESTED_FULL_NAME_ROMAN_ALIASES.get(hangul) || []) {
+    add(alias.text, Number(alias.outputScore) || 0);
   }
 
   const surnameVariants = (surnameData?.latin || [{ text: surname, score: 1 }]).slice(0, 5);
@@ -3628,11 +4005,28 @@ function generateKanaOutputs(hangul, exactRows) {
     .map(([text, score]) => ({ text, score }));
 }
 
+function surnameKeyForHanjaOutput(hangul, hanjaText) {
+  const { surname } = splitNameUnits(hangul, state.runtime.compoundSurnames);
+  const surnameLength = Array.from(surname).length;
+  const hanjaCharacters = Array.from(String(hanjaText || "")).filter((character) =>
+    /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/.test(character),
+  );
+  if (!surname || hanjaCharacters.length < surnameLength) return "";
+  return `${surname}|${hanjaCharacters.slice(0, surnameLength).join("")}`;
+}
+
 function hanjaOutputsForCandidate(hangul, exactRows) {
   const counter = new Map();
   for (const row of exactRows) {
     if (!row.hanja) continue;
-    counter.set(row.hanja, Math.max(Number(row.weight || 0) + 5, counter.get(row.hanja) || 0));
+    const score = Number(row.weight || 0) + 5;
+    const existing = counter.get(row.hanja);
+    if (!existing || score > existing.score) {
+      counter.set(row.hanja, {
+        score,
+        surnameKey: surnameKeyForHanjaOutput(hangul, row.hanja),
+      });
+    }
   }
   if (!counter.size) {
     const { surname } = splitNameUnits(hangul, state.runtime.compoundSurnames);
@@ -3643,16 +4037,17 @@ function hanjaOutputsForCandidate(hangul, exactRows) {
         text: `${item.text} …`,
         score: Number(item.percent ?? item.count ?? 0),
         percent: item.percent != null ? Number(item.percent) : null,
+        surnameKey: `${surname}|${item.text}`,
       }));
     }
     for (const hanja of surnameData?.hanja || []) {
-      counter.set(`${hanja} …`, 1.2);
+      counter.set(`${hanja} …`, { score: 1.2, surnameKey: `${surname}|${hanja}` });
     }
   }
   return [...counter.entries()]
-    .sort((a, b) => b[1] - a[1])
+    .sort((a, b) => b[1].score - a[1].score)
     .slice(0, 6)
-    .map(([text, score]) => ({ text, score }));
+    .map(([text, item]) => ({ text, score: item.score, surnameKey: item.surnameKey }));
 }
 
 function buildResultCards(candidateMap) {
@@ -3699,7 +4094,7 @@ function buildResultCards(candidateMap) {
     const hanjaList = fragment.querySelector(".hanja-list");
     fillVariantList(romanList, romanOutputs);
     fillVariantList(kanaList, kanaOutputs);
-    fillVariantList(hanjaList, hanjaOutputs, !hanjaOutputs.length ? t("noHanjaObserved") : "");
+    fillHanjaVariantList(hanjaList, hanjaOutputs, !hanjaOutputs.length ? t("noHanjaObserved") : "");
 
     resultsEl.appendChild(fragment);
   }
@@ -3864,6 +4259,134 @@ function fillVariantList(listEl, items, emptyText = t("noOutput")) {
   }
 }
 
+function localizedBonGwanName(clan) {
+  if (clan.otherCombined) return t("bonGwanOther");
+  if (state.language === "en") return clan.name;
+  return clan.hanja || clan.name;
+}
+
+function populateBonGwanPanel(details, record) {
+  if (details.dataset.hydrated === "true") return;
+  details.dataset.hydrated = "true";
+  const meta = state.bonGwanData?.meta || {};
+  const year = Number(meta.year || 2015);
+  const surname = `${record.hangul}(${record.hanja})`;
+
+  const panel = document.createElement("div");
+  panel.className = "bon-gwan-panel";
+
+  const scope = document.createElement("p");
+  scope.className = "bon-gwan-scope";
+  scope.textContent = t("bonGwanScope", {
+    surname,
+    population: formatNumber(record.total),
+    year,
+  });
+  panel.appendChild(scope);
+
+  const columnLabels = document.createElement("div");
+  columnLabels.className = "bon-gwan-columns";
+  for (const [className, key] of [
+    ["bon-gwan-column-name", "bonGwanNameLabel"],
+    ["bon-gwan-column-share", "bonGwanShareLabel"],
+    ["bon-gwan-column-count", "bonGwanPeopleLabel"],
+  ]) {
+    const label = document.createElement("span");
+    label.className = className;
+    label.textContent = t(key);
+    columnLabels.appendChild(label);
+  }
+  panel.appendChild(columnLabels);
+
+  const list = document.createElement("ul");
+  list.className = "bon-gwan-list";
+  list.tabIndex = 0;
+  list.setAttribute("aria-label", t("bonGwanDistribution"));
+  for (const clan of record.clans || []) {
+    const row = document.createElement("li");
+    const name = document.createElement("span");
+    const share = document.createElement("span");
+    const count = document.createElement("span");
+    name.className = "bon-gwan-name";
+    share.className = "bon-gwan-share";
+    count.className = "bon-gwan-count";
+    name.textContent = localizedBonGwanName(clan);
+    share.textContent = `${formatPercentRatio(clan.count, record.total)}%`;
+    count.textContent = formatNumber(clan.count);
+    row.append(name, share, count);
+    list.appendChild(row);
+  }
+  panel.appendChild(list);
+
+  if ((record.clans || []).some((clan) => clan.otherCombined)) {
+    const note = document.createElement("p");
+    note.className = "bon-gwan-note";
+    note.textContent = t("bonGwanCombinedNote");
+    panel.appendChild(note);
+  }
+
+  if (meta.sourceUrl) {
+    const source = document.createElement("a");
+    source.className = "bon-gwan-source";
+    source.href = meta.sourceUrl;
+    source.target = "_blank";
+    source.rel = "noreferrer";
+    source.textContent = t("bonGwanSource", { year });
+    panel.appendChild(source);
+  }
+  details.appendChild(panel);
+}
+
+function fillHanjaVariantList(listEl, items, emptyText = t("noHanjaObserved")) {
+  listEl.innerHTML = "";
+  if (!items.length) {
+    const li = document.createElement("li");
+    li.textContent = emptyText;
+    listEl.appendChild(li);
+    return;
+  }
+  const computedPercents = items.some((item) => item.percent != null)
+    ? []
+    : allocatePercentages(items, (item) => Number(item.score) || 0);
+  for (const item of items) {
+    const li = document.createElement("li");
+    li.className = "hanja-variant-item";
+    const variant = document.createElement("div");
+    variant.className = "hanja-variant-main";
+    const value = document.createElement("span");
+    value.textContent = item.text;
+    const score = document.createElement("span");
+    score.className = "variant-score";
+    const percent = item.percent != null ? item.percent.toFixed(2) : computedPercents.shift();
+    score.textContent = ` ${percent}%`;
+    variant.append(value, score);
+    li.appendChild(variant);
+
+    const record = item.surnameKey ? state.bonGwanData?.surnames?.[item.surnameKey] : null;
+    if (record?.clans?.length) {
+      const details = document.createElement("details");
+      details.className = "bon-gwan-disclosure";
+      const summary = document.createElement("summary");
+      const label = document.createElement("span");
+      const count = document.createElement("span");
+      const chevron = document.createElement("span");
+      label.className = "bon-gwan-summary-label";
+      count.className = "bon-gwan-summary-count";
+      chevron.className = "bon-gwan-chevron";
+      chevron.setAttribute("aria-hidden", "true");
+      label.textContent = t("bonGwanDistribution");
+      count.textContent = t("bonGwanEntryCount", { count: record.clans.length });
+      summary.append(label, count, chevron);
+      details.appendChild(summary);
+      details.addEventListener("toggle", () => {
+        if (details.open) populateBonGwanPanel(details, record);
+      });
+      li.appendChild(details);
+    }
+    listEl.appendChild(li);
+  }
+}
+
 function shuffled(items) {
   const out = [...items];
   for (let i = out.length - 1; i > 0; i -= 1) {
@@ -3892,6 +4415,18 @@ function pickWeightedRandom(items, getWeight) {
   return weighted[weighted.length - 1].item;
 }
 
+function pickWeightedWithoutReplacement(items, count, getWeight) {
+  const remaining = [...(items || [])];
+  const picks = [];
+  while (remaining.length && picks.length < count) {
+    const picked = pickWeightedRandom(remaining, getWeight);
+    if (!picked) break;
+    picks.push(picked);
+    remaining.splice(remaining.indexOf(picked), 1);
+  }
+  return picks;
+}
+
 function addExample(pool, seen, text, type) {
   const normalized = text?.trim();
   if (!normalized) return;
@@ -3903,35 +4438,138 @@ function addExample(pool, seen, text, type) {
   pool.push({ text: normalized, type });
 }
 
-function pickSurnameHanja(surnameData) {
-  const entries = (surnameData?.hanjaEntries || []).filter((item) => item.text);
-  if (entries.length) {
-    return pickWeightedRandom(entries.slice(0, 4), (item) => Number(item.count || 0) || Number(item.percent || 0) || 1)?.text;
+function buildTypewriterHanjaSurnameKeys(limit = TYPEWRITER_HANJA_SURNAME_LIMIT) {
+  const ranked = [];
+  for (const surname of state.data?.surnames || []) {
+    for (const entry of surname.hanjaEntries || []) {
+      const count = Number(entry.count || 0);
+      if (!surname.hangul || !entry.text || count <= 0) continue;
+      ranked.push({
+        key: `${surname.hangul}|${entry.text}`,
+        count,
+        population: Number(surname.population || 0),
+      });
+    }
   }
-  return pickRandom(surnameData?.hanja || []);
+  return new Set(
+    ranked
+      .sort((a, b) => b.count - a.count || b.population - a.population || a.key.localeCompare(b.key))
+      .slice(0, limit)
+      .map((item) => item.key),
+  );
 }
 
-function pickUsageHanjaForGiven(given) {
-  const entries = state.data?.hanjaUsageGivenNames?.[given] || [];
-  if (!entries.length) return "";
-  return pickWeightedRandom(entries.slice(0, 4), (item) => Math.pow(Math.max(1, Number(item.score || 0)), 1.4))?.hanja || "";
+function surnameHanjaOptions(surnameData, allowedHanjaSurnameKeys = null) {
+  const entries = (surnameData?.hanjaEntries || []).filter(
+    (item) => item.text && (!allowedHanjaSurnameKeys || allowedHanjaSurnameKeys.has(`${surnameData.hangul}|${item.text}`)),
+  );
+  if (entries.length) {
+    return entries.slice(0, 4).map((item) => ({
+      text: item.text,
+      score: 24 + Math.log1p(Number(item.count || item.percent || 1)) * 8,
+    }));
+  }
+  if (allowedHanjaSurnameKeys) return [];
+  return (surnameData?.hanja || []).slice(0, 4).map((text, index) => ({
+    text,
+    score: Math.max(1, 12 - index * 2),
+  }));
 }
 
-function generateHanjaExampleForName(hangul) {
-  if (!hangul) return "";
+function modernGivenHanjaOptionsForSyllable(syllable) {
+  const merged = new Map();
+  const add = (character, score) => {
+    if (!character) return;
+    merged.set(character, Math.max(score, merged.get(character) || 0));
+  };
+
+  const modernUsageCharacters = (state.data?.hanjaUsageCharsByReading?.[syllable] || []).slice(0, 8);
+  for (const item of modernUsageCharacters) {
+    add(item.char, 64 + Math.log1p(Number(item.score || 0)) * 12);
+  }
+  const supplementaryLimit = modernUsageCharacters.length ? 2 : 3;
+  const observedNameCharacters = (state.data?.hanjaNameCharsByReading?.[syllable] || [])
+    .filter((item) => Number(item.observedScore || 0) > 0)
+    .slice(0, supplementaryLimit);
+  for (const item of observedNameCharacters) {
+    add(item.char, 28 + Math.log1p(Number(item.observedScore || 0)) * 10);
+  }
+
+  return [...merged.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([character, score]) => ({ character, score }));
+}
+
+function givenHanjaCandidates(given) {
+  const counter = new Map();
+  const add = (text, score) => {
+    if (!text || Array.from(text).length !== Array.from(given).length) return;
+    counter.set(text, Math.max(score, counter.get(text) || 0));
+  };
+
+  for (const item of state.data?.hanjaUsageGivenNames?.[given] || []) {
+    add(item.hanja, 180 + Math.log1p(Number(item.score || 0)) * 14);
+  }
+
+  const givenUnits = Array.from(given);
+  const hasRepeatHanjaEvidence = givenUnits.every(
+    (syllable) => Number(state.data?.syllables?.[syllable]?.hanjaGivenCount || 0) >= 2,
+  );
+  if (!hasRepeatHanjaEvidence) {
+    return [...counter.entries()].map(([text, score]) => ({ text, score }));
+  }
+
+  let combinations = [{ text: "", score: 0 }];
+  for (const syllable of givenUnits) {
+    const options = modernGivenHanjaOptionsForSyllable(syllable);
+    if (!options.length) return [...counter.entries()].map(([text, score]) => ({ text, score }));
+    const next = [];
+    for (const combination of combinations) {
+      for (const option of options) {
+        next.push({
+          text: `${combination.text}${option.character}`,
+          score: combination.score + option.score,
+        });
+      }
+    }
+    combinations = next.sort((a, b) => b.score - a.score).slice(0, 72);
+  }
+  for (const combination of combinations) add(combination.text, 48 + combination.score);
+
+  return [...counter.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([text, score]) => ({ text, score }));
+}
+
+function generateHanjaExamplesForName(hangul, count = TYPEWRITER_HANJA_VARIANTS_PER_NAME, allowedHanjaSurnameKeys = null) {
+  if (!hangul) return [];
   const { surname, given } = splitNameUnits(hangul, state.runtime.compoundSurnames);
   const surnameData = state.runtime.surnameByHangul.get(surname);
-  const surnameHanja = pickSurnameHanja(surnameData);
-  if (!surnameHanja) return "";
+  const surnameOptions = surnameHanjaOptions(surnameData, allowedHanjaSurnameKeys);
+  const givenOptions = givenHanjaCandidates(given);
+  if (!surnameOptions.length || !givenOptions.length) return [];
 
-  const exactUsageGivenHanja = pickUsageHanjaForGiven(given);
-  if (exactUsageGivenHanja) return `${surnameHanja}${exactUsageGivenHanja}`;
-  return "";
+  const candidates = [];
+  for (const surnameOption of surnameOptions) {
+    for (const givenOption of givenOptions) {
+      candidates.push({
+        text: `${surnameOption.text}${givenOption.text}`,
+        score: surnameOption.score * 0.35 + givenOption.score,
+      });
+    }
+  }
+  return pickWeightedWithoutReplacement(
+    candidates,
+    count,
+    (item) => Math.pow(Math.max(1, item.score), 1.45),
+  ).map((item) => item.text);
 }
 
 function buildGeneratedExampleNames() {
   const pool = [];
   const seen = new Set();
+  const typewriterHanjaSurnameKeys = buildTypewriterHanjaSurnameKeys();
   const surnames = (state.data?.surnames || []).filter((item) => item.hangul && Number(item.population || 0) >= 50000);
   const givenNames = Object.entries(state.data?.givenNames || {})
     .map(([hangul, meta]) => ({
@@ -3951,7 +4589,7 @@ function buildGeneratedExampleNames() {
 
   const highRankedGivenNames = givenNames.slice(0, 800);
   const broaderGivenNames = givenNames.slice(800, 2500);
-  const targetCount = Math.max(exampleChipEls.length * 24, 160);
+  const targetCount = Math.max(exampleChipEls.length * 32, 220);
   let attempts = 0;
   while (pool.length < targetCount && attempts < targetCount * 12) {
     attempts += 1;
@@ -3972,8 +4610,28 @@ function buildGeneratedExampleNames() {
       givenRank: given?.rank || null,
       roman: pickWeightedRandom(romanOutputs.slice(0, 4), (item) => Number(item.score) || 1)?.text,
       kana: pickWeightedRandom(kanaOutputs.slice(0, 4), (item) => Number(item.score) || 1)?.text?.replace(/\s+/g, "・"),
-      hanja: generateHanjaExampleForName(hangul),
+      hanja: "",
+      hanjaVariants: [],
     });
+  }
+
+  const hanjaEligibleNames = pickWeightedWithoutReplacement(
+    pool.filter((item) => Number(item.givenRank || Infinity) <= 1600),
+    pool.length,
+    (item) => Math.log1p(Math.max(1, 1601 - Number(item.givenRank || 1600))),
+  );
+  let hanjaSourceNameCount = 0;
+  for (const item of hanjaEligibleNames) {
+    const variants = generateHanjaExamplesForName(
+      item.hangul,
+      TYPEWRITER_HANJA_VARIANTS_PER_NAME,
+      typewriterHanjaSurnameKeys,
+    );
+    if (!variants.length) continue;
+    item.hanjaVariants = variants;
+    item.hanja = variants[0];
+    hanjaSourceNameCount += 1;
+    if (hanjaSourceNameCount >= TYPEWRITER_HANJA_SOURCE_NAME_COUNT) break;
   }
   return pool;
 }
@@ -4047,6 +4705,7 @@ function buildTypewriterPromptSamples(generatedNames) {
   const add = (type, text) => {
     const normalized = text?.trim();
     if (!normalized || seen.has(normalized)) return;
+    if (poolsByType[type].length >= (TYPEWRITER_POOL_LIMITS[type] || 96)) return;
     if (!hasSearchableResultsForExample(normalized)) return;
     seen.add(normalized);
     poolsByType[type].push(normalized);
@@ -4056,7 +4715,9 @@ function buildTypewriterPromptSamples(generatedNames) {
     for (const format of hangulPromptFormats(item.hangul)) add("hangul", format);
     for (const format of romanPromptFormats(item.roman)) add("roman", format);
     for (const format of kanaPromptFormats(item.kana)) add("kana", format);
-    for (const format of hanjaPromptFormats(item.hanja)) add("hanja", format);
+    for (const hanja of item.hanjaVariants?.length ? item.hanjaVariants : [item.hanja]) {
+      for (const format of hanjaPromptFormats(hanja)) add("hanja", format);
+    }
   }
 
   const picks = [];
@@ -4099,16 +4760,18 @@ function buildTypewriterPromptSamples(generatedNames) {
   return picks;
 }
 
-function setTypewriterText(text) {
+function setTypewriterText(text, searchValue = text) {
   if (!typewriterNameEl) return;
   typewriterNameEl.textContent = text;
+  typewriterNameEl.dataset.searchValue = searchValue;
+  updateTypewriterActionLabel();
 }
 
 function startTypewriterAnimation(samples) {
   if (!typewriterNameEl || !samples.length) return;
   if (typewriterTimerId) window.clearTimeout(typewriterTimerId);
   if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
-    setTypewriterText(samples[0]);
+    setTypewriterText(samples[0], samples[0]);
     return;
   }
 
@@ -4119,7 +4782,7 @@ function startTypewriterAnimation(samples) {
   const tick = () => {
     const current = samples[sampleIndex] || "";
     const chars = Array.from(current);
-    setTypewriterText(chars.slice(0, charIndex).join(""));
+    setTypewriterText(chars.slice(0, charIndex).join(""), current);
 
     if (!deleting && charIndex < chars.length) {
       charIndex += 1;
@@ -4227,7 +4890,7 @@ function collectCandidatesForQuery(query) {
   searchKana(query, candidateMap);
   searchHanja(query, candidateMap);
   searchMixedGroups(query, candidateMap);
-  return pruneImplausibleCandidates(candidateMap);
+  return collapseDuplicateStandaloneRoles(pruneImplausibleCandidates(candidateMap));
 }
 
 function hasSearchableResultsForExample(text) {
@@ -4268,13 +4931,15 @@ function levenshtein(a, b) {
 }
 
 async function init() {
-  const [response, hanjaReadingData, hanjaNameCharData, hanjaUsageRankData] = await Promise.all([
+  const [response, hanjaReadingData, hanjaNameCharData, hanjaUsageRankData, bonGwanData] = await Promise.all([
     fetch(dataUrl),
     fetchOptionalJson(hanjaReadingUrl),
     fetchOptionalJson(hanjaNameCharUrl),
     fetchOptionalJson(hanjaUsageRankUrl),
+    fetchOptionalJson(bonGwanDataUrl),
   ]);
   state.data = await response.json();
+  state.bonGwanData = bonGwanData;
   attachHanjaReadingData(state.data, hanjaReadingData);
   attachHanjaNameCharData(state.data, hanjaNameCharData);
   attachHanjaUsageRankData(state.data, hanjaUsageRankData);
@@ -4292,10 +4957,53 @@ formEl.addEventListener("submit", (event) => {
   search(queryEl.value);
 });
 
+typewriterNameEl?.addEventListener("click", () => {
+  const name = typewriterNameEl.dataset.searchValue?.trim() || typewriterNameEl.textContent?.trim();
+  if (!name) return;
+  queryEl.value = name;
+  if (typeof formEl.requestSubmit === "function") formEl.requestSubmit();
+  else search(name);
+  window.requestAnimationFrame(() => {
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    resultsSectionEl?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+  });
+});
+
 exampleChipEls.forEach((button) => {
   button.addEventListener("click", () => {
     queryEl.value = button.dataset.example || "";
     search(queryEl.value);
+  });
+});
+
+siteTabEls.forEach((tab) => {
+  tab.addEventListener("click", () => setActiveSiteTab(tab.dataset.tab));
+  tab.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      moveSiteTabFocus(tab, event.key === "ArrowRight" ? 1 : -1);
+      return;
+    }
+    if (event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      const target = event.key === "Home" ? siteTabEls[0] : siteTabEls[siteTabEls.length - 1];
+      setActiveSiteTab(target?.dataset.tab, { focus: true });
+    }
+  });
+});
+
+aboutExampleEls.forEach((button) => {
+  button.addEventListener("click", () => {
+    const example = button.dataset.aboutExample?.trim();
+    if (!example) return;
+    setActiveSiteTab("home");
+    queryEl.value = example;
+    if (typeof formEl.requestSubmit === "function") formEl.requestSubmit();
+    else search(example);
+    window.requestAnimationFrame(() => {
+      const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+      resultsSectionEl?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+    });
   });
 });
 
@@ -4304,9 +5012,15 @@ languageTriggerEl?.addEventListener("click", () => {
 });
 
 languageTriggerEl?.addEventListener("keydown", (event) => {
-  if (event.key !== "ArrowDown") return;
-  event.preventDefault();
-  setLanguageMenuOpen(true, true);
+  if (event.key === "Escape" && languageTriggerEl.getAttribute("aria-expanded") === "true") {
+    event.preventDefault();
+    setLanguageMenuOpen(false);
+    return;
+  }
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    event.preventDefault();
+    setLanguageMenuOpen(true, true);
+  }
 });
 
 languageOptionEls.forEach((option) => {
@@ -4345,6 +5059,7 @@ document.addEventListener("click", (event) => {
 });
 
 setLanguage(state.language, { persist: false, rerender: false });
+setActiveSiteTab("home");
 
 init().catch((error) => {
   console.error(error);

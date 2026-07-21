@@ -7,13 +7,39 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&amp;family=Noto+Sans+JP:wght@400;500;600;700;800&amp;family=Noto+Sans+KR:wght@400;500;600;700;800&amp;family=Noto+Sans+TC:wght@400;500;600;700;800&amp;display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260721-typewriter-caret" />
+    <link rel="stylesheet" href="./styles.css?v=20260722-bon-gwan-scroll-1" />
   </head>
   <body>
     <header class="utility-header">
+      <div class="utility-header-inner">
+        <nav class="site-tabs" role="tablist" aria-label="Site sections" data-i18n-aria-label="siteSectionsLabel">
+          <button
+            id="home-tab"
+            class="site-tab"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="home-panel"
+            tabindex="0"
+            data-tab="home"
+            data-i18n="home"
+          >Home</button>
+          <button
+            id="about-tab"
+            class="site-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="about-panel"
+            tabindex="-1"
+            data-tab="about"
+            data-i18n="about"
+          >About</button>
+        </nav>
+      </div>
       <div class="language-selector">
         <button
           id="language-trigger"
@@ -33,20 +59,37 @@
           <span class="language-chevron" aria-hidden="true"></span>
         </button>
         <ul id="language-menu" class="language-menu" role="menu" hidden>
-          <li role="none"><button type="button" role="menuitem" data-language="en" aria-label="English">EN</button></li>
-          <li role="none"><button type="button" role="menuitem" data-language="ja" aria-label="日本語">JP</button></li>
-          <li role="none"><button type="button" role="menuitem" data-language="zh" aria-label="繁體中文">ZH</button></li>
+          <li class="language-menu-header" role="presentation" data-i18n="languageSelectorLabel">Choose language</li>
+          <li role="none">
+            <button type="button" role="menuitemradio" data-language="en" aria-checked="false" aria-label="English">
+              <span class="language-check" aria-hidden="true">✓</span>
+              <span>English</span>
+            </button>
+          </li>
+          <li role="none">
+            <button type="button" role="menuitemradio" data-language="ja" aria-checked="false" aria-label="日本語">
+              <span class="language-check" aria-hidden="true">✓</span>
+              <span>日本語</span>
+            </button>
+          </li>
+          <li role="none">
+            <button type="button" role="menuitemradio" data-language="zh" aria-checked="false" aria-label="繁體中文">
+              <span class="language-check" aria-hidden="true">✓</span>
+              <span>繁體中文</span>
+            </button>
+          </li>
         </ul>
       </div>
     </header>
 
     <main class="screen app-shell">
-      <div class="screen-content">
+      <section id="home-panel" class="site-panel" role="tabpanel" aria-labelledby="home-tab" data-panel="home">
+        <div class="screen-content">
         <section class="top">
           <h1 class="top-eyebrow text" data-typography="t1" data-color="brand" data-weight="700" aria-label="How do I read this name?" data-i18n-aria-label="promptAriaLabel">
             <span id="prompt-prefix" data-i18n="promptPrefix">How do I read</span>
-            <span class="typewriter-wrap" aria-hidden="true">
-              <span id="typewriter-name" class="typewriter-name">gildonghong</span>
+            <span class="typewriter-wrap">
+              <button id="typewriter-name" class="typewriter-name" type="button" aria-label="Search for gildonghong">gildonghong</button>
               <span id="prompt-suffix" class="typewriter-question" data-i18n="promptSuffix">?</span>
             </span>
           </h1>
@@ -89,7 +132,89 @@
           </div>
           <div id="results" class="results-list"></div>
         </section>
-      </div>
+        </div>
+      </section>
+
+      <section id="about-panel" class="site-panel about-panel" role="tabpanel" aria-labelledby="about-tab" data-panel="about" tabindex="0" hidden>
+        <div class="about-content">
+          <header class="about-header">
+            <h1 data-i18n="aboutTitle">About gildonghong</h1>
+          </header>
+
+          <section class="about-section" aria-labelledby="about-does-title">
+            <h2 id="about-does-title" data-i18n="aboutDoesTitle">What it does</h2>
+            <ul class="about-list">
+              <li data-i18n="aboutDoesSearch">Ranks plausible modern Korean names from several writing systems.</li>
+              <li data-i18n="aboutDoesOutputs">Shows Roman-letter, Japanese-kana, and Hanja variants when evidence is available.</li>
+              <li data-i18n="aboutDoesAudio">Plays Korean pronunciation for each result.</li>
+            </ul>
+          </section>
+
+          <section class="about-section" aria-labelledby="about-use-title">
+            <h2 id="about-use-title" data-i18n="aboutUseTitle">How to search</h2>
+            <ol class="about-steps">
+              <li data-i18n="aboutUseStepOne">Enter one surname, one given name, or a full name.</li>
+              <li data-i18n="aboutUseStepTwo">Use spaces, hyphens, or familiar personal spellings in Roman letters.</li>
+              <li data-i18n="aboutUseStepThree">Open a result to compare its scripts and evidence.</li>
+            </ol>
+            <div class="about-examples" aria-label="Search examples" data-i18n-aria-label="aboutExamplesLabel">
+              <button type="button" class="about-example" data-about-example="박수경"><span>박수경</span><small data-i18n="formatHangul">Hangul</small></button>
+              <button type="button" class="about-example" data-about-example="sookyung-park"><span>sookyung-park</span><small data-i18n="formatRoman">Roman letters</small></button>
+              <button type="button" class="about-example" data-about-example="パク・スギョン"><span>パク・スギョン</span><small data-i18n="formatKana">Japanese kana</small></button>
+              <button type="button" class="about-example" data-about-example="朴秀景"><span>朴秀景</span><small data-i18n="formatHanja">Hanja</small></button>
+            </div>
+          </section>
+
+          <section class="about-section" aria-labelledby="about-ranking-title">
+            <h2 id="about-ranking-title" data-i18n="aboutRankingTitle">How ranking works</h2>
+            <ul class="about-list">
+              <li data-i18n="aboutRankingEvidence">Candidates combine surname population, modern given-name evidence, script readings, and observed spellings.</li>
+              <li data-i18n="aboutRankingMeaning">Plausibility compares the candidates shown. It is not a population probability.</li>
+              <li data-i18n="aboutRankingLimit">Personal spellings vary, so a lower-ranked result can still be correct.</li>
+            </ul>
+          </section>
+
+          <section class="about-section" aria-labelledby="about-bongwan-title">
+            <h2 id="about-bongwan-title" data-i18n="aboutBonGwanTitle">Bon-gwan data</h2>
+            <p class="about-copy" data-i18n="aboutBonGwanCopy">Bon-gwan means an ancestral clan seat. Shares are calculated within one exact Hangul–Hanja surname, so 유(柳) and 유(劉) use separate totals.</p>
+            <ul class="about-list about-notes">
+              <li data-i18n="aboutBonGwanYear">The latest official surname and bon-gwan table available is the 2015 census.</li>
+              <li data-i18n="aboutBonGwanOther">The source combines bon-gwan with fewer than 1,000 people as Other.</li>
+            </ul>
+          </section>
+
+          <section class="about-section" aria-labelledby="about-sources-title">
+            <h2 id="about-sources-title" data-i18n="aboutSourcesTitle">Sources</h2>
+            <ul class="source-list">
+              <li>
+                <a href="https://kosis.kr/statHtml/statHtml.do?orgId=101&amp;tblId=DT_1IN15SB&amp;conn_path=I2" target="_blank" rel="noreferrer">
+                  <span class="source-name" data-i18n="sourceKosisName">KOSIS · 2015 Population and Housing Census</span>
+                  <span class="source-description" data-i18n="sourceKosisDescription">Surname, Hanja surname, population, and bon-gwan counts.</span>
+                </a>
+              </li>
+              <li>
+                <a href="https://www.unicode.org/charts/unihan.html" target="_blank" rel="noreferrer">
+                  <span class="source-name" data-i18n="sourceUnihanName">Unicode Unihan Database</span>
+                  <span class="source-description" data-i18n="sourceUnihanDescription">kHangul readings used as a Hanja fallback.</span>
+                </a>
+              </li>
+              <li>
+                <a href="https://www.korean.go.kr/front_eng/roman/roman_01.do" target="_blank" rel="noreferrer">
+                  <span class="source-name" data-i18n="sourceRomanizationName">National Institute of Korean Language</span>
+                  <span class="source-description" data-i18n="sourceRomanizationDescription">Revised Romanization reference.</span>
+                </a>
+              </li>
+              <li>
+                <a href="https://www.ohmybaby.kr/rankings" target="_blank" rel="noreferrer">
+                  <span class="source-name" data-i18n="sourceNamesName">2025–2026 baby-name rankings</span>
+                  <span class="source-description" data-i18n="sourceNamesDescription">Supplementary modern-name and representative Hanja prior, based on Supreme Court birth registrations.</span>
+                </a>
+              </li>
+            </ul>
+            <p class="source-note" data-i18n="sourceMethodNote">Additional spelling aliases and kana variants are curated compatibility rules. They widen search coverage without changing the cited source totals.</p>
+          </section>
+        </div>
+      </section>
     </main>
 
     <template id="result-template">
@@ -133,6 +258,6 @@
       </article>
     </template>
 
-  <script type="module" src="./app.js?v=20260721-rieul-kana-liaison-2"></script>
+  <script type="module" src="./app.js?v=20260722-ranked-hanja-examples-1"></script>
   </body>
 </html>
