@@ -3,20 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Korean Name Reader</title>
+    <title>gildonghong</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260626-speaker" />
+    <link rel="stylesheet" href="./styles.css?v=20260721-typewriter-hanja" />
   </head>
   <body>
     <main class="screen app-shell">
       <div class="screen-content">
         <section class="top">
-          <h1 class="top-eyebrow text" data-typography="t1" data-color="brand" data-weight="700">Korean Name Reader</h1>
+          <h1 class="top-eyebrow text" data-typography="t1" data-color="brand" data-weight="700" aria-label="How do I read this name?">
+            <span>How do I read</span>
+            <span class="typewriter-wrap" aria-hidden="true">
+              <span id="typewriter-name" class="typewriter-name">gildonghong</span>
+              <span class="typewriter-question">?</span>
+            </span>
+          </h1>
         </section>
 
         <form id="search-form" class="search-panel" aria-label="Korean name search">
@@ -99,6 +105,6 @@
       </article>
     </template>
 
-  <script type="module" src="./app.js?v=20260703-choah-kana-filter"></script>
+  <script type="module" src="./app.js?v=20260721-hanja-usage-rank"></script>
   </body>
 </html>

@@ -8,7 +8,10 @@ Included files:
 - `app.js`
 - `styles.css`
 - `data/name_index.json`
+- `data/hanja_readings.json`
 - `.nojekyll`
+
+`data/hanja_readings.json` is a compact extract of Unicode Unihan `kHangul` readings from `Unihan_Readings.txt`, used as a fallback for Hanja full-name input.
 
 Recommended deployment:
 

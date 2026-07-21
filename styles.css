@@ -178,11 +178,52 @@ button:disabled,
 }
 
 .top-eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  column-gap: 0.28em;
   margin: 0;
   font-size: 32px;
   line-height: 42px;
   font-weight: 700;
   color: var(--text-primary);
+}
+
+.typewriter-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  min-width: 0;
+  max-width: 100%;
+  justify-content: flex-start;
+  color: var(--text-brand);
+  border-right: 2px solid currentColor;
+  padding-right: 2px;
+  animation: typewriter-caret 0.72s steps(1, end) infinite;
+}
+
+.typewriter-name {
+  display: inline-block;
+  max-width: 100%;
+  min-height: 1em;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.typewriter-question {
+  margin-left: 0.08em;
+  color: var(--text-primary);
+}
+
+@keyframes typewriter-caret {
+  0%,
+  100% {
+    border-color: transparent;
+  }
+
+  50% {
+    border-color: currentColor;
+  }
 }
 
 .top-title,
@@ -857,5 +898,9 @@ button:disabled,
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.001ms !important;
+  }
+
+  .typewriter-wrap {
+    border-right: 0;
   }
 }

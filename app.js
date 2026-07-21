@@ -1,4 +1,7 @@
 const dataUrl = "./data/name_index.json?v=20260626-gye-ge-kana";
+const hanjaReadingUrl = "./data/hanja_readings.json?v=20260721-unihan-khangul";
+const hanjaNameCharUrl = "./data/hanja_name_chars.json?v=20260721-top1000-name-hanja";
+const hanjaUsageRankUrl = "./data/hanja_usage_rank.json?v=20260721-ohmybaby-top50";
 
 const state = {
   data: null,
@@ -20,9 +23,16 @@ const interpretationEl = document.querySelector("#query-interpretation");
 const queryEl = document.querySelector("#query");
 const formEl = document.querySelector("#search-form");
 const exampleChipEls = Array.from(document.querySelectorAll(".example-chip"));
+const typewriterNameEl = document.querySelector("#typewriter-name");
 let activePronunciationButton = null;
 let activePronunciationAudio = null;
 let activePronunciationUtterance = null;
+let typewriterTimerId = null;
+
+const TYPEWRITER_EXAMPLE_COUNT = 24;
+const TYPEWRITER_TYPE_DELAY_MS = 72;
+const TYPEWRITER_DELETE_DELAY_MS = 42;
+const TYPEWRITER_HOLD_DELAY_MS = 1280;
 
 const compoundSurnamesFallback = new Set(["남궁", "황보", "선우", "제갈", "사공", "서문", "독고", "동방", "어금", "망절"]);
 const HANGUL_BASE = 0xac00;
@@ -96,6 +106,10 @@ const MODERN_GIVEN_SYLLABLE_ROMAN_OUTPUT_ALLOWLIST = new Map(Object.entries({
   흥: ["heung"],
 }).map(([hangul, variants]) => [hangul, new Set(variants)]));
 
+const BLOCKED_GIVEN_ROMAN_BY_HANGUL = new Map(Object.entries({
+  태: ["t"],
+}).map(([hangul, variants]) => [hangul, new Set(variants)]));
+
 function isModernRomanText(text) {
   return /^[A-Za-z][A-Za-z -]*$/.test(text || "");
 }
@@ -107,7 +121,14 @@ function modernGivenRomanVariantsForOutput(syllable, variants) {
     const filtered = modernVariants.filter((item) => allowlist.has(normalizeLatin(item.text)));
     if (filtered.length) return filtered;
   }
-  const filtered = modernVariants.filter((item) => !/(?:uh|aeu)/.test(normalizeLatin(item.text)));
+  const blocklist = BLOCKED_GIVEN_ROMAN_BY_HANGUL.get(syllable);
+  const filtered = modernVariants.filter((item) => {
+    const norm = normalizeLatin(item.text);
+    if (!norm) return false;
+    if (blocklist?.has(norm)) return false;
+    if (!hasRomanVowel(norm)) return false;
+    return !/(?:uh|aeu)/.test(norm);
+  });
   return filtered.length ? filtered : modernVariants;
 }
 
@@ -184,6 +205,25 @@ function sanitizeModernNameEvidenceData(data) {
   return data;
 }
 
+function rebuildSyllableLatinIndex(data) {
+  const index = {};
+  for (const [hangul, syllable] of Object.entries(data?.syllables || {})) {
+    for (const item of syllable.latin || []) {
+      const norm = normalizeLatin(item.text);
+      if (!norm) continue;
+      const bucket = index[norm] || [];
+      bucket.push({ hangul, score: Number(item.score) || 0 });
+      index[norm] = bucket;
+    }
+  }
+
+  for (const key of Object.keys(index)) {
+    index[key].sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+  }
+
+  data.syllableLatinIndex = index;
+}
+
 function sanitizeModernKoreanRomanData(data) {
   if (!data) return data;
   const allowedSurnameRomanByHangul = new Map();
@@ -231,7 +271,57 @@ function sanitizeModernKoreanRomanData(data) {
     data.fullNameRomanIndex = filteredIndex;
   }
 
+  for (const [syllable, meta] of Object.entries(data.syllables || {})) {
+    const filteredLatin = modernGivenRomanVariantsForOutput(syllable, meta.latin || []);
+    meta.latin = filteredLatin.length ? filteredLatin : (meta.latin || []).filter((item) => isModernRomanText(item.text));
+  }
+  rebuildSyllableLatinIndex(data);
+
   return sanitizeModernNameEvidenceData(data);
+}
+
+function attachHanjaReadingData(data, hanjaReadingData) {
+  const readings = hanjaReadingData?.readings;
+  if (!data || !readings || typeof readings !== "object") return data;
+  data.hanjaReadingIndex = readings;
+  if (data.meta && hanjaReadingData.meta) {
+    data.meta.hanjaReadingSource = hanjaReadingData.meta.source || "Unihan";
+    data.meta.hanjaReadingField = hanjaReadingData.meta.field || "kHangul";
+    data.meta.hanjaReadingCount = Number(hanjaReadingData.meta.readingCount || 0);
+  }
+  return data;
+}
+
+function attachHanjaNameCharData(data, hanjaNameCharData) {
+  const byReading = hanjaNameCharData?.charactersByReading;
+  if (!data || !byReading || typeof byReading !== "object") return data;
+  data.hanjaNameCharsByReading = byReading;
+  if (data.meta && hanjaNameCharData.meta) {
+    data.meta.hanjaNameCharSource = hanjaNameCharData.meta.source || "Unihan kHangul";
+    data.meta.hanjaNameCharCount = Number(hanjaNameCharData.meta.characterCount || 0);
+  }
+  return data;
+}
+
+function attachHanjaUsageRankData(data, hanjaUsageRankData) {
+  if (!data || !hanjaUsageRankData) return data;
+  data.hanjaUsageGivenNames = hanjaUsageRankData.givenNames || {};
+  data.hanjaUsageCharsByReading = hanjaUsageRankData.charactersByReading || {};
+  if (data.meta && hanjaUsageRankData.meta) {
+    data.meta.hanjaUsageRankSource = hanjaUsageRankData.meta.source || "Modern baby-name Hanja usage prior";
+    data.meta.hanjaUsageRankCharacterReadingCount = Number(hanjaUsageRankData.meta.characterReadingCount || 0);
+  }
+  return data;
+}
+
+async function fetchOptionalJson(url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    return response.json();
+  } catch {
+    return null;
+  }
 }
 
 function normalizeKana(text) {
@@ -2501,7 +2591,7 @@ function parseGivenHanja(text) {
   if (!norm) return [];
   let combos = [{ units: [], score: 0 }];
   for (const char of Array.from(norm)) {
-    const items = state.data.hanjaGivenIndex[char] || [];
+    const items = hanjaGivenReadingCandidates(char);
     if (!items.length) return [];
     const next = [];
     for (const combo of combos) {
@@ -2511,7 +2601,30 @@ function parseGivenHanja(text) {
     }
     combos = next.sort((a, b) => b.score - a.score).slice(0, 30);
   }
-  return combos;
+  return filterEvidenceBackedGivenCandidates(dedupeCandidateUnits(combos, 30));
+}
+
+function hanjaFallbackReadingScore(hangul) {
+  const syllable = state.data?.syllables?.[hangul];
+  if (!syllable) return 0.8;
+  let score = 1.1;
+  if (syllable.sinoAllowed) score += 1.4;
+  if (Number(syllable.hanjaGivenCount || 0) > 0) score += Math.min(3.2, Math.log1p(Number(syllable.hanjaGivenCount || 0)) * 1.15);
+  score += Math.min(2.2, Math.log1p(Number(syllable.givenCount || 0) + Number(syllable.nameCount || 0)) * 0.28);
+  score += Math.min(2.4, Math.log1p(Number(syllable.decadeWeight || 0)) * 0.18);
+  return score;
+}
+
+function hanjaGivenReadingCandidates(char) {
+  const results = [];
+  for (const item of state.data?.hanjaGivenIndex?.[char] || []) {
+    results.push({ hangul: item.hangul, score: Number(item.score || 0) + 4 });
+  }
+  for (const hangul of state.data?.hanjaReadingIndex?.[char] || []) {
+    if (!hangul || !state.data?.syllables?.[hangul]) continue;
+    results.push({ hangul, score: hanjaFallbackReadingScore(hangul) });
+  }
+  return dedupeScoredByField(results, "hangul", "score", 8);
 }
 
 function parseJoinedRomanGivenToken(token) {
@@ -3460,6 +3573,32 @@ function addExample(pool, seen, text, type) {
   pool.push({ text: normalized, type });
 }
 
+function pickSurnameHanja(surnameData) {
+  const entries = (surnameData?.hanjaEntries || []).filter((item) => item.text);
+  if (entries.length) {
+    return pickWeightedRandom(entries.slice(0, 4), (item) => Number(item.count || 0) || Number(item.percent || 0) || 1)?.text;
+  }
+  return pickRandom(surnameData?.hanja || []);
+}
+
+function pickUsageHanjaForGiven(given) {
+  const entries = state.data?.hanjaUsageGivenNames?.[given] || [];
+  if (!entries.length) return "";
+  return pickWeightedRandom(entries.slice(0, 4), (item) => Math.pow(Math.max(1, Number(item.score || 0)), 1.4))?.hanja || "";
+}
+
+function generateHanjaExampleForName(hangul) {
+  if (!hangul) return "";
+  const { surname, given } = splitNameUnits(hangul, state.runtime.compoundSurnames);
+  const surnameData = state.runtime.surnameByHangul.get(surname);
+  const surnameHanja = pickSurnameHanja(surnameData);
+  if (!surnameHanja) return "";
+
+  const exactUsageGivenHanja = pickUsageHanjaForGiven(given);
+  if (exactUsageGivenHanja) return `${surnameHanja}${exactUsageGivenHanja}`;
+  return "";
+}
+
 function buildGeneratedExampleNames() {
   const pool = [];
   const seen = new Set();
@@ -3482,7 +3621,7 @@ function buildGeneratedExampleNames() {
 
   const highRankedGivenNames = givenNames.slice(0, 800);
   const broaderGivenNames = givenNames.slice(800, 2500);
-  const targetCount = Math.max(exampleChipEls.length * 12, 60);
+  const targetCount = Math.max(exampleChipEls.length * 24, 160);
   let attempts = 0;
   while (pool.length < targetCount && attempts < targetCount * 12) {
     attempts += 1;
@@ -3503,6 +3642,7 @@ function buildGeneratedExampleNames() {
       givenRank: given?.rank || null,
       roman: pickWeightedRandom(romanOutputs.slice(0, 4), (item) => Number(item.score) || 1)?.text,
       kana: pickWeightedRandom(kanaOutputs.slice(0, 4), (item) => Number(item.score) || 1)?.text?.replace(/\s+/g, "・"),
+      hanja: generateHanjaExampleForName(hangul),
     });
   }
   return pool;
@@ -3535,13 +3675,160 @@ function buildKanaExamplePool(generatedNames) {
   return pool;
 }
 
-function hydrateRandomExamples() {
-  if (!exampleChipEls.length) return;
-  const generatedNames = shuffled(buildGeneratedExampleNames());
+function romanPromptFormats(text) {
+  const normalized = text?.trim();
+  if (!normalized) return [];
+  const formats = [normalized];
+  if (/\s/.test(normalized)) {
+    formats.push(normalized.replace(/\s+/g, "."));
+  }
+  return formats;
+}
+
+function hangulPromptFormats(hangul) {
+  if (!hangul) return [];
+  return [hangul];
+}
+
+function kanaPromptFormats(text) {
+  const normalized = text?.trim();
+  if (!normalized) return [];
+  const formats = [normalized];
+  if (normalized.includes("・")) {
+    formats.push(normalized.replace(/・/g, " "));
+  }
+  return formats;
+}
+
+function hanjaPromptFormats(text) {
+  const normalized = text?.trim();
+  if (!normalized) return [];
+  return [normalized];
+}
+
+function buildTypewriterPromptSamples(generatedNames) {
   const poolsByType = {
-    hangul: shuffled(buildHangulExamplePool(generatedNames)),
-    roman: shuffled(buildRomanExamplePool(generatedNames)),
-    kana: shuffled(buildKanaExamplePool(generatedNames)),
+    hangul: [],
+    roman: [],
+    kana: [],
+    hanja: [],
+  };
+  const seen = new Set();
+  const add = (type, text) => {
+    const normalized = text?.trim();
+    if (!normalized || seen.has(normalized)) return;
+    if (!hasSearchableResultsForExample(normalized)) return;
+    seen.add(normalized);
+    poolsByType[type].push(normalized);
+  };
+
+  for (const item of shuffled(generatedNames || [])) {
+    for (const format of hangulPromptFormats(item.hangul)) add("hangul", format);
+    for (const format of romanPromptFormats(item.roman)) add("roman", format);
+    for (const format of kanaPromptFormats(item.kana)) add("kana", format);
+    for (const format of hanjaPromptFormats(item.hanja)) add("hanja", format);
+  }
+
+  const picks = [];
+  const used = new Set();
+  const addPick = (text) => {
+    if (!text || used.has(text) || picks.length >= TYPEWRITER_EXAMPLE_COUNT) return;
+    used.add(text);
+    picks.push(text);
+  };
+
+  for (const type of ["hangul", "roman", "kana", "hanja"]) {
+    addPick(pickRandom(shuffled(poolsByType[type])));
+  }
+
+  const punctuatedPool = shuffled(
+    [...poolsByType.roman, ...poolsByType.kana, ...poolsByType.hanja].filter((text) => /[.\-・\s]/.test(text)),
+  );
+  addPick(pickRandom(punctuatedPool));
+
+  const shuffledPools = Object.fromEntries(
+    Object.entries(poolsByType).map(([type, pool]) => [type, shuffled(pool)]),
+  );
+  const cursors = { hangul: 0, roman: 0, kana: 0, hanja: 0 };
+  const typeOrder = shuffled(["hangul", "roman", "kana", "hanja"]);
+
+  while (picks.length < TYPEWRITER_EXAMPLE_COUNT) {
+    const before = picks.length;
+    for (const type of typeOrder) {
+      const pool = shuffledPools[type] || [];
+      while (cursors[type] < pool.length && used.has(pool[cursors[type]])) {
+        cursors[type] += 1;
+      }
+      addPick(pool[cursors[type]]);
+      cursors[type] += 1;
+      if (picks.length >= TYPEWRITER_EXAMPLE_COUNT) break;
+    }
+    if (picks.length === before) break;
+  }
+
+  return picks;
+}
+
+function setTypewriterText(text) {
+  if (!typewriterNameEl) return;
+  typewriterNameEl.textContent = text;
+}
+
+function startTypewriterAnimation(samples) {
+  if (!typewriterNameEl || !samples.length) return;
+  if (typewriterTimerId) window.clearTimeout(typewriterTimerId);
+  if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
+    setTypewriterText(samples[0]);
+    return;
+  }
+
+  let sampleIndex = 0;
+  let charIndex = 0;
+  let deleting = false;
+
+  const tick = () => {
+    const current = samples[sampleIndex] || "";
+    const chars = Array.from(current);
+    setTypewriterText(chars.slice(0, charIndex).join(""));
+
+    if (!deleting && charIndex < chars.length) {
+      charIndex += 1;
+      typewriterTimerId = window.setTimeout(tick, TYPEWRITER_TYPE_DELAY_MS + Math.random() * 28);
+      return;
+    }
+
+    if (!deleting) {
+      deleting = true;
+      typewriterTimerId = window.setTimeout(tick, TYPEWRITER_HOLD_DELAY_MS);
+      return;
+    }
+
+    if (charIndex > 0) {
+      charIndex -= 1;
+      typewriterTimerId = window.setTimeout(tick, TYPEWRITER_DELETE_DELAY_MS);
+      return;
+    }
+
+    deleting = false;
+    sampleIndex = (sampleIndex + 1) % samples.length;
+    typewriterTimerId = window.setTimeout(tick, TYPEWRITER_TYPE_DELAY_MS);
+  };
+
+  tick();
+}
+
+function hydrateTypewriterPrompt(generatedNames) {
+  const samples = buildTypewriterPromptSamples(generatedNames);
+  startTypewriterAnimation(samples.length ? samples : ["홍길동"]);
+}
+
+function hydrateRandomExamples(generatedNames = null) {
+  if (!exampleChipEls.length) return;
+  const sourceNames = generatedNames || shuffled(buildGeneratedExampleNames());
+  const poolsByType = {
+    hangul: shuffled(buildHangulExamplePool(sourceNames)),
+    roman: shuffled(buildRomanExamplePool(sourceNames)),
+    kana: shuffled(buildKanaExamplePool(sourceNames)),
   };
   const pool = shuffled([...poolsByType.hangul, ...poolsByType.roman, ...poolsByType.kana]);
   if (!pool.length) return;
@@ -3651,11 +3938,21 @@ function levenshtein(a, b) {
 }
 
 async function init() {
-  const response = await fetch(dataUrl);
+  const [response, hanjaReadingData, hanjaNameCharData, hanjaUsageRankData] = await Promise.all([
+    fetch(dataUrl),
+    fetchOptionalJson(hanjaReadingUrl),
+    fetchOptionalJson(hanjaNameCharUrl),
+    fetchOptionalJson(hanjaUsageRankUrl),
+  ]);
   state.data = await response.json();
+  attachHanjaReadingData(state.data, hanjaReadingData);
+  attachHanjaNameCharData(state.data, hanjaNameCharData);
+  attachHanjaUsageRankData(state.data, hanjaUsageRankData);
   sanitizeModernKoreanRomanData(state.data);
   state.runtime = buildRuntime(state.data);
-  hydrateRandomExamples();
+  const generatedNames = shuffled(buildGeneratedExampleNames());
+  hydrateRandomExamples(generatedNames);
+  hydrateTypewriterPrompt(generatedNames);
   resultsEl.innerHTML = "";
   hideResultsSection();
 }
