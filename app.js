@@ -3,10 +3,143 @@ const hanjaReadingUrl = "./data/hanja_readings.json?v=20260721-unihan-khangul";
 const hanjaNameCharUrl = "./data/hanja_name_chars.json?v=20260721-top1000-name-hanja";
 const hanjaUsageRankUrl = "./data/hanja_usage_rank.json?v=20260721-ohmybaby-top50";
 
+const LANGUAGE_STORAGE_KEY = "gildonghong.language";
+const LANGUAGE_CONFIG = {
+  en: { code: "EN", htmlLang: "en", intlLocale: "en" },
+  ja: { code: "JP", htmlLang: "ja", intlLocale: "ja-JP" },
+  zh: { code: "ZH", htmlLang: "zh-Hant", intlLocale: "zh-TW" },
+};
+
+const TRANSLATIONS = {
+  en: {
+    languageSelectorLabel: "Choose language",
+    promptAriaLabel: "How do I read this Korean name?",
+    promptPrefix: "How do I read",
+    promptSuffix: "?",
+    searchAriaLabel: "Korean name search",
+    searchLabel: "Korean name",
+    searchPlaceholder: "Search a Korean name",
+    convert: "Convert",
+    examples: "Examples",
+    rankedResults: "Ranked results",
+    plausibility: "Plausibility",
+    romanAlphabet: "Roman alphabet",
+    japaneseKana: "Japanese kana",
+    hanja: "Hanja",
+    kindSurname: "surname",
+    kindGiven: "given name",
+    kindFull: "full name",
+    supportingRows: ({ count }) => `${count} supporting dataset row${count === 1 ? "" : "s"}`,
+    generatedGivenEvidence: "generated from given-name evidence",
+    syntheticFullEvidence: "synthetic from surname and syllable evidence",
+    surnameSubtitle: ({ population, evidence }) => `Surname match · population ${population} · ${evidence}`,
+    givenSubtitle: ({ count, evidence }) => `${count}-syllable given name · ${evidence}`,
+    fullSubtitle: ({ surname, given, evidence }) => `Surname ${surname} · Given ${given} · ${evidence}`,
+    interpretationNone: "Interpretation: likely neither a surname, given name, nor full name.",
+    interpretationLikely: ({ kind }) => `Interpretation: likely ${kind}.`,
+    interpretationAmbiguous: ({ kinds }) => `Interpretation: ambiguous between ${kinds}.`,
+    noMatches: "No matches found. Try a shorter name or another spelling.",
+    pronunciationAria: ({ name }) => `Play Korean pronunciation for ${name}`,
+    playPronunciation: "Play pronunciation",
+    pronunciationUnavailable: "Pronunciation unavailable",
+    noOutput: "No output",
+    noHanjaObserved: "No observed Hanja reading in the dataset",
+    loadFailed: "Could not load the search data. Reload the page and try again.",
+  },
+  ja: {
+    languageSelectorLabel: "言語を選択",
+    promptAriaLabel: "この韓国人名はどう読みますか？",
+    promptPrefix: "「",
+    promptSuffix: "」はどう読む？",
+    searchAriaLabel: "韓国人名を検索",
+    searchLabel: "韓国人名",
+    searchPlaceholder: "韓国人名を検索",
+    convert: "変換",
+    examples: "例",
+    rankedResults: "候補ランキング",
+    plausibility: "確からしさ",
+    romanAlphabet: "ローマ字",
+    japaneseKana: "日本語カナ",
+    hanja: "漢字",
+    kindSurname: "姓",
+    kindGiven: "名",
+    kindFull: "姓名",
+    supportingRows: ({ count }) => `データセットの根拠 ${count}件`,
+    generatedGivenEvidence: "名の用例から生成",
+    syntheticFullEvidence: "姓と各音節の用例から生成",
+    surnameSubtitle: ({ population, evidence }) => `姓の一致 · 人口 ${population} · ${evidence}`,
+    givenSubtitle: ({ count, evidence }) => `${count}音節の名 · ${evidence}`,
+    fullSubtitle: ({ surname, given, evidence }) => `姓 ${surname} · 名 ${given} · ${evidence}`,
+    interpretationNone: "判定：姓、名、姓名のいずれにも該当しない可能性があります。",
+    interpretationLikely: ({ kind }) => `判定：${kind}の可能性が高いです。`,
+    interpretationAmbiguous: ({ kinds }) => `判定：${kinds}の可能性があります。`,
+    noMatches: "一致する候補が見つかりません。名前を短くするか、別の表記をお試しください。",
+    pronunciationAria: ({ name }) => `${name}の韓国語の発音を再生`,
+    playPronunciation: "発音を再生",
+    pronunciationUnavailable: "発音を再生できません",
+    noOutput: "出力なし",
+    noHanjaObserved: "データセットに該当する漢字表記がありません",
+    loadFailed: "検索データを読み込めませんでした。ページを再読み込みしてください。",
+  },
+  zh: {
+    languageSelectorLabel: "選擇語言",
+    promptAriaLabel: "這個韓國姓名怎麼讀？",
+    promptPrefix: "“",
+    promptSuffix: "”怎麼讀？",
+    searchAriaLabel: "搜尋韓國姓名",
+    searchLabel: "韓國姓名",
+    searchPlaceholder: "搜尋韓國姓名",
+    convert: "轉換",
+    examples: "範例",
+    rankedResults: "候選結果",
+    plausibility: "可信度",
+    romanAlphabet: "羅馬字母",
+    japaneseKana: "日文假名",
+    hanja: "漢字",
+    kindSurname: "姓氏",
+    kindGiven: "名字",
+    kindFull: "完整姓名",
+    supportingRows: ({ count }) => `${count} 筆資料集證據`,
+    generatedGivenEvidence: "根據名字用例生成",
+    syntheticFullEvidence: "根據姓氏和音節用例生成",
+    surnameSubtitle: ({ population, evidence }) => `姓氏相符 · 人口 ${population} · ${evidence}`,
+    givenSubtitle: ({ count, evidence }) => `${count} 音節名字 · ${evidence}`,
+    fullSubtitle: ({ surname, given, evidence }) => `姓氏 ${surname} · 名字 ${given} · ${evidence}`,
+    interpretationNone: "判斷：很可能不是姓氏、名字或完整姓名。",
+    interpretationLikely: ({ kind }) => `判斷：很可能是${kind}。`,
+    interpretationAmbiguous: ({ kinds }) => `判斷：可能是${kinds}之一。`,
+    noMatches: "找不到相符結果。請縮短姓名或嘗試其他拼寫。",
+    pronunciationAria: ({ name }) => `播放${name}的韓語發音`,
+    playPronunciation: "播放發音",
+    pronunciationUnavailable: "無法播放發音",
+    noOutput: "無輸出",
+    noHanjaObserved: "資料集中沒有對應的漢字寫法",
+    loadFailed: "無法載入搜尋資料。請重新整理頁面後再試。",
+  },
+};
+
+function normalizeLanguage(value) {
+  const language = String(value || "").toLowerCase();
+  if (language.startsWith("ja")) return "ja";
+  if (language.startsWith("zh")) return "zh";
+  return "en";
+}
+
+function resolveInitialLanguage() {
+  try {
+    const saved = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (saved && LANGUAGE_CONFIG[saved]) return saved;
+  } catch {
+    // Storage may be unavailable in privacy-restricted contexts.
+  }
+  return normalizeLanguage(typeof navigator !== "undefined" ? navigator.language : "en");
+}
+
 const state = {
   data: null,
   runtime: null,
   queryMeta: null,
+  language: resolveInitialLanguage(),
 };
 
 const scriptPatterns = {
@@ -24,6 +157,11 @@ const queryEl = document.querySelector("#query");
 const formEl = document.querySelector("#search-form");
 const exampleChipEls = Array.from(document.querySelectorAll(".example-chip"));
 const typewriterNameEl = document.querySelector("#typewriter-name");
+const languageSelectorEl = document.querySelector(".language-selector");
+const languageTriggerEl = document.querySelector("#language-trigger");
+const languageMenuEl = document.querySelector("#language-menu");
+const currentLanguageCodeEl = document.querySelector("#current-language-code");
+const languageOptionEls = Array.from(document.querySelectorAll("[data-language]"));
 let activePronunciationButton = null;
 let activePronunciationAudio = null;
 let activePronunciationUtterance = null;
@@ -33,6 +171,84 @@ const TYPEWRITER_EXAMPLE_COUNT = 24;
 const TYPEWRITER_TYPE_DELAY_MS = 72;
 const TYPEWRITER_DELETE_DELAY_MS = 42;
 const TYPEWRITER_HOLD_DELAY_MS = 1280;
+
+function t(key, params = {}) {
+  const fallback = TRANSLATIONS.en[key];
+  const value = TRANSLATIONS[state.language]?.[key] ?? fallback ?? key;
+  return typeof value === "function" ? value(params) : value;
+}
+
+function formatNumber(value) {
+  return new Intl.NumberFormat(LANGUAGE_CONFIG[state.language]?.intlLocale || "en").format(Number(value || 0));
+}
+
+function applyTranslations() {
+  document.documentElement.lang = LANGUAGE_CONFIG[state.language]?.htmlLang || "en";
+  document.documentElement.dataset.language = state.language;
+  const roots = [document, resultTemplate?.content].filter(Boolean);
+  for (const root of roots) {
+    root.querySelectorAll("[data-i18n]").forEach((element) => {
+      element.textContent = t(element.dataset.i18n);
+    });
+    root.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
+      element.setAttribute("placeholder", t(element.dataset.i18nPlaceholder));
+    });
+    root.querySelectorAll("[data-i18n-aria-label]").forEach((element) => {
+      element.setAttribute("aria-label", t(element.dataset.i18nAriaLabel));
+    });
+  }
+}
+
+function updateLanguageSelector() {
+  if (currentLanguageCodeEl) {
+    currentLanguageCodeEl.textContent = LANGUAGE_CONFIG[state.language]?.code || "EN";
+  }
+  for (const option of languageOptionEls) {
+    if (option.dataset.language === state.language) {
+      option.setAttribute("aria-current", "true");
+    } else {
+      option.removeAttribute("aria-current");
+    }
+  }
+}
+
+function setLanguageMenuOpen(open, focusSelected = false) {
+  if (!languageMenuEl || !languageTriggerEl) return;
+  languageMenuEl.hidden = !open;
+  languageTriggerEl.setAttribute("aria-expanded", String(open));
+  if (!open || !focusSelected) return;
+  const selected = languageOptionEls.find((option) => option.dataset.language === state.language);
+  selected?.focus();
+}
+
+function setLanguage(language, options = {}) {
+  const nextLanguage = LANGUAGE_CONFIG[language] ? language : normalizeLanguage(language);
+  const { persist = true, rerender = true } = options;
+  state.language = nextLanguage;
+  if (persist) {
+    try {
+      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
+    } catch {
+      // The selected language still applies for the current visit.
+    }
+  }
+  applyTranslations();
+  updateLanguageSelector();
+  setLanguageMenuOpen(false);
+  if (rerender && state.runtime && queryEl?.value.trim()) {
+    stopActivePronunciation();
+    search(queryEl.value);
+  }
+}
+
+function moveLanguageMenuFocus(direction) {
+  if (!languageOptionEls.length) return;
+  const activeIndex = languageOptionEls.indexOf(document.activeElement);
+  const selectedIndex = languageOptionEls.findIndex((option) => option.dataset.language === state.language);
+  const startIndex = activeIndex >= 0 ? activeIndex : Math.max(0, selectedIndex);
+  const nextIndex = (startIndex + direction + languageOptionEls.length) % languageOptionEls.length;
+  languageOptionEls[nextIndex].focus();
+}
 
 const compoundSurnamesFallback = new Set(["남궁", "황보", "선우", "제갈", "사공", "서문", "독고", "동방", "어금", "망절"]);
 const HANGUL_BASE = 0xac00;
@@ -109,6 +325,10 @@ const MODERN_GIVEN_SYLLABLE_ROMAN_OUTPUT_ALLOWLIST = new Map(Object.entries({
 const BLOCKED_GIVEN_ROMAN_BY_HANGUL = new Map(Object.entries({
   태: ["t"],
 }).map(([hangul, variants]) => [hangul, new Set(variants)]));
+
+const RARE_GIVEN_ROMAN_ALIASES = new Map(Object.entries({
+  용: [{ text: "yueng", score: 8 }],
+}));
 
 function isModernRomanText(text) {
   return /^[A-Za-z][A-Za-z -]*$/.test(text || "");
@@ -224,8 +444,26 @@ function rebuildSyllableLatinIndex(data) {
   data.syllableLatinIndex = index;
 }
 
+function attachRareGivenRomanAliases(data) {
+  for (const [hangul, aliases] of RARE_GIVEN_ROMAN_ALIASES) {
+    const syllable = data?.syllables?.[hangul];
+    if (!syllable) continue;
+
+    const latin = syllable.latin || [];
+    const existing = new Set(latin.map((item) => normalizeLatin(item.text)).filter(Boolean));
+    for (const alias of aliases) {
+      const normalized = normalizeLatin(alias.text);
+      if (!normalized || existing.has(normalized)) continue;
+      latin.push({ text: alias.text, score: Number(alias.score) || 0 });
+      existing.add(normalized);
+    }
+    syllable.latin = latin;
+  }
+}
+
 function sanitizeModernKoreanRomanData(data) {
   if (!data) return data;
+  attachRareGivenRomanAliases(data);
   const allowedSurnameRomanByHangul = new Map();
 
   data.surnames = (data.surnames || []).map((surname) => {
@@ -786,9 +1024,9 @@ function candidateKey(hangul, kind = "full") {
 }
 
 function candidateKindLabel(kind) {
-  if (kind === "surname") return "surname";
-  if (kind === "given") return "given name";
-  return "full name";
+  if (kind === "surname") return t("kindSurname");
+  if (kind === "given") return t("kindGiven");
+  return t("kindFull");
 }
 
 function candidateGivenUnits(candidate) {
@@ -1001,6 +1239,40 @@ function applyNieunLiaison(nextKana) {
   return null;
 }
 
+function applyRieulLiaison(nextKana) {
+  const text = normalizeKana(nextKana);
+  const mapping = [
+    ["ヒャ", "リャ"],
+    ["ヒュ", "リュ"],
+    ["ヒョ", "リョ"],
+    ["ヒェ", "リェ"],
+    ["ファ", "ラ"],
+    ["フィ", "リ"],
+    ["フェ", "レ"],
+    ["フォ", "ロ"],
+    ["ハ", "ラ"],
+    ["ヒ", "リ"],
+    ["フ", "ル"],
+    ["ヘ", "レ"],
+    ["ホ", "ロ"],
+    ["イェ", "リェ"],
+    ["ヤ", "リャ"],
+    ["ユ", "リュ"],
+    ["ヨ", "リョ"],
+    ["ア", "ラ"],
+    ["イ", "リ"],
+    ["ウ", "ル"],
+    ["エ", "レ"],
+    ["オ", "ロ"],
+  ];
+  for (const [from, to] of mapping) {
+    if (text.startsWith(from)) {
+      return `${to}${text.slice(from.length)}`;
+    }
+  }
+  return null;
+}
+
 const REVERSE_NIEUN_LIAISON_PREFIXES = [
   ["ニャ", ["ヤ", "ヒャ"]],
   ["ニュ", ["ユ", "ヒュ"]],
@@ -1011,6 +1283,18 @@ const REVERSE_NIEUN_LIAISON_PREFIXES = [
   ["ヌ", ["ウ", "フ"]],
   ["ネ", ["エ", "ヘ", "フェ"]],
   ["ノ", ["オ", "ホ", "フォ"]],
+];
+
+const REVERSE_RIEUL_LIAISON_PREFIXES = [
+  ["リャ", ["ヤ", "ヒャ"]],
+  ["リュ", ["ユ", "ヒュ"]],
+  ["リョ", ["ヨ", "ヒョ"]],
+  ["リェ", ["イェ", "ヒェ"]],
+  ["ラ", ["ア", "ハ", "ファ"]],
+  ["リ", ["イ", "ヒ", "フィ"]],
+  ["ル", ["ウ", "フ"]],
+  ["レ", ["エ", "ヘ", "フェ"]],
+  ["ロ", ["オ", "ホ", "フォ"]],
 ];
 
 function reverseNieunLiaisonSurfaces(text) {
@@ -1025,13 +1309,25 @@ function reverseNieunLiaisonSurfaces(text) {
   return surfaces;
 }
 
+function reverseRieulLiaisonSurfaces(text) {
+  const norm = normalizeKana(text);
+  const surfaces = [];
+  for (const [from, originals] of REVERSE_RIEUL_LIAISON_PREFIXES) {
+    if (!norm.startsWith(from)) continue;
+    for (const original of originals) {
+      surfaces.push(`${original}${norm.slice(from.length)}`);
+    }
+  }
+  return surfaces;
+}
+
 function generateLiaisonKanaVariants(parts, syllables) {
   let surfaces = [{ text: parts.join("\u0000"), scoreScale: 1 }];
   for (let index = 1; index < parts.length; index += 1) {
     const previous = decomposeHangulSyllable(syllables[index - 1]);
     const current = decomposeHangulSyllable(syllables[index]);
     if (!previous || !current) continue;
-    if (previous.coda !== "ㄴ" || !["ㅇ", "ㅎ"].includes(current.onset)) continue;
+    if (!["ㄴ", "ㄹ"].includes(previous.coda) || !["ㅇ", "ㅎ"].includes(current.onset)) continue;
 
     const nextSurface = [];
     for (const surface of surfaces) {
@@ -1039,15 +1335,18 @@ function generateLiaisonKanaVariants(parts, syllables) {
       const currentParts = surface.text ? surface.text.split("\u0000") : parts.slice();
       const previousPart = currentParts[index - 1] || "";
       const currentPart = currentParts[index] || "";
-      if (!previousPart.endsWith("ン")) continue;
-      const liaison = applyNieunLiaison(currentPart);
+      const carrier = previous.coda === "ㄴ" ? "ン" : "ル";
+      if (!previousPart.endsWith(carrier)) continue;
+      const liaison = previous.coda === "ㄴ"
+        ? applyNieunLiaison(currentPart)
+        : applyRieulLiaison(currentPart);
       if (!liaison) continue;
       const mergedParts = currentParts.slice();
       mergedParts[index - 1] = previousPart.slice(0, -1);
       mergedParts[index] = liaison;
       nextSurface.push({
         text: mergedParts.join("\u0000"),
-        scoreScale: surface.scoreScale * 0.93,
+        scoreScale: surface.scoreScale * (previous.coda === "ㄴ" ? 0.93 : 0.9),
       });
     }
     surfaces = dedupeScoredByField(
@@ -2287,32 +2586,53 @@ function parseSyllablesKana(norm, maxUnits = 3) {
   return dfs(0, 0);
 }
 
-function parseKanaReverseNieunLiaison(norm, maxUnits = 3) {
+function parseKanaReverseLiaison(norm, maxUnits = 3) {
   const text = normalizeKana(norm);
   if (!text || maxUnits < 2) return [];
   const results = [];
+  const rules = [
+    {
+      coda: "ㄴ",
+      carrier: "ン",
+      restoreRight: reverseNieunLiaisonSurfaces,
+      tailScale: 0.92,
+      bonus: 36,
+    },
+    {
+      coda: "ㄹ",
+      carrier: "ル",
+      restoreRight: reverseRieulLiaisonSurfaces,
+      tailScale: 0.9,
+      bonus: 32,
+    },
+  ];
 
-  for (let split = 1; split < text.length; split += 1) {
-    const leftSurface = text.slice(0, split);
-    const rightSurface = text.slice(split);
-    const restoredRightSurfaces = reverseNieunLiaisonSurfaces(rightSurface);
-    if (!restoredRightSurfaces.length) continue;
+  for (const rule of rules) {
+    for (let split = 1; split < text.length; split += 1) {
+      const leftSurface = text.slice(0, split);
+      const rightSurface = text.slice(split);
+      const restoredRightSurfaces = rule.restoreRight(rightSurface);
+      if (!restoredRightSurfaces.length) continue;
 
-    const restoredLeftCandidates = lookupKanaChunkCandidates(`${leftSurface}ン`).filter((item) => {
-      const parts = decomposeHangulSyllable(item.hangul);
-      return parts?.coda === "ㄴ";
-    });
-    if (!restoredLeftCandidates.length) continue;
+      const restoredLeftCandidates = lookupKanaChunkCandidates(`${leftSurface}${rule.carrier}`).filter((item) => {
+        const parts = decomposeHangulSyllable(item.hangul);
+        return parts?.coda === rule.coda;
+      });
+      if (!restoredLeftCandidates.length) continue;
 
-    for (const leftCandidate of restoredLeftCandidates.slice(0, 8)) {
-      for (const restoredRightSurface of restoredRightSurfaces) {
-        for (const tailCandidate of parseSyllablesKana(restoredRightSurface, maxUnits - 1).slice(0, 12)) {
-          const units = [leftCandidate.hangul, ...(tailCandidate.units || [])];
-          if (units.length < 2 || units.length > maxUnits) continue;
-          results.push({
-            units,
-            score: Number(leftCandidate.score || 0) + Number(tailCandidate.score || 0) * 0.92 + 36,
-          });
+      for (const leftCandidate of restoredLeftCandidates.slice(0, 8)) {
+        for (const restoredRightSurface of restoredRightSurfaces) {
+          for (const tailCandidate of parseSyllablesKana(restoredRightSurface, maxUnits - 1).slice(0, 12)) {
+            const units = [leftCandidate.hangul, ...(tailCandidate.units || [])];
+            if (units.length < 2 || units.length > maxUnits) continue;
+            results.push({
+              units,
+              score:
+                Number(leftCandidate.score || 0) +
+                Number(tailCandidate.score || 0) * rule.tailScale +
+                rule.bonus,
+            });
+          }
         }
       }
     }
@@ -2538,7 +2858,7 @@ function parseGivenKanaTokens(tokens) {
     return pruneKanaSingleTokenGivenCandidates(recoverPronouncedSinoGivenCandidates(dedupeCandidateUnits(exactGiven, 24)));
   }
   if (tokens.length === 1) {
-    const parsed = parseSyllablesKana(tokens[0], 3).concat(parseKanaReverseNieunLiaison(tokens[0], 3));
+    const parsed = parseSyllablesKana(tokens[0], 3).concat(parseKanaReverseLiaison(tokens[0], 3));
     return pruneKanaSingleTokenGivenCandidates(recoverPronouncedSinoGivenCandidates(dedupeCandidateUnits(parsed, 24)));
   }
   const perToken = tokens.map((token) => lookupKanaChunkCandidates(token).map((item) => ({
@@ -2546,7 +2866,7 @@ function parseGivenKanaTokens(tokens) {
     score: Number(item.score),
   })));
   if (perToken.some((items) => !items.length)) {
-    const joinedParsed = parseSyllablesKana(tokens.join(""), 3).concat(parseKanaReverseNieunLiaison(tokens.join(""), 3));
+    const joinedParsed = parseSyllablesKana(tokens.join(""), 3).concat(parseKanaReverseLiaison(tokens.join(""), 3));
     return pruneKanaSingleTokenGivenCandidates(recoverPronouncedSinoGivenCandidates(dedupeCandidateUnits(joinedParsed, 24)));
   }
   let combos = [{ units: [], score: 0 }];
@@ -3151,20 +3471,28 @@ function generateOutputsForCandidate(candidate, exactRows) {
 }
 
 function candidateSubtitle(candidate, exactRows) {
+  const evidence = exactRows.length
+    ? t("supportingRows", { count: exactRows.length })
+    : candidate.kind === "given"
+      ? t("generatedGivenEvidence")
+      : t("syntheticFullEvidence");
   if (candidate.kind === "surname") {
     const surnameData = state.runtime?.surnameByHangul?.get(candidate.hangul);
-    return `Surname match · population ${Number(surnameData?.population || 0).toLocaleString()} · ${exactRows.length} supporting dataset row(s)`;
+    return t("surnameSubtitle", {
+      population: formatNumber(surnameData?.population || 0),
+      evidence: t("supportingRows", { count: exactRows.length }),
+    });
   }
   if (candidate.kind === "given") {
-    return `${candidate.hangul.length}-syllable given name · ${exactRows.length ? `${exactRows.length} supporting dataset row(s)` : "generated from given-name evidence"}`;
+    return t("givenSubtitle", { count: candidate.hangul.length, evidence });
   }
   const { surname, given } = splitNameUnits(candidate.hangul, state.runtime.compoundSurnames);
-  return `Surname ${surname} · Given ${given || "—"} · ${exactRows.length ? `${exactRows.length} supporting dataset row(s)` : "synthetic from surname and syllable evidence"}`;
+  return t("fullSubtitle", { surname, given: given || "—", evidence });
 }
 
 function deriveInterpretationText(query, candidateMap) {
   const candidates = [...candidateMap.values()].sort((a, b) => b.score - a.score);
-  if (!candidates.length) return `Interpretation: likely neither a surname, given name, nor full name.`;
+  if (!candidates.length) return t("interpretationNone");
   const topScore = Number(candidates[0].score) || 0;
   const activeKinds = [...new Set(
     candidates
@@ -3173,12 +3501,14 @@ function deriveInterpretationText(query, candidateMap) {
       .map((candidate) => candidate.kind || "full"),
   )];
   if (!activeKinds.length) {
-    return `Interpretation: likely neither a surname, given name, nor full name.`;
+    return t("interpretationNone");
   }
   if (activeKinds.length === 1) {
-    return `Interpretation: likely ${candidateKindLabel(activeKinds[0])}.`;
+    return t("interpretationLikely", { kind: candidateKindLabel(activeKinds[0]) });
   }
-  return `Interpretation: ambiguous between ${activeKinds.map(candidateKindLabel).join(", ")}.`;
+  return t("interpretationAmbiguous", {
+    kinds: activeKinds.map(candidateKindLabel).join(state.language === "en" ? ", " : "、"),
+  });
 }
 
 function generateRomanOutputs(hangul, exactRows) {
@@ -3328,7 +3658,7 @@ function hanjaOutputsForCandidate(hangul, exactRows) {
 function buildResultCards(candidateMap) {
   const candidates = [...candidateMap.values()].sort((a, b) => candidateRankingScore(b) - candidateRankingScore(a)).slice(0, 16);
   if (!candidates.length) {
-    resultsEl.innerHTML = `<div class="empty-state" role="status">No plausible candidates found. Try another spacing style, a different romanization, or a shorter query.</div>`;
+    resultsEl.innerHTML = `<div class="empty-state" role="status">${t("noMatches")}</div>`;
     showResultsSection();
     return;
   }
@@ -3346,18 +3676,18 @@ function buildResultCards(candidateMap) {
     const pronunciationLabel = fragment.querySelector(".pronunciation-label");
     if (pronunciationButton && pronunciationLabel) {
       const pronunciationText = candidate.hangul;
-      const pronunciationLabelText = `Play Korean pronunciation for ${pronunciationText}`;
+      const pronunciationLabelText = t("pronunciationAria", { name: pronunciationText });
       pronunciationButton.dataset.name = pronunciationText;
       pronunciationButton.dataset.state = "idle";
       pronunciationButton.setAttribute("aria-label", pronunciationLabelText);
-      pronunciationButton.title = "Play pronunciation";
+      pronunciationButton.title = t("playPronunciation");
       pronunciationLabel.textContent = pronunciationLabelText;
       if (supportsAudioPlayback() || supportsSpeechSynthesis()) {
         pronunciationButton.addEventListener("click", () => playKoreanPronunciation(pronunciationText, pronunciationButton));
       } else {
         pronunciationButton.disabled = true;
         pronunciationButton.dataset.state = "unavailable";
-        pronunciationButton.title = "Pronunciation unavailable";
+        pronunciationButton.title = t("pronunciationUnavailable");
       }
     }
     fragment.querySelector(".result-subtitle").textContent = candidateSubtitle(candidate, exactRows);
@@ -3369,7 +3699,7 @@ function buildResultCards(candidateMap) {
     const hanjaList = fragment.querySelector(".hanja-list");
     fillVariantList(romanList, romanOutputs);
     fillVariantList(kanaList, kanaOutputs);
-    fillVariantList(hanjaList, hanjaOutputs, !hanjaOutputs.length ? "No observed Hanja reading in the dataset" : "");
+    fillVariantList(hanjaList, hanjaOutputs, !hanjaOutputs.length ? t("noHanjaObserved") : "");
 
     resultsEl.appendChild(fragment);
   }
@@ -3512,7 +3842,7 @@ function allocatePercentages(items, getWeight = (item) => Number(item.score) || 
   return base;
 }
 
-function fillVariantList(listEl, items, emptyText = "No output") {
+function fillVariantList(listEl, items, emptyText = t("noOutput")) {
   listEl.innerHTML = "";
   if (!items.length) {
     const li = document.createElement("li");
@@ -3969,8 +4299,55 @@ exampleChipEls.forEach((button) => {
   });
 });
 
+languageTriggerEl?.addEventListener("click", () => {
+  setLanguageMenuOpen(languageMenuEl?.hidden ?? true);
+});
+
+languageTriggerEl?.addEventListener("keydown", (event) => {
+  if (event.key !== "ArrowDown") return;
+  event.preventDefault();
+  setLanguageMenuOpen(true, true);
+});
+
+languageOptionEls.forEach((option) => {
+  option.addEventListener("click", () => {
+    setLanguage(option.dataset.language);
+    languageTriggerEl?.focus();
+  });
+});
+
+languageMenuEl?.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    setLanguageMenuOpen(false);
+    languageTriggerEl?.focus();
+    return;
+  }
+  if (event.key === "Tab") {
+    setLanguageMenuOpen(false);
+    return;
+  }
+  if (event.key === "Home" || event.key === "End") {
+    event.preventDefault();
+    const option = event.key === "Home" ? languageOptionEls[0] : languageOptionEls[languageOptionEls.length - 1];
+    option?.focus();
+    return;
+  }
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    event.preventDefault();
+    moveLanguageMenuFocus(event.key === "ArrowDown" ? 1 : -1);
+  }
+});
+
+document.addEventListener("click", (event) => {
+  if (!languageMenuEl || languageMenuEl.hidden || languageSelectorEl?.contains(event.target)) return;
+  setLanguageMenuOpen(false);
+});
+
+setLanguage(state.language, { persist: false, rerender: false });
+
 init().catch((error) => {
   console.error(error);
-  resultsEl.innerHTML = `<div class="empty-state" role="status">Failed to load the search index. Serve the folder over HTTP and reload.</div>`;
+  resultsEl.innerHTML = `<div class="empty-state" role="status">${t("loadFailed")}</div>`;
   showResultsSection();
 });

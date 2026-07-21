@@ -75,26 +75,12 @@
   --radius-image: 12px;
 
   --font-product:
-    "Toss Product Sans",
-    "Tossface",
-    "SF Pro KR",
-    "SF Pro Display",
-    "SF Pro Icons",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Basier Square",
-    "Apple SD Gothic Neo",
-    Roboto,
-    "Noto Sans KR",
     "Noto Sans",
-    "Helvetica Neue",
-    Helvetica,
-    Arial,
-    sans-serif,
-    "Apple Color Emoji",
-    "Segoe UI Emoji",
-    "Segoe UI Symbol",
-    "Noto Color Emoji";
+    "Noto Sans KR",
+    "Noto Sans JP",
+    "Noto Sans TC",
+    "Noto Color Emoji",
+    sans-serif;
 
   --motion-button:
     color 0.1s ease-in-out,
@@ -122,6 +108,24 @@ body {
   font-family: var(--font-product);
 }
 
+html[lang="ja"] body {
+  font-family:
+    "Noto Sans JP",
+    "Noto Sans",
+    "Noto Sans KR",
+    "Noto Sans TC",
+    sans-serif;
+}
+
+html[lang="zh-Hant"] body {
+  font-family:
+    "Noto Sans TC",
+    "Noto Sans",
+    "Noto Sans KR",
+    "Noto Sans JP",
+    sans-serif;
+}
+
 button,
 input {
   font: inherit;
@@ -147,6 +151,125 @@ button:disabled,
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+.utility-header {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 20;
+  height: 64px;
+  pointer-events: none;
+}
+
+.language-selector {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-6);
+  pointer-events: auto;
+}
+
+.language-trigger {
+  min-width: 64px;
+  height: 40px;
+  padding: 0 var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-control-medium);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 19.5px;
+  font-weight: 600;
+  transition: var(--motion-button);
+}
+
+.language-trigger:hover,
+.language-trigger[aria-expanded="true"] {
+  background: var(--surface-pressed);
+  border-color: var(--color-gray-350);
+}
+
+.language-trigger:focus-visible,
+.language-menu button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.language-globe {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.language-code {
+  min-width: 20px;
+  text-align: center;
+}
+
+.language-chevron {
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.1s ease-in-out;
+}
+
+.language-trigger[aria-expanded="true"] .language-chevron {
+  margin-top: 3px;
+  transform: rotate(225deg);
+}
+
+.language-menu {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  width: 76px;
+  margin: 0;
+  padding: var(--space-2) 0;
+  list-style: none;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-control-medium);
+  background: var(--surface-raised);
+  box-shadow: 0 8px 20px rgba(17, 17, 17, 0.08);
+  overflow: hidden;
+}
+
+.language-menu[hidden] {
+  display: none;
+}
+
+.language-menu button {
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 19.5px;
+  font-weight: 500;
+  text-align: center;
+  transition: var(--motion-button);
+}
+
+.language-menu button:hover,
+.language-menu button:focus-visible {
+  background: var(--surface-subtle);
+  color: var(--text-primary);
+}
+
+.language-menu button[aria-current="true"] {
+  color: var(--text-primary);
+  font-weight: 700;
 }
 
 .screen {
@@ -190,6 +313,30 @@ button:disabled,
   color: var(--text-primary);
 }
 
+html[data-language="ja"] .top-eyebrow,
+html[data-language="zh"] .top-eyebrow {
+  column-gap: 0;
+}
+
+html[data-language="ja"] #prompt-prefix,
+html[data-language="zh"] #prompt-prefix {
+  display: none;
+}
+
+html[data-language="ja"] .typewriter-wrap::before,
+html[data-language="zh"] .typewriter-wrap::before {
+  flex: 0 0 auto;
+  color: var(--text-primary);
+}
+
+html[data-language="ja"] .typewriter-wrap::before {
+  content: "「";
+}
+
+html[data-language="zh"] .typewriter-wrap::before {
+  content: "“";
+}
+
 .typewriter-wrap {
   display: inline-flex;
   align-items: baseline;
@@ -197,17 +344,17 @@ button:disabled,
   max-width: 100%;
   justify-content: flex-start;
   color: var(--text-brand);
-  border-right: 2px solid currentColor;
-  padding-right: 2px;
-  animation: typewriter-caret 0.72s steps(1, end) infinite;
 }
 
 .typewriter-name {
   display: inline-block;
   max-width: 100%;
   min-height: 1em;
+  padding-right: 2px;
+  border-right: 2px solid currentColor;
   overflow: hidden;
   white-space: nowrap;
+  animation: typewriter-caret 0.72s steps(1, end) infinite;
 }
 
 .typewriter-question {
@@ -794,6 +941,11 @@ button:disabled,
 }
 
 @media (max-width: 720px) {
+  .language-selector {
+    top: var(--space-3);
+    right: var(--space-4);
+  }
+
   .screen-content {
     padding: 72px var(--space-6) var(--space-10);
   }
@@ -900,7 +1052,7 @@ button:disabled,
     transition-duration: 0.001ms !important;
   }
 
-  .typewriter-wrap {
+  .typewriter-name {
     border-right: 0;
   }
 }

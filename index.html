@@ -7,26 +7,53 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260721-typewriter-hanja" />
+    <link rel="stylesheet" href="./styles.css?v=20260721-typewriter-caret" />
   </head>
   <body>
+    <header class="utility-header">
+      <div class="language-selector">
+        <button
+          id="language-trigger"
+          class="language-trigger"
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded="false"
+          aria-controls="language-menu"
+          aria-label="Choose language"
+          data-i18n-aria-label="languageSelectorLabel"
+        >
+          <svg class="language-globe" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M3 12h18M12 3c2.4 2.5 3.7 5.5 3.7 9S14.4 18.5 12 21M12 3C9.6 5.5 8.3 8.5 8.3 12S9.6 18.5 12 21"></path>
+          </svg>
+          <span id="current-language-code" class="language-code">EN</span>
+          <span class="language-chevron" aria-hidden="true"></span>
+        </button>
+        <ul id="language-menu" class="language-menu" role="menu" hidden>
+          <li role="none"><button type="button" role="menuitem" data-language="en" aria-label="English">EN</button></li>
+          <li role="none"><button type="button" role="menuitem" data-language="ja" aria-label="日本語">JP</button></li>
+          <li role="none"><button type="button" role="menuitem" data-language="zh" aria-label="繁體中文">ZH</button></li>
+        </ul>
+      </div>
+    </header>
+
     <main class="screen app-shell">
       <div class="screen-content">
         <section class="top">
-          <h1 class="top-eyebrow text" data-typography="t1" data-color="brand" data-weight="700" aria-label="How do I read this name?">
-            <span>How do I read</span>
+          <h1 class="top-eyebrow text" data-typography="t1" data-color="brand" data-weight="700" aria-label="How do I read this name?" data-i18n-aria-label="promptAriaLabel">
+            <span id="prompt-prefix" data-i18n="promptPrefix">How do I read</span>
             <span class="typewriter-wrap" aria-hidden="true">
               <span id="typewriter-name" class="typewriter-name">gildonghong</span>
-              <span class="typewriter-question">?</span>
+              <span id="prompt-suffix" class="typewriter-question" data-i18n="promptSuffix">?</span>
             </span>
           </h1>
         </section>
 
-        <form id="search-form" class="search-panel" aria-label="Korean name search">
-          <label class="visually-hidden" for="query">Korean name</label>
+        <form id="search-form" class="search-panel" aria-label="Korean name search" data-i18n-aria-label="searchAriaLabel">
+          <label class="visually-hidden" for="query" data-i18n="searchLabel">Korean name</label>
           <div class="search-row">
             <input
               id="query"
@@ -35,13 +62,14 @@
               autocomplete="off"
               spellcheck="false"
               placeholder="Search a Korean name"
+              data-i18n-placeholder="searchPlaceholder"
             />
             <button class="button" type="submit" data-size="medium" data-variant="fill" data-color="primary" data-display="inline">
-              <span class="button-content">Convert</span>
+              <span class="button-content" data-i18n="convert">Convert</span>
             </button>
           </div>
           <div class="examples-line">
-            <span id="example-label" class="list-header-title example-label">Examples</span>
+            <span id="example-label" class="list-header-title example-label" data-i18n="examples">Examples</span>
             <div class="example-row">
               <button type="button" class="example-chip" hidden></button>
               <button type="button" class="example-chip" hidden></button>
@@ -55,7 +83,7 @@
         <section class="results-section is-hidden" aria-hidden="true">
           <div class="list-header section-head">
             <div class="list-header-main">
-              <h2 class="list-header-title">Ranked results</h2>
+              <h2 class="list-header-title" data-i18n="rankedResults">Ranked results</h2>
             </div>
             <p id="query-interpretation" class="list-header-description query-interpretation"></p>
           </div>
@@ -83,28 +111,28 @@
             <span class="visually-hidden pronunciation-label"></span>
           </button>
           <div class="score-box">
-            <span class="score-label">Plausibility</span>
+            <span class="score-label" data-i18n="plausibility">Plausibility</span>
             <span class="score-value"></span>
           </div>
         </div>
         <div class="score-bar"><span></span></div>
         <div class="result-grid">
           <section class="output-section">
-            <h4>Roman alphabet</h4>
+            <h4 data-i18n="romanAlphabet">Roman alphabet</h4>
             <ol class="variant-list roman-list"></ol>
           </section>
           <section class="output-section">
-            <h4>Japanese kana</h4>
+            <h4 data-i18n="japaneseKana">Japanese kana</h4>
             <ol class="variant-list kana-list"></ol>
           </section>
           <section class="output-section">
-            <h4>Hanja</h4>
+            <h4 data-i18n="hanja">Hanja</h4>
             <ol class="variant-list hanja-list"></ol>
           </section>
         </div>
       </article>
     </template>
 
-  <script type="module" src="./app.js?v=20260721-hanja-usage-rank"></script>
+  <script type="module" src="./app.js?v=20260721-rieul-kana-liaison-2"></script>
   </body>
 </html>
