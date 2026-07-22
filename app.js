@@ -317,6 +317,7 @@ const TYPEWRITER_EXAMPLE_COUNT = 40;
 const TYPEWRITER_HANJA_SOURCE_NAME_COUNT = 72;
 const TYPEWRITER_HANJA_VARIANTS_PER_NAME = 3;
 const TYPEWRITER_HANJA_SURNAME_LIMIT = 200;
+const TYPEWRITER_HANJA_SURNAME_MIN_PERCENT = 1;
 const TYPEWRITER_POOL_LIMITS = { hangul: 96, roman: 96, kana: 96, hanja: 144 };
 const TYPEWRITER_TYPE_DELAY_MS = 72;
 const TYPEWRITER_DELETE_DELAY_MS = 42;
@@ -4443,17 +4444,19 @@ function buildTypewriterHanjaSurnameKeys(limit = TYPEWRITER_HANJA_SURNAME_LIMIT)
   for (const surname of state.data?.surnames || []) {
     for (const entry of surname.hanjaEntries || []) {
       const count = Number(entry.count || 0);
-      if (!surname.hangul || !entry.text || count <= 0) continue;
+      const percent = Number(entry.percent || 0);
+      if (!surname.hangul || !entry.text || count <= 0 || percent <= TYPEWRITER_HANJA_SURNAME_MIN_PERCENT) continue;
       ranked.push({
         key: `${surname.hangul}|${entry.text}`,
         count,
+        percent,
         population: Number(surname.population || 0),
       });
     }
   }
   return new Set(
     ranked
-      .sort((a, b) => b.count - a.count || b.population - a.population || a.key.localeCompare(b.key))
+      .sort((a, b) => b.count - a.count || b.percent - a.percent || b.population - a.population || a.key.localeCompare(b.key))
       .slice(0, limit)
       .map((item) => item.key),
   );

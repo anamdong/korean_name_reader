@@ -562,15 +562,17 @@ button:disabled,
 
 .top-eyebrow {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: baseline;
   justify-content: center;
   column-gap: 0.28em;
+  max-width: 100%;
   margin: 0;
   font-size: 32px;
   line-height: 42px;
   font-weight: 700;
   color: var(--text-primary);
+  white-space: nowrap;
 }
 
 html[data-language="ja"] .top-eyebrow,
@@ -607,7 +609,9 @@ html[data-language="zh"] .typewriter-wrap::before {
 }
 
 .typewriter-name {
+  flex: 0 1 auto;
   display: inline-block;
+  min-width: 0;
   max-width: 100%;
   min-height: 1em;
   margin: 0;
@@ -645,6 +649,7 @@ html[data-language="zh"] .typewriter-wrap::before {
 }
 
 .typewriter-question {
+  flex: 0 0 auto;
   margin-left: 0.08em;
   color: var(--text-primary);
 }
@@ -1476,8 +1481,8 @@ html[data-language="zh"] .typewriter-wrap::before {
   }
 
   .top-eyebrow {
-    font-size: 28px;
-    line-height: 37px;
+    font-size: clamp(18px, 5.2vw, 28px);
+    line-height: 1.32;
   }
 
   .search-panel {
@@ -1537,8 +1542,8 @@ html[data-language="zh"] .typewriter-wrap::before {
   }
 
   .top-eyebrow {
-    font-size: 26px;
-    line-height: 35px;
+    font-size: 18px;
+    line-height: 1.32;
   }
 
   .score-box {
