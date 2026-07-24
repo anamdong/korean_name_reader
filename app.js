@@ -526,6 +526,7 @@ const RARE_SURNAME_ROMAN_ALIASES = new Map(Object.entries({
 const RARE_GIVEN_ROMAN_ALIASES = new Map(Object.entries({
   용: [{ text: "yueng", score: 8 }],
   채: [{ text: "chea", score: 8 }],
+  혜: [{ text: "hae", score: 8 }],
   원: [{ text: "one", score: 6 }],
   준: [{ text: "june", score: 8 }],
   지: [{ text: "gee", score: 7 }],
@@ -538,6 +539,19 @@ const RARE_GIVEN_ROMAN_ALIASES = new Map(Object.entries({
 }));
 
 const LEGACY_UCK_ROMAN_VOWELS = new Set(["ㅓ", "ㅕ"]);
+
+const INITIAL_SOUND_LAW_SURNAME_PAIRS = new Set([
+  "나|라",
+  "노|로",
+  "누|루",
+  "이|리",
+  "여|려",
+  "요|료",
+  "유|류",
+  "양|량",
+  "염|렴",
+  "임|림",
+]);
 
 const ATTESTED_FULL_NAME_ROMAN_ALIASES = new Map(Object.entries({
   궉채이: [{ text: "Kuck Cheayi", searchScore: 100, outputScore: 220 }],
@@ -737,6 +751,114 @@ function attachAttestedFullNameRomanAliases(data) {
       data.supplementalRomanIndex[normalized] = bucket;
     }
   }
+}
+
+function surnameSpellingsAreInitialSoundLawVariants(first, second) {
+  if (!first || !second || first === second) return false;
+  return INITIAL_SOUND_LAW_SURNAME_PAIRS.has(`${first}|${second}`) || INITIAL_SOUND_LAW_SURNAME_PAIRS.has(`${second}|${first}`);
+}
+
+function surnameEntryPercent(count, population) {
+  const denominator = Number(population || 0);
+  if (!denominator) return null;
+  return Number(((Number(count || 0) / denominator) * 100).toFixed(2));
+}
+
+function sortSurnameHanjaEntries(entries) {
+  return (entries || []).sort(
+    (a, b) =>
+      Number(b.count || 0) - Number(a.count || 0) ||
+      Number(b.percent || 0) - Number(a.percent || 0) ||
+      String(a.text || "").localeCompare(String(b.text || "")),
+  );
+}
+
+function rebuildSurnameHanjaIndex(data) {
+  const index = {};
+  const add = (hanja, hangul, score) => {
+    if (!hanja || !hangul) return;
+    const bucket = index[hanja] || [];
+    const existing = bucket.find((item) => item.hangul === hangul);
+    if (existing) existing.score = Math.max(Number(existing.score || 0), Number(score || 0));
+    else bucket.push({ hangul, score: Number(score || 0) });
+    index[hanja] = bucket;
+  };
+
+  for (const surname of data?.surnames || []) {
+    const score = Math.log1p(Number(surname.population || 0) || 1);
+    for (const entry of surname.hanjaEntries || []) {
+      add(entry.text, surname.hangul, score);
+    }
+    for (const entry of surname.hanjaCompatibilityEntries || []) {
+      add(entry.text, surname.hangul, score * 0.92);
+    }
+  }
+
+  for (const bucket of Object.values(index)) {
+    bucket.sort((a, b) => Number(b.score || 0) - Number(a.score || 0) || a.hangul.localeCompare(b.hangul));
+  }
+  data.surnameHanjaIndex = index;
+}
+
+function attachBonGwanSurnameHanjaData(data, bonGwanData) {
+  if (!data || !bonGwanData?.surnames) return data;
+  const surnameByHangul = new Map((data.surnames || []).map((item) => [item.hangul, item]));
+
+  for (const [key, record] of Object.entries(bonGwanData.surnames || {})) {
+    const [hangul, hanja] = key.split("|");
+    if (!hangul || !hanja || hanja === "?") continue;
+    const surname = surnameByHangul.get(hangul);
+    if (!surname) continue;
+
+    surname.hanjaEntries ||= [];
+    const count = Number(record?.total || 0);
+    const existing = surname.hanjaEntries.find((item) => item.text === hanja);
+    if (existing) {
+      if (count > Number(existing.count || 0)) existing.count = count;
+      if (existing.percent == null) existing.percent = surnameEntryPercent(existing.count, surname.population);
+    } else {
+      surname.hanjaEntries.push({
+        text: hanja,
+        count,
+        percent: surnameEntryPercent(count, surname.population),
+      });
+    }
+    surname.hanja = Array.from(new Set([...(surname.hanja || []), hanja]));
+    sortSurnameHanjaEntries(surname.hanjaEntries);
+  }
+
+  return data;
+}
+
+function attachInitialSoundLawSurnameHanjaAliases(data, bonGwanData) {
+  if (!data || !bonGwanData?.surnames || !data.hanjaReadingIndex) return data;
+  const surnameByHangul = new Map((data.surnames || []).map((item) => [item.hangul, item]));
+
+  for (const [sourceKey, record] of Object.entries(bonGwanData.surnames || {})) {
+    const [sourceHangul, hanja] = sourceKey.split("|");
+    if (!sourceHangul || !hanja || hanja === "?") continue;
+    const readings = data.hanjaReadingIndex[hanja] || [];
+    for (const targetHangul of readings) {
+      if (!surnameSpellingsAreInitialSoundLawVariants(sourceHangul, targetHangul)) continue;
+      if (bonGwanData.surnames[`${targetHangul}|${hanja}`]) continue;
+      const targetSurname = surnameByHangul.get(targetHangul);
+      if (!targetSurname) continue;
+      if ((targetSurname.hanjaEntries || []).some((item) => item.text === hanja)) continue;
+
+      targetSurname.hanjaCompatibilityEntries ||= [];
+      if (targetSurname.hanjaCompatibilityEntries.some((item) => item.text === hanja && item.sourceKey === sourceKey)) continue;
+      targetSurname.hanjaCompatibilityEntries.push({
+        text: hanja,
+        count: Number(record?.total || 0),
+        score: Math.log1p(Number(record?.total || 0) || 1),
+        sourceKey,
+        sourceHangul,
+      });
+      targetSurname.hanja = Array.from(new Set([...(targetSurname.hanja || []), hanja]));
+    }
+  }
+
+  return data;
 }
 
 function sanitizeModernKoreanRomanData(data) {
@@ -3770,16 +3892,37 @@ function generateSurnameKanaOutputs(hangul) {
     .map((item) => ({ text: item.text, score: Number(item.score) || 0 }));
 }
 
-function generateSurnameHanjaOutputs(hangul) {
-  const surnameData = state.runtime?.surnameByHangul?.get(hangul);
-  const entries = surnameData?.hanjaEntries || [];
-  if (entries.length) {
-    return entries.slice(0, 6).map((item) => ({
+function surnameHanjaEntriesForOutput(hangul, surnameData) {
+  const seen = new Set();
+  const entries = [];
+  for (const item of surnameData?.hanjaEntries || []) {
+    if (!item.text || seen.has(item.text)) continue;
+    seen.add(item.text);
+    entries.push({
       text: item.text,
       score: Number(item.percent ?? item.count ?? 0),
       percent: item.percent != null ? Number(item.percent) : null,
       surnameKey: `${hangul}|${item.text}`,
-    }));
+    });
+  }
+  for (const item of surnameData?.hanjaCompatibilityEntries || []) {
+    if (!item.text || seen.has(item.text)) continue;
+    seen.add(item.text);
+    entries.push({
+      text: item.text,
+      score: Number(item.score ?? item.count ?? 1),
+      percent: null,
+      surnameKey: item.sourceKey || `${hangul}|${item.text}`,
+    });
+  }
+  return entries;
+}
+
+function generateSurnameHanjaOutputs(hangul) {
+  const surnameData = state.runtime?.surnameByHangul?.get(hangul);
+  const entries = surnameHanjaEntriesForOutput(hangul, surnameData);
+  if (entries.length) {
+    return entries.slice(0, 6);
   }
   return (surnameData?.hanja || [])
     .slice(0, 6)
@@ -4032,13 +4175,13 @@ function hanjaOutputsForCandidate(hangul, exactRows) {
   if (!counter.size) {
     const { surname } = splitNameUnits(hangul, state.runtime.compoundSurnames);
     const surnameData = state.runtime.surnameByHangul.get(surname);
-    const hanjaEntries = surnameData?.hanjaEntries || [];
+    const hanjaEntries = surnameHanjaEntriesForOutput(surname, surnameData);
     if (hanjaEntries.length) {
       return hanjaEntries.slice(0, 6).map((item) => ({
         text: `${item.text} …`,
-        score: Number(item.percent ?? item.count ?? 0),
-        percent: item.percent != null ? Number(item.percent) : null,
-        surnameKey: `${surname}|${item.text}`,
+        score: Number(item.score || 0),
+        percent: item.percent,
+        surnameKey: item.surnameKey,
       }));
     }
     for (const hanja of surnameData?.hanja || []) {
@@ -4358,8 +4501,11 @@ function fillHanjaVariantList(listEl, items, emptyText = t("noHanjaObserved")) {
     value.textContent = item.text;
     const score = document.createElement("span");
     score.className = "variant-score";
-    const percent = item.percent != null ? item.percent.toFixed(2) : computedPercents.shift();
-    score.textContent = ` ${percent}%`;
+    if (item.percent != null) {
+      score.textContent = ` ${item.percent.toFixed(2)}%`;
+    } else if (computedPercents.length) {
+      score.textContent = ` ${computedPercents.shift()}%`;
+    }
     variant.append(value, score);
     li.appendChild(variant);
 
@@ -4946,7 +5092,10 @@ async function init() {
   attachHanjaReadingData(state.data, hanjaReadingData);
   attachHanjaNameCharData(state.data, hanjaNameCharData);
   attachHanjaUsageRankData(state.data, hanjaUsageRankData);
+  attachBonGwanSurnameHanjaData(state.data, state.bonGwanData);
+  attachInitialSoundLawSurnameHanjaAliases(state.data, state.bonGwanData);
   sanitizeModernKoreanRomanData(state.data);
+  rebuildSurnameHanjaIndex(state.data);
   state.runtime = buildRuntime(state.data);
   const generatedNames = shuffled(buildGeneratedExampleNames());
   hydrateRandomExamples(generatedNames);
