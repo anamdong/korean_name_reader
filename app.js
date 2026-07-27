@@ -1754,7 +1754,7 @@ function generateLiaisonKanaVariants(parts, syllables) {
       mergedParts[index] = liaison;
       nextSurface.push({
         text: mergedParts.join("\u0000"),
-        scoreScale: surface.scoreScale * (previous.coda === "ㄴ" ? 0.93 : 0.9),
+        scoreScale: surface.scoreScale * (previous.coda === "ㄴ" ? 1.08 : 0.9),
       });
     }
     surfaces = dedupeScoredByField(
