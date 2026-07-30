@@ -5,6 +5,9 @@ const hanjaUsageRankUrl = "./data/hanja_usage_rank.json?v=20260721-ohmybaby-top5
 const bonGwanDataUrl = "./data/bon_gwan_by_surname.json?v=20260721-kosis-2015-hanja";
 
 const LANGUAGE_STORAGE_KEY = "gildonghong.language";
+const SEARCH_HISTORY_STORAGE_KEY = "gildonghong.searchHistory";
+const SEARCH_HISTORY_LIMIT = 5;
+const SEARCH_HISTORY_COMPACT_VISIBLE_COUNT = 2;
 const LANGUAGE_CONFIG = {
   en: { code: "EN", htmlLang: "en", intlLocale: "en" },
   ja: { code: "JP", htmlLang: "ja", intlLocale: "ja-JP" },
@@ -26,6 +29,9 @@ const TRANSLATIONS = {
     searchPlaceholder: "Search a Korean name",
     convert: "Convert",
     examples: "Examples",
+    history: "History",
+    clearAll: "Clear all",
+    removeHistoryItem: ({ name }) => `Remove ${name} from history`,
     rankedResults: "Ranked results",
     plausibility: "Plausibility",
     romanAlphabet: "Roman alphabet",
@@ -36,12 +42,11 @@ const TRANSLATIONS = {
     kindFull: "full name",
     supportingRows: ({ count }) => `${count} supporting dataset row${count === 1 ? "" : "s"}`,
     generatedGivenEvidence: "generated from given-name evidence",
-    syntheticFullEvidence: "synthetic from surname and syllable evidence",
     surnameSubtitle: ({ population, evidence }) => `Surname match · population ${population} · ${evidence}`,
     givenSubtitle: ({ count, evidence }) => `${count}-syllable given name · ${evidence}`,
     ambiguousStandaloneSubtitle: ({ count, population }) =>
       `Used as a ${count}-syllable given name or surname · surname population ${population}`,
-    fullSubtitle: ({ surname, given, evidence }) => `Surname ${surname} · Given ${given} · ${evidence}`,
+    fullSubtitle: ({ surname, given, evidence }) => evidence ? `Surname ${surname} · Given ${given} · ${evidence}` : `Surname ${surname} · Given ${given}`,
     interpretationNone: "Interpretation: likely neither a surname, given name, nor full name.",
     interpretationLikely: ({ kind }) => `Interpretation: likely ${kind}.`,
     interpretationAmbiguous: ({ kinds }) => `Interpretation: ambiguous between ${kinds}.`,
@@ -108,6 +113,9 @@ const TRANSLATIONS = {
     searchPlaceholder: "韓国人名を検索",
     convert: "変換",
     examples: "例",
+    history: "履歴",
+    clearAll: "すべて削除",
+    removeHistoryItem: ({ name }) => `「${name}」を履歴から削除`,
     rankedResults: "候補ランキング",
     plausibility: "確からしさ",
     romanAlphabet: "ローマ字",
@@ -118,12 +126,11 @@ const TRANSLATIONS = {
     kindFull: "姓名",
     supportingRows: ({ count }) => `データセットの根拠 ${count}件`,
     generatedGivenEvidence: "名の用例から生成",
-    syntheticFullEvidence: "姓と各音節の用例から生成",
     surnameSubtitle: ({ population, evidence }) => `姓の一致 · 人口 ${population} · ${evidence}`,
     givenSubtitle: ({ count, evidence }) => `${count}音節の名 · ${evidence}`,
     ambiguousStandaloneSubtitle: ({ count, population }) =>
       `${count}音節の名、または姓として使用 · 姓の人口 ${population}`,
-    fullSubtitle: ({ surname, given, evidence }) => `姓 ${surname} · 名 ${given} · ${evidence}`,
+    fullSubtitle: ({ surname, given, evidence }) => evidence ? `姓 ${surname} · 名 ${given} · ${evidence}` : `姓 ${surname} · 名 ${given}`,
     interpretationNone: "判定：姓、名、姓名のいずれにも該当しない可能性があります。",
     interpretationLikely: ({ kind }) => `判定：${kind}の可能性が高いです。`,
     interpretationAmbiguous: ({ kinds }) => `判定：${kinds}の可能性があります。`,
@@ -190,6 +197,9 @@ const TRANSLATIONS = {
     searchPlaceholder: "搜尋韓國姓名",
     convert: "轉換",
     examples: "範例",
+    history: "紀錄",
+    clearAll: "全部清除",
+    removeHistoryItem: ({ name }) => `從紀錄移除${name}`,
     rankedResults: "候選結果",
     plausibility: "可信度",
     romanAlphabet: "羅馬字母",
@@ -200,12 +210,11 @@ const TRANSLATIONS = {
     kindFull: "完整姓名",
     supportingRows: ({ count }) => `${count} 筆資料集證據`,
     generatedGivenEvidence: "根據名字用例生成",
-    syntheticFullEvidence: "根據姓氏和音節用例生成",
     surnameSubtitle: ({ population, evidence }) => `姓氏相符 · 人口 ${population} · ${evidence}`,
     givenSubtitle: ({ count, evidence }) => `${count} 音節名字 · ${evidence}`,
     ambiguousStandaloneSubtitle: ({ count, population }) =>
       `可作 ${count} 音節名字或姓氏 · 姓氏人口 ${population}`,
-    fullSubtitle: ({ surname, given, evidence }) => `姓氏 ${surname} · 名字 ${given} · ${evidence}`,
+    fullSubtitle: ({ surname, given, evidence }) => evidence ? `姓氏 ${surname} · 名字 ${given} · ${evidence}` : `姓氏 ${surname} · 名字 ${given}`,
     interpretationNone: "判斷：很可能不是姓氏、名字或完整姓名。",
     interpretationLikely: ({ kind }) => `判斷：很可能是${kind}。`,
     interpretationAmbiguous: ({ kinds }) => `判斷：可能是${kinds}之一。`,
@@ -299,6 +308,9 @@ const interpretationEl = document.querySelector("#query-interpretation");
 const queryEl = document.querySelector("#query");
 const formEl = document.querySelector("#search-form");
 const exampleChipEls = Array.from(document.querySelectorAll(".example-chip"));
+const historySectionEl = document.querySelector("#history-section");
+const historyListEl = document.querySelector("#history-list");
+const clearHistoryEl = document.querySelector("#clear-history");
 const typewriterNameEl = document.querySelector("#typewriter-name");
 const languageSelectorEl = document.querySelector(".language-selector");
 const languageTriggerEl = document.querySelector("#language-trigger");
@@ -403,6 +415,7 @@ function setLanguage(language, options = {}) {
   }
   applyTranslations();
   updateLanguageSelector();
+  renderSearchHistory();
   setLanguageMenuOpen(false);
   if (rerender && state.runtime && queryEl?.value.trim()) {
     stopActivePronunciation();
@@ -1478,7 +1491,7 @@ function candidateRankingScore(candidate) {
     if (hasSupportedWholeGivenName(units)) {
       score += 900 + Math.min(1600, givenWholeNamePrior(units) * 0.4) + givenWholeNameRankingBoost(units);
     } else if (units.length >= 2) {
-      score -= 780;
+      score -= unsupportedWholeGivenPenalty(units);
       if (units.some((syllable) => isUltraRareGivenSyllable(syllable))) {
         score -= 360;
       }
@@ -2007,6 +2020,37 @@ function hasSupportedWholeGivenName(units) {
   const data = state.data?.givenNames?.[name];
   if (!data) return false;
   return Number(data.totalWeight || 0) > 0 || Number(data.datasetCount || 0) > 0 || Number(data.rowOccurrences || 0) > 0;
+}
+
+function constructedGivenSyllableEvidenceStrength(syllable) {
+  const data = state.data?.syllables?.[syllable];
+  if (!data) return 0;
+
+  const total = Number(data.givenCount || 0) + Number(data.nameCount || 0);
+  const decadeWeight = Number(data.decadeWeight || 0);
+  const decadePeriods = Number(data.decadePeriods || 0);
+  let strength = 0;
+
+  if (isAllowedNameSyllable(syllable)) strength += 1.2;
+  if (hasHanjaGivenSupport(syllable)) strength += 1.1;
+  if (total > 0) strength += Math.min(2.4, Math.log1p(total) * 0.7);
+  if (decadeWeight > 0) strength += Math.min(2.2, Math.log1p(decadeWeight) * 0.2 + decadePeriods * 0.2);
+
+  return strength;
+}
+
+function unsupportedWholeGivenPenalty(units) {
+  const basePenalty = 780;
+  if (!units?.length) return basePenalty;
+
+  const evidenceBacked = units.every((syllable) => hasGivenSyllableEvidence(syllable) || isSinoLikeGivenSyllable(syllable));
+  if (!evidenceBacked) return basePenalty;
+
+  const strengths = units.map((syllable) => constructedGivenSyllableEvidenceStrength(syllable));
+  const weakest = Math.min(...strengths);
+  const average = strengths.reduce((sum, value) => sum + value, 0) / strengths.length;
+  const evidenceRelief = Math.min(600, average * 80 + weakest * 70);
+  return Math.max(180, Math.round(basePenalty - evidenceRelief));
 }
 
 function givenUnitsNamePrior(units) {
@@ -3985,7 +4029,7 @@ function candidateSubtitle(candidate, exactRows) {
     ? t("supportingRows", { count: exactRows.length })
     : candidate.kind === "given"
       ? t("generatedGivenEvidence")
-      : t("syntheticFullEvidence");
+      : "";
   const roleKinds = candidateRoleKinds(candidate);
   if (roleKinds.has("surname") && roleKinds.has("given")) {
     const surnameData = state.runtime?.surnameByHangul?.get(candidate.hangul);
@@ -4202,7 +4246,7 @@ function buildResultCards(candidateMap) {
     return;
   }
 
-  const candidatePercents = allocatePercentages(candidates, (candidate) => candidateRankingScore(candidate));
+  const candidatePercents = allocatePercentages(candidates, (candidate) => candidateRankingScore(candidate), { minPositive: 1 });
   resultsEl.innerHTML = "";
   for (const [index, candidate] of candidates.entries()) {
     const exactRows = gatherExactRowsForHangul(candidate.hangul, candidate);
@@ -4364,7 +4408,7 @@ function pruneImplausibleCandidates(candidateMap) {
   return filtered;
 }
 
-function allocatePercentages(items, getWeight = (item) => Number(item.score) || 0) {
+function allocatePercentages(items, getWeight = (item) => Number(item.score) || 0, options = {}) {
   if (!items.length) return [];
   const rawWeights = items.map((item) => Math.max(0, getWeight(item)));
   const total = rawWeights.reduce((sum, weight) => sum + weight, 0);
@@ -4377,6 +4421,26 @@ function allocatePercentages(items, getWeight = (item) => Number(item.score) || 
   for (let i = 0; i < rankedRemainders.length && remainder > 0; i += 1) {
     base[rankedRemainders[i].index] += 1;
     remainder -= 1;
+  }
+  const minPositive = Math.max(0, Math.floor(Number(options.minPositive || 0)));
+  const positiveIndices = rawWeights
+    .map((weight, index) => (weight > 0 ? index : -1))
+    .filter((index) => index >= 0);
+  if (minPositive > 0 && positiveIndices.length > 1 && positiveIndices.length * minPositive <= 100) {
+    let needed = 0;
+    for (const index of positiveIndices) {
+      if (base[index] >= minPositive) continue;
+      needed += minPositive - base[index];
+      base[index] = minPositive;
+    }
+    while (needed > 0) {
+      const donor = positiveIndices
+        .filter((index) => base[index] > minPositive)
+        .sort((a, b) => base[b] - base[a] || rawWeights[b] - rawWeights[a] || a - b)[0];
+      if (donor == null) break;
+      base[donor] -= 1;
+      needed -= 1;
+    }
   }
   return base;
 }
@@ -5005,10 +5069,101 @@ function hydrateRandomExamples(generatedNames = null) {
   });
 }
 
+function readSearchHistory() {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(SEARCH_HISTORY_STORAGE_KEY) || "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((item) => String(item || "").trim())
+      .filter(Boolean)
+      .slice(0, SEARCH_HISTORY_LIMIT);
+  } catch {
+    return [];
+  }
+}
+
+function writeSearchHistory(items) {
+  try {
+    window.localStorage.setItem(SEARCH_HISTORY_STORAGE_KEY, JSON.stringify(items.slice(0, SEARCH_HISTORY_LIMIT)));
+  } catch {
+    // Search still works when storage is unavailable.
+  }
+}
+
+function updateHistoryCompactState(history = readSearchHistory()) {
+  if (!historySectionEl) return;
+  const hasVisibleResults = !!resultsSectionEl && !resultsSectionEl.classList.contains("is-hidden");
+  historySectionEl.classList.toggle("is-results-visible", hasVisibleResults);
+  historySectionEl.classList.toggle("has-overflow", hasVisibleResults && history.length > SEARCH_HISTORY_COMPACT_VISIBLE_COUNT);
+}
+
+function renderSearchHistory() {
+  if (!historySectionEl || !historyListEl) return;
+  const history = readSearchHistory();
+  historySectionEl.hidden = history.length === 0;
+  updateHistoryCompactState(history);
+  historyListEl.innerHTML = "";
+  for (const item of history) {
+    const row = document.createElement("div");
+    row.className = "history-item";
+    const button = document.createElement("button");
+    button.className = "history-query";
+    button.type = "button";
+    button.dataset.historyQuery = item;
+
+    const icon = document.createElement("span");
+    icon.className = "history-clock";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = "◷";
+
+    const text = document.createElement("span");
+    text.className = "history-text";
+    text.textContent = item;
+    button.append(icon, text);
+
+    const remove = document.createElement("button");
+    remove.className = "history-remove";
+    remove.type = "button";
+    remove.dataset.historyRemove = item;
+    remove.setAttribute("aria-label", t("removeHistoryItem", { name: item }));
+    remove.textContent = "×";
+    row.append(button, remove);
+    historyListEl.appendChild(row);
+  }
+}
+
+function addSearchHistoryItem(query) {
+  const normalized = String(query || "").trim();
+  if (!normalized) return;
+  const history = readSearchHistory();
+  const deduped = history.filter((item) => item !== normalized);
+  writeSearchHistory([normalized, ...deduped]);
+  renderSearchHistory();
+}
+
+function removeSearchHistoryItem(query) {
+  const normalized = String(query || "").trim();
+  if (!normalized) return;
+  writeSearchHistory(readSearchHistory().filter((item) => item !== normalized));
+  renderSearchHistory();
+}
+
+function clearSearchHistory() {
+  writeSearchHistory([]);
+  renderSearchHistory();
+}
+
+function submitSearch(query, options = {}) {
+  const value = String(query || "").trim();
+  search(value);
+  if (value && options.recordHistory !== false) addSearchHistoryItem(value);
+}
+
 function hideResultsSection() {
   resultsSectionEl.classList.remove("is-entering", "is-visible");
   resultsSectionEl.classList.add("is-hidden");
   resultsSectionEl.setAttribute("aria-hidden", "true");
+  updateHistoryCompactState();
   if (interpretationEl) interpretationEl.textContent = "";
 }
 
@@ -5016,6 +5171,7 @@ function showResultsSection() {
   const alreadyVisible = resultsSectionEl.classList.contains("is-visible");
   resultsSectionEl.classList.remove("is-hidden");
   resultsSectionEl.setAttribute("aria-hidden", "false");
+  updateHistoryCompactState();
   if (alreadyVisible) return;
   resultsSectionEl.classList.add("is-entering");
   requestAnimationFrame(() => {
@@ -5100,13 +5256,14 @@ async function init() {
   const generatedNames = shuffled(buildGeneratedExampleNames());
   hydrateRandomExamples(generatedNames);
   hydrateTypewriterPrompt(generatedNames);
+  renderSearchHistory();
   resultsEl.innerHTML = "";
   hideResultsSection();
 }
 
 formEl.addEventListener("submit", (event) => {
   event.preventDefault();
-  search(queryEl.value);
+  submitSearch(queryEl.value);
 });
 
 typewriterNameEl?.addEventListener("click", () => {
@@ -5114,7 +5271,7 @@ typewriterNameEl?.addEventListener("click", () => {
   if (!name) return;
   queryEl.value = name;
   if (typeof formEl.requestSubmit === "function") formEl.requestSubmit();
-  else search(name);
+  else submitSearch(name);
   window.requestAnimationFrame(() => {
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
     resultsSectionEl?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
@@ -5124,8 +5281,26 @@ typewriterNameEl?.addEventListener("click", () => {
 exampleChipEls.forEach((button) => {
   button.addEventListener("click", () => {
     queryEl.value = button.dataset.example || "";
-    search(queryEl.value);
+    submitSearch(queryEl.value);
   });
+});
+
+historyListEl?.addEventListener("click", (event) => {
+  const target = event.target instanceof Element ? event.target : event.target?.parentElement;
+  const removeButton = target?.closest("[data-history-remove]");
+  if (removeButton) {
+    removeSearchHistoryItem(removeButton.dataset.historyRemove);
+    return;
+  }
+  const queryButton = target?.closest("[data-history-query]");
+  if (!queryButton) return;
+  const value = queryButton.dataset.historyQuery || "";
+  queryEl.value = value;
+  submitSearch(value);
+});
+
+clearHistoryEl?.addEventListener("click", () => {
+  clearSearchHistory();
 });
 
 siteTabEls.forEach((tab) => {
@@ -5151,7 +5326,7 @@ aboutExampleEls.forEach((button) => {
     setActiveSiteTab("home");
     queryEl.value = example;
     if (typeof formEl.requestSubmit === "function") formEl.requestSubmit();
-    else search(example);
+    else submitSearch(example);
     window.requestAnimationFrame(() => {
       const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
       resultsSectionEl?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });

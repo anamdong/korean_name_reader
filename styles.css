@@ -88,6 +88,10 @@
     border-color 0.1s ease-in-out,
     box-shadow 0.1s ease-in-out,
     opacity 0.1s ease-in-out;
+
+  --search-input-shadow:
+    0 1px 2px rgba(17, 17, 17, 0.04),
+    0 10px 28px rgba(17, 17, 17, 0.07);
 }
 
 * {
@@ -781,6 +785,28 @@ html[data-language="zh"] .typewriter-wrap::before {
   width: 100%;
 }
 
+.search-input-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.search-input-icon {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  width: 18px;
+  height: 18px;
+  color: var(--text-tertiary);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
 .search-row input {
   width: 100%;
   min-width: 0;
@@ -793,6 +819,7 @@ html[data-language="zh"] .typewriter-wrap::before {
   font-size: 16px;
   line-height: 24px;
   outline: none;
+  box-shadow: var(--search-input-shadow);
   transition: var(--motion-button);
 }
 
@@ -802,11 +829,16 @@ html[data-language="zh"] .typewriter-wrap::before {
 
 .search-row input:hover {
   border-color: var(--color-gray-350);
+  box-shadow:
+    0 1px 2px rgba(17, 17, 17, 0.05),
+    0 12px 32px rgba(17, 17, 17, 0.08);
 }
 
 .search-row input:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgb(var(--color-primary-rgb) / 0.16);
+  box-shadow:
+    0 0 0 3px rgb(var(--color-primary-rgb) / 0.16),
+    var(--search-input-shadow);
 }
 
 .examples-line {
@@ -853,6 +885,126 @@ html[data-language="zh"] .typewriter-wrap::before {
 
 .example-chip:active {
   background: rgb(var(--color-primary-rgb) / 0.24);
+}
+
+.history-section {
+  position: relative;
+  width: min(100%, 520px);
+  margin: var(--space-7) auto 0;
+}
+
+.history-section[hidden] {
+  display: none;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-2);
+}
+
+.history-label {
+  color: var(--text-primary);
+}
+
+.history-clear {
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  line-height: 19.5px;
+  font-weight: 500;
+}
+
+.history-clear:hover,
+.history-clear:focus-visible {
+  color: var(--text-brand);
+}
+
+.history-clear:focus-visible,
+.history-query:focus-visible,
+.history-remove:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gray-350) transparent;
+}
+
+.history-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--color-gray-350);
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  align-items: center;
+  min-height: 40px;
+}
+
+.history-query,
+.history-remove {
+  border: 0;
+  background: transparent;
+}
+
+.history-query {
+  min-width: 0;
+  min-height: 40px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: center;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 21px;
+  text-align: left;
+}
+
+.history-clock {
+  width: 20px;
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.history-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-remove {
+  width: 32px;
+  height: 32px;
+  justify-self: end;
+  border-radius: 50%;
+  color: var(--text-tertiary);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.history-query:hover,
+.history-query:focus-visible,
+.history-remove:hover,
+.history-remove:focus-visible {
+  color: var(--text-brand);
 }
 
 .button {
@@ -1449,7 +1601,7 @@ html[data-language="zh"] .typewriter-wrap::before {
   }
 
   .screen-content {
-    padding: 72px var(--space-6) var(--space-10);
+    padding: 96px var(--space-6) var(--space-10);
   }
 
   .about-content {
@@ -1491,12 +1643,32 @@ html[data-language="zh"] .typewriter-wrap::before {
 
   .search-row {
     grid-template-columns: 1fr;
-    gap: var(--space-4);
+  }
+
+  .search-row .button {
+    display: none;
+  }
+
+  .search-input-icon {
+    display: block;
   }
 
   .search-row input {
-    height: 56px;
-    padding: 0 18px;
+    height: 48px;
+    padding: 0 16px 0 44px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--color-gray-150);
+    font-size: 15px;
+    line-height: 22.5px;
+    box-shadow: var(--search-input-shadow);
+  }
+
+  .search-row input:hover,
+  .search-row input:focus {
+    border-color: transparent;
+    background: var(--color-gray-150);
+    box-shadow: var(--search-input-shadow);
   }
 
   .button[data-size="medium"] {
@@ -1508,9 +1680,41 @@ html[data-language="zh"] .typewriter-wrap::before {
   }
 
   .examples-line {
-    grid-template-columns: auto minmax(0, 1fr);
-    justify-content: flex-start;
+    grid-template-columns: 1fr;
+    justify-content: stretch;
+    justify-items: start;
     margin-top: var(--space-6);
+  }
+
+  .example-row {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .history-section {
+    width: 100%;
+    margin-top: var(--space-6);
+  }
+
+  .history-section.is-results-visible .history-list {
+    max-height: calc(40px * 2 + 2px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 2px;
+  }
+
+  .history-section.has-overflow::after {
+    content: "";
+    position: absolute;
+    right: 6px;
+    bottom: 0;
+    left: 6px;
+    height: 34px;
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--surface-page));
+    box-shadow: inset 0 -20px 20px -22px rgba(17, 17, 17, 0.2);
+    mask-image: linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 18px), transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 18px), transparent);
   }
 
   .results-section {
@@ -1564,11 +1768,11 @@ html[data-language="zh"] .typewriter-wrap::before {
 
   .examples-line {
     grid-template-columns: 1fr;
-    justify-items: center;
+    justify-items: start;
   }
 
   .example-row {
-    justify-content: center;
+    justify-content: flex-start;
   }
 }
 
