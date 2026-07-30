@@ -8,6 +8,7 @@ const LANGUAGE_STORAGE_KEY = "gildonghong.language";
 const SEARCH_HISTORY_STORAGE_KEY = "gildonghong.searchHistory";
 const SEARCH_HISTORY_LIMIT = 5;
 const SEARCH_HISTORY_COMPACT_VISIBLE_COUNT = 2;
+const RESULTS_REVEAL_DELAY_MS = 430;
 const LANGUAGE_CONFIG = {
   en: { code: "EN", htmlLang: "en", intlLocale: "en" },
   ja: { code: "JP", htmlLang: "ja", intlLocale: "ja-JP" },
@@ -302,6 +303,7 @@ const scriptPatterns = {
 };
 
 const resultTemplate = document.querySelector("#result-template");
+const homePanelEl = document.querySelector("#home-panel");
 const resultsSectionEl = document.querySelector(".results-section");
 const resultsEl = document.querySelector("#results");
 const interpretationEl = document.querySelector("#query-interpretation");
@@ -324,6 +326,7 @@ let activePronunciationButton = null;
 let activePronunciationAudio = null;
 let activePronunciationUtterance = null;
 let typewriterTimerId = null;
+let resultsRevealTimerId = null;
 
 const TYPEWRITER_EXAMPLE_COUNT = 40;
 const TYPEWRITER_HANJA_SOURCE_NAME_COUNT = 72;
@@ -5160,6 +5163,11 @@ function submitSearch(query, options = {}) {
 }
 
 function hideResultsSection() {
+  if (resultsRevealTimerId) {
+    window.clearTimeout(resultsRevealTimerId);
+    resultsRevealTimerId = null;
+  }
+  homePanelEl?.classList.remove("has-results");
   resultsSectionEl.classList.remove("is-entering", "is-visible");
   resultsSectionEl.classList.add("is-hidden");
   resultsSectionEl.setAttribute("aria-hidden", "true");
@@ -5169,17 +5177,34 @@ function hideResultsSection() {
 
 function showResultsSection() {
   const alreadyVisible = resultsSectionEl.classList.contains("is-visible");
-  resultsSectionEl.classList.remove("is-hidden");
-  resultsSectionEl.setAttribute("aria-hidden", "false");
+  homePanelEl?.classList.add("has-results");
   updateHistoryCompactState();
-  if (alreadyVisible) return;
-  resultsSectionEl.classList.add("is-entering");
-  requestAnimationFrame(() => {
+  if (resultsRevealTimerId) {
+    window.clearTimeout(resultsRevealTimerId);
+    resultsRevealTimerId = null;
+  }
+  const reducedMotion = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  const reveal = () => {
+    resultsRevealTimerId = null;
+    resultsSectionEl.classList.remove("is-hidden", "is-visible");
+    resultsSectionEl.setAttribute("aria-hidden", "false");
+    updateHistoryCompactState();
+    resultsSectionEl.classList.add("is-entering");
     requestAnimationFrame(() => {
-      resultsSectionEl.classList.remove("is-entering");
-      resultsSectionEl.classList.add("is-visible");
+      requestAnimationFrame(() => {
+        resultsSectionEl.classList.remove("is-entering");
+        resultsSectionEl.classList.add("is-visible");
+      });
     });
-  });
+  };
+
+  if (alreadyVisible || reducedMotion) {
+    reveal();
+    return;
+  }
+
+  resultsSectionEl.setAttribute("aria-hidden", "true");
+  resultsRevealTimerId = window.setTimeout(reveal, RESULTS_REVEAL_DELAY_MS);
 }
 
 function collectCandidatesForQuery(query) {

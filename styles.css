@@ -385,7 +385,12 @@ button:disabled,
 .screen-content {
   width: 100%;
   min-height: 100dvh;
-  padding: 112px var(--space-6) var(--space-12);
+  padding: clamp(114px, calc(43dvh - 148px), 270px) var(--space-6) var(--space-12);
+  transition: padding-top 0.58s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#home-panel.has-results .screen-content {
+  padding-top: 112px;
 }
 
 .about-content {
@@ -811,7 +816,7 @@ html[data-language="zh"] .typewriter-wrap::before {
   width: 100%;
   min-width: 0;
   height: 56px;
-  border: 1px solid var(--border-strong);
+  border: 0;
   border-radius: var(--radius-control-medium);
   padding: 0 18px;
   color: var(--text-primary);
@@ -828,16 +833,14 @@ html[data-language="zh"] .typewriter-wrap::before {
 }
 
 .search-row input:hover {
-  border-color: var(--color-gray-350);
   box-shadow:
     0 1px 2px rgba(17, 17, 17, 0.05),
     0 12px 32px rgba(17, 17, 17, 0.08);
 }
 
 .search-row input:focus {
-  border-color: var(--color-primary);
   box-shadow:
-    0 0 0 3px rgb(var(--color-primary-rgb) / 0.16),
+    0 0 0 3px var(--color-primary),
     var(--search-input-shadow);
 }
 
@@ -1117,8 +1120,7 @@ html[data-language="zh"] .typewriter-wrap::before {
 
 .button:focus-visible,
 .example-chip:focus-visible,
-.pronunciation-button:focus-visible,
-.search-row input:focus-visible {
+.pronunciation-button:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
@@ -1134,8 +1136,8 @@ html[data-language="zh"] .typewriter-wrap::before {
   opacity: 1;
   transform: translateY(0);
   transition:
-    opacity 0.25s ease-out,
-    transform 0.25s ease-out;
+    opacity 0.34s ease-out,
+    transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .results-section.is-hidden {
@@ -1149,7 +1151,7 @@ html[data-language="zh"] .typewriter-wrap::before {
 
 .results-section.is-entering {
   opacity: 0;
-  transform: translateY(12px);
+  transform: translateY(18px);
 }
 
 .section-head {
@@ -1601,7 +1603,11 @@ html[data-language="zh"] .typewriter-wrap::before {
   }
 
   .screen-content {
-    padding: 96px var(--space-6) var(--space-10);
+    padding: clamp(128px, calc(42dvh - 84px), 220px) var(--space-6) var(--space-10);
+  }
+
+  #home-panel.has-results .screen-content {
+    padding-top: 96px;
   }
 
   .about-content {
@@ -1664,11 +1670,18 @@ html[data-language="zh"] .typewriter-wrap::before {
     box-shadow: var(--search-input-shadow);
   }
 
-  .search-row input:hover,
-  .search-row input:focus {
+  .search-row input:hover {
     border-color: transparent;
     background: var(--color-gray-150);
     box-shadow: var(--search-input-shadow);
+  }
+
+  .search-row input:focus {
+    border-color: transparent;
+    background: var(--color-gray-150);
+    box-shadow:
+      0 0 0 3px var(--color-primary),
+      var(--search-input-shadow);
   }
 
   .button[data-size="medium"] {
