@@ -1140,11 +1140,16 @@ html[data-language="zh"] .typewriter-wrap::before {
     transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.results-section.is-resetting {
+  transition: none !important;
+}
+
 .results-section.is-hidden {
   display: none;
 }
 
 .results-section.is-entering,
+.results-section.is-exiting,
 .results-section.is-visible {
   display: block;
 }
@@ -1152,6 +1157,15 @@ html[data-language="zh"] .typewriter-wrap::before {
 .results-section.is-entering {
   opacity: 0;
   transform: translateY(18px);
+}
+
+.results-section.is-exiting {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition:
+    opacity 0.2s ease-out,
+    transform 0.2s ease-out;
 }
 
 .section-head {

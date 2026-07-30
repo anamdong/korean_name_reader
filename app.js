@@ -9,6 +9,7 @@ const SEARCH_HISTORY_STORAGE_KEY = "gildonghong.searchHistory";
 const SEARCH_HISTORY_LIMIT = 5;
 const SEARCH_HISTORY_COMPACT_VISIBLE_COUNT = 2;
 const RESULTS_REVEAL_DELAY_MS = 430;
+const RESULTS_SWAP_FADE_MS = 220;
 const LANGUAGE_CONFIG = {
   en: { code: "EN", htmlLang: "en", intlLocale: "en" },
   ja: { code: "JP", htmlLang: "ja", intlLocale: "ja-JP" },
@@ -327,6 +328,7 @@ let activePronunciationAudio = null;
 let activePronunciationUtterance = null;
 let typewriterTimerId = null;
 let resultsRevealTimerId = null;
+let resultsSwapTimerId = null;
 
 const TYPEWRITER_EXAMPLE_COUNT = 40;
 const TYPEWRITER_HANJA_SOURCE_NAME_COUNT = 72;
@@ -1697,6 +1699,72 @@ function applyRieulLiaison(nextKana) {
   return null;
 }
 
+function applyGiyeokLiaison(nextKana) {
+  const text = normalizeKana(nextKana);
+  const mapping = [
+    ["イェ", "ギェ"],
+    ["ヤ", "ギャ"],
+    ["ユ", "ギュ"],
+    ["ヨ", "ギョ"],
+    ["ア", "ガ"],
+    ["イ", "ギ"],
+    ["ウ", "グ"],
+    ["エ", "ゲ"],
+    ["オ", "ゴ"],
+  ];
+  for (const [from, to] of mapping) {
+    if (text.startsWith(from)) return `${to}${text.slice(from.length)}`;
+  }
+  return null;
+}
+
+function applyMieumLiaison(nextKana) {
+  const text = normalizeKana(nextKana);
+  const mapping = [
+    ["イェ", "ミェ"],
+    ["ヤ", "ミャ"],
+    ["ユ", "ミュ"],
+    ["ヨ", "ミョ"],
+    ["ア", "マ"],
+    ["イ", "ミ"],
+    ["ウ", "ム"],
+    ["エ", "メ"],
+    ["オ", "モ"],
+  ];
+  for (const [from, to] of mapping) {
+    if (text.startsWith(from)) return `${to}${text.slice(from.length)}`;
+  }
+  return null;
+}
+
+function applyBieupLiaison(nextKana) {
+  const text = normalizeKana(nextKana);
+  const mapping = [
+    ["イェ", "ビェ"],
+    ["ヤ", "ビャ"],
+    ["ユ", "ビュ"],
+    ["ヨ", "ビョ"],
+    ["ア", "バ"],
+    ["イ", "ビ"],
+    ["ウ", "ブ"],
+    ["エ", "ベ"],
+    ["オ", "ボ"],
+  ];
+  for (const [from, to] of mapping) {
+    if (text.startsWith(from)) return `${to}${text.slice(from.length)}`;
+  }
+  return null;
+}
+
+function codaLiaisonRule(coda) {
+  if (coda === "ㄱ") return { carrier: "ク", apply: applyGiyeokLiaison, scoreScale: 1.06 };
+  if (coda === "ㄴ") return { carrier: "ン", apply: applyNieunLiaison, scoreScale: 1.08 };
+  if (coda === "ㄹ") return { carrier: "ル", apply: applyRieulLiaison, scoreScale: 0.9 };
+  if (coda === "ㅁ") return { carrier: "ム", apply: applyMieumLiaison, scoreScale: 1.06 };
+  if (coda === "ㅂ") return { carrier: "プ", apply: applyBieupLiaison, scoreScale: 1.06 };
+  return null;
+}
+
 const REVERSE_NIEUN_LIAISON_PREFIXES = [
   ["ニャ", ["ヤ", "ヒャ"]],
   ["ニュ", ["ユ", "ヒュ"]],
@@ -1751,7 +1819,10 @@ function generateLiaisonKanaVariants(parts, syllables) {
     const previous = decomposeHangulSyllable(syllables[index - 1]);
     const current = decomposeHangulSyllable(syllables[index]);
     if (!previous || !current) continue;
-    if (!["ㄴ", "ㄹ"].includes(previous.coda) || !["ㅇ", "ㅎ"].includes(current.onset)) continue;
+    const rule = codaLiaisonRule(previous.coda);
+    if (!rule) continue;
+    const supportsCurrentOnset = current.onset === "ㅇ" || (current.onset === "ㅎ" && ["ㄴ", "ㄹ"].includes(previous.coda));
+    if (!supportsCurrentOnset) continue;
 
     const nextSurface = [];
     for (const surface of surfaces) {
@@ -1759,18 +1830,15 @@ function generateLiaisonKanaVariants(parts, syllables) {
       const currentParts = surface.text ? surface.text.split("\u0000") : parts.slice();
       const previousPart = currentParts[index - 1] || "";
       const currentPart = currentParts[index] || "";
-      const carrier = previous.coda === "ㄴ" ? "ン" : "ル";
-      if (!previousPart.endsWith(carrier)) continue;
-      const liaison = previous.coda === "ㄴ"
-        ? applyNieunLiaison(currentPart)
-        : applyRieulLiaison(currentPart);
+      if (!previousPart.endsWith(rule.carrier)) continue;
+      const liaison = rule.apply(currentPart);
       if (!liaison) continue;
       const mergedParts = currentParts.slice();
       mergedParts[index - 1] = previousPart.slice(0, -1);
       mergedParts[index] = liaison;
       nextSurface.push({
         text: mergedParts.join("\u0000"),
-        scoreScale: surface.scoreScale * (previous.coda === "ㄴ" ? 1.08 : 0.9),
+        scoreScale: surface.scoreScale * rule.scoreScale,
       });
     }
     surfaces = dedupeScoredByField(
@@ -1849,6 +1917,25 @@ function voiceInitialGiyeokKana(text) {
   return text;
 }
 
+function unvoiceInitialBieupKana(text) {
+  if (!text) return text;
+  const replacements = [
+    ["ビャ", "ピャ"],
+    ["ビュ", "ピュ"],
+    ["ビョ", "ピョ"],
+    ["ビェ", "ピェ"],
+    ["バ", "パ"],
+    ["ビ", "ピ"],
+    ["ブ", "プ"],
+    ["ベ", "ペ"],
+    ["ボ", "ポ"],
+  ];
+  for (const [from, to] of replacements) {
+    if (text.startsWith(from)) return `${to}${text.slice(from.length)}`;
+  }
+  return text;
+}
+
 function augmentInitialGivenKanaVariants(syllable, variants, syllableIndex) {
   if (syllableIndex !== 0 || !variants?.length) return variants || [];
   const parts = decomposeHangulSyllable(syllable);
@@ -1864,6 +1951,55 @@ function augmentInitialGivenKanaVariants(syllable, variants, syllableIndex) {
     });
   }
   return augmented.sort((a, b) => Number(b.score) - Number(a.score));
+}
+
+function applySokuonGeminateBoundary(previousPart, currentPart, coda, onset) {
+  if (!previousPart || !currentPart) return null;
+  if (coda === "ㄱ" && onset === "ㄱ" && previousPart.endsWith("ク")) {
+    const unvoiced = unvoiceInitialGiyeokKana(currentPart);
+    if (!unvoiced || unvoiced === currentPart) return null;
+    return [`${previousPart.slice(0, -1)}ッ`, unvoiced];
+  }
+  if (coda === "ㅂ" && onset === "ㅂ" && previousPart.endsWith("プ")) {
+    const unvoiced = unvoiceInitialBieupKana(currentPart);
+    if (!unvoiced || unvoiced === currentPart) return null;
+    return [`${previousPart.slice(0, -1)}ッ`, unvoiced];
+  }
+  return null;
+}
+
+function generateSokuonGeminateKanaVariants(parts, units) {
+  let surfaces = [{ parts: parts.slice(), scoreScale: 1 }];
+  for (let index = 1; index < units.length; index += 1) {
+    const next = [];
+    for (const surface of surfaces) {
+      next.push(surface);
+      const previous = decomposeHangulSyllable(units[index - 1]);
+      const current = decomposeHangulSyllable(units[index]);
+      if (!previous || !current) continue;
+      const transformed = applySokuonGeminateBoundary(
+        surface.parts[index - 1],
+        surface.parts[index],
+        previous.coda,
+        current.onset,
+      );
+      if (!transformed) continue;
+      const nextParts = surface.parts.slice();
+      nextParts[index - 1] = transformed[0];
+      nextParts[index] = transformed[1];
+      next.push({
+        parts: nextParts,
+        scoreScale: surface.scoreScale * 1.14,
+      });
+    }
+    surfaces = dedupeScoredByField(
+      next.map((item) => ({ surface: item.parts.join("\u0000"), score: item.scoreScale })),
+      "surface",
+      "score",
+      12,
+    ).map((item) => ({ parts: item.surface.split("\u0000"), scoreScale: item.score }));
+  }
+  return surfaces.filter((item) => item.parts.join("") !== parts.join(""));
 }
 
 function dedupeScored(items, textKey = "text", scoreKey = "score", limit = 8) {
@@ -3916,6 +4052,9 @@ function generateGivenKanaOutputs(hangul) {
     for (const voicedSurface of generateVoicedGiyeokKanaVariants(normalizedParts, givenUnits)) {
       add(voicedSurface.parts.join(""), combo.score * voicedSurface.scoreScale);
     }
+    for (const sokuonSurface of generateSokuonGeminateKanaVariants(normalizedParts, givenUnits)) {
+      add(sokuonSurface.parts.join(""), combo.score * sokuonSurface.scoreScale);
+    }
   }
   for (const pronouncedSurface of generatePronouncedGivenSurfaceVariants(givenUnits)) {
     const pronouncedCombos = buildKanaGivenCombosForUnits(pronouncedSurface.units);
@@ -4169,6 +4308,12 @@ function generateKanaOutputs(hangul, exactRows) {
             (Number(surnameVariant.score) + givenCombo.score) * voicedSurface.scoreScale,
           );
         }
+        for (const sokuonSurface of generateSokuonGeminateKanaVariants(normalizedParts, givenUnits)) {
+          add(
+            `${surnameSurface} ${sokuonSurface.parts.join("")}`.trim(),
+            (Number(surnameVariant.score) + givenCombo.score) * sokuonSurface.scoreScale,
+          );
+        }
       }
     }
   }
@@ -4241,11 +4386,10 @@ function hanjaOutputsForCandidate(hangul, exactRows) {
     .map(([text, item]) => ({ text, score: item.score, surnameKey: item.surnameKey }));
 }
 
-function buildResultCards(candidateMap) {
+function populateResultCards(candidateMap) {
   const candidates = [...candidateMap.values()].sort((a, b) => candidateRankingScore(b) - candidateRankingScore(a)).slice(0, 16);
   if (!candidates.length) {
     resultsEl.innerHTML = `<div class="empty-state" role="status">${t("noMatches")}</div>`;
-    showResultsSection();
     return;
   }
 
@@ -4289,7 +4433,38 @@ function buildResultCards(candidateMap) {
 
     resultsEl.appendChild(fragment);
   }
-  showResultsSection();
+}
+
+function buildResultCards(candidateMap) {
+  const reducedMotion = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  const shouldSwapVisibleResults =
+    !reducedMotion &&
+    resultsSectionEl.classList.contains("is-visible") &&
+    !resultsSectionEl.classList.contains("is-hidden");
+
+  if (resultsSwapTimerId) {
+    window.clearTimeout(resultsSwapTimerId);
+    resultsSwapTimerId = null;
+  }
+
+  const renderAndReveal = (options = {}) => {
+    populateResultCards(candidateMap);
+    showResultsSection(options);
+  };
+
+  if (!shouldSwapVisibleResults) {
+    renderAndReveal();
+    return;
+  }
+
+  resultsSectionEl.classList.remove("is-entering", "is-visible");
+  resultsSectionEl.classList.add("is-exiting");
+  resultsSectionEl.setAttribute("aria-hidden", "true");
+  resultsSwapTimerId = window.setTimeout(() => {
+    resultsSwapTimerId = null;
+    resultsSectionEl.classList.remove("is-exiting");
+    renderAndReveal({ delay: false });
+  }, RESULTS_SWAP_FADE_MS);
 }
 
 function pruneImplausibleCandidates(candidateMap) {
@@ -5167,15 +5342,20 @@ function hideResultsSection() {
     window.clearTimeout(resultsRevealTimerId);
     resultsRevealTimerId = null;
   }
+  if (resultsSwapTimerId) {
+    window.clearTimeout(resultsSwapTimerId);
+    resultsSwapTimerId = null;
+  }
   homePanelEl?.classList.remove("has-results");
-  resultsSectionEl.classList.remove("is-entering", "is-visible");
+  resultsSectionEl.classList.remove("is-entering", "is-exiting", "is-visible");
   resultsSectionEl.classList.add("is-hidden");
   resultsSectionEl.setAttribute("aria-hidden", "true");
   updateHistoryCompactState();
   if (interpretationEl) interpretationEl.textContent = "";
 }
 
-function showResultsSection() {
+function showResultsSection(options = {}) {
+  const { delay = true } = options;
   const alreadyVisible = resultsSectionEl.classList.contains("is-visible");
   homePanelEl?.classList.add("has-results");
   updateHistoryCompactState();
@@ -5186,19 +5366,23 @@ function showResultsSection() {
   const reducedMotion = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
   const reveal = () => {
     resultsRevealTimerId = null;
-    resultsSectionEl.classList.remove("is-hidden", "is-visible");
+    resultsSectionEl.classList.add("is-resetting");
+    resultsSectionEl.classList.remove("is-hidden", "is-exiting", "is-visible");
     resultsSectionEl.setAttribute("aria-hidden", "false");
     updateHistoryCompactState();
     resultsSectionEl.classList.add("is-entering");
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
+    resultsSectionEl.getBoundingClientRect();
+    window.setTimeout(() => {
+      resultsSectionEl.classList.remove("is-resetting");
+      resultsSectionEl.getBoundingClientRect();
+      window.setTimeout(() => {
         resultsSectionEl.classList.remove("is-entering");
         resultsSectionEl.classList.add("is-visible");
-      });
-    });
+      }, 20);
+    }, 20);
   };
 
-  if (alreadyVisible || reducedMotion) {
+  if (alreadyVisible || reducedMotion || !delay) {
     reveal();
     return;
   }
