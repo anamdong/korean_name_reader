@@ -781,7 +781,7 @@ html[data-language="zh"] .typewriter-wrap::before {
 
 .search-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 176px;
+  grid-template-columns: minmax(0, 1fr) 128px;
   gap: var(--space-3);
   align-items: stretch;
 }
@@ -1062,9 +1062,9 @@ html[data-language="zh"] .typewriter-wrap::before {
   --button-font-size: 14px;
   --button-line-height: 21px;
   --button-border-radius: 8px;
-  --button-min-width: 160px;
+  --button-min-width: 112px;
   --button-min-height: 56px;
-  --button-padding: 0 28px;
+  --button-padding: 0 20px;
   --button-loader-size: 6px;
   --button-loader-gap: 5px;
 }

@@ -544,7 +544,7 @@ const RARE_SURNAME_ROMAN_ALIASES = new Map(Object.entries({
 const RARE_GIVEN_ROMAN_ALIASES = new Map(Object.entries({
   용: [{ text: "yueng", score: 8 }],
   채: [{ text: "chea", score: 8 }],
-  혜: [{ text: "hae", score: 8 }],
+  혜: [{ text: "hae", score: 8 }, { text: "hea", score: 8 }],
   원: [{ text: "one", score: 6 }],
   준: [{ text: "june", score: 8 }],
   지: [{ text: "gee", score: 7 }],
