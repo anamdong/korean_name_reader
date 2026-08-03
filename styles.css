@@ -191,6 +191,7 @@ button:disabled,
   font-size: 14px;
   line-height: 21px;
   font-weight: 600;
+  white-space: nowrap;
   transition: color 0.2s ease-out;
 }
 
@@ -409,6 +410,24 @@ button:disabled,
   font-size: 30px;
   line-height: 40px;
   font-weight: 700;
+}
+
+.creator-credit {
+  margin: var(--space-4) 0 0;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 24px;
+}
+
+.creator-credit a {
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.creator-credit a:hover,
+.creator-credit a:focus-visible {
+  text-decoration: underline;
 }
 
 .about-section {
@@ -1608,7 +1627,14 @@ html[data-language="zh"] .typewriter-wrap::before {
   }
 
   .site-tabs {
+    max-width: calc(100vw - 124px);
+    overflow-x: auto;
     gap: var(--space-4);
+    scrollbar-width: none;
+  }
+
+  .site-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .language-selector {

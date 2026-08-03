@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&amp;family=Noto+Sans+JP:wght@400;500;600;700;800&amp;family=Noto+Sans+KR:wght@400;500;600;700;800&amp;family=Noto+Sans+TC:wght@400;500;600;700;800&amp;display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260803-rare-surname-aliases-1" />
+    <link rel="stylesheet" href="./styles.css?v=20260803-how-page-credit-1" />
   </head>
   <body>
     <header class="utility-header">
@@ -38,6 +38,17 @@
             data-tab="about"
             data-i18n="about"
           >About</button>
+          <button
+            id="how-tab"
+            class="site-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="how-panel"
+            tabindex="-1"
+            data-tab="how"
+            data-i18n="howItWorks"
+          >How it works</button>
         </nav>
       </div>
       <div class="language-selector">
@@ -153,6 +164,10 @@
         <div class="about-content">
           <header class="about-header">
             <h1 data-i18n="aboutTitle">About gildonghong</h1>
+            <p class="creator-credit">
+              <span data-i18n="creatorCredit">Created by James Hyungjune Seo</span>
+              <a href="https://x.com/sho3unsk" target="_blank" rel="noreferrer">x.com/sho3unsk</a>
+            </p>
           </header>
 
           <section class="about-section" aria-labelledby="about-does-title">
@@ -229,6 +244,50 @@
           </section>
         </div>
       </section>
+
+      <section id="how-panel" class="site-panel about-panel" role="tabpanel" aria-labelledby="how-tab" data-panel="how" tabindex="0" hidden>
+        <div class="about-content">
+          <header class="about-header">
+            <h1 data-i18n="howTitle">How it works</h1>
+            <p class="about-copy" data-i18n="howIntro">The tool turns a search string into possible Korean names, then ranks the candidates by matching evidence from several writing systems.</p>
+          </header>
+
+          <section class="about-section" aria-labelledby="how-token-title">
+            <h2 id="how-token-title" data-i18n="howTokenTitle">1. It reads the input as evidence</h2>
+            <p class="about-copy" data-i18n="howTokenCopy">The search is split by script and separators, so Hangul, Roman letters, Japanese kana, and Hanja can all be used alone or together.</p>
+            <ul class="about-list">
+              <li data-i18n="howTokenRoman">Roman input accepts surname-first and surname-last order, spaces, dots, hyphens, and curated personal spellings.</li>
+              <li data-i18n="howTokenKana">Kana input is matched against common Japanese ways of writing Korean sounds, including liaison and small-tsu variants.</li>
+              <li data-i18n="howTokenHanja">Hanja input uses observed Korean name characters first, then falls back to Korean readings when needed.</li>
+            </ul>
+          </section>
+
+          <section class="about-section" aria-labelledby="how-candidate-title">
+            <h2 id="how-candidate-title" data-i18n="howCandidateTitle">2. It builds Korean-name candidates</h2>
+            <p class="about-copy" data-i18n="howCandidateCopy">The system combines possible surnames and given-name syllables, then removes candidates that do not look like modern Korean names.</p>
+            <ul class="about-list">
+              <li data-i18n="howCandidateSurname">Surname candidates use Korean census population, Hanja surname data, and curated Korean-only spelling aliases.</li>
+              <li data-i18n="howCandidateGiven">Given names use modern name evidence, syllable evidence, representative Hanja, and attested spelling examples.</li>
+              <li data-i18n="howCandidateFilter">Filters reject many false positives, including unsupported syllables and non-Korean Sinosphere romanizations.</li>
+            </ul>
+          </section>
+
+          <section class="about-section" aria-labelledby="how-rank-title">
+            <h2 id="how-rank-title" data-i18n="howRankTitle">3. It ranks by plausibility</h2>
+            <p class="about-copy" data-i18n="howRankCopy">The score is a comparison among the shown candidates, not a claim about the real-world probability of a person having that exact name.</p>
+            <ul class="about-list">
+              <li data-i18n="howRankPopulation">Common surnames and well-supported given names get stronger priors.</li>
+              <li data-i18n="howRankExact">Exact observed spellings and exact Hanja/kana matches get additional weight.</li>
+              <li data-i18n="howRankRare">Rare aliases are allowed so real personal spellings can be found, but they are kept weaker than standard spellings.</li>
+            </ul>
+          </section>
+
+          <section class="about-section" aria-labelledby="how-output-title">
+            <h2 id="how-output-title" data-i18n="howOutputTitle">4. It formats the result</h2>
+            <p class="about-copy" data-i18n="howOutputCopy">For each ranked Korean candidate, the page shows likely Roman spellings, Japanese kana, Hanja options, bon-gwan distribution when available, and Korean pronunciation playback.</p>
+          </section>
+        </div>
+      </section>
     </main>
 
     <template id="result-template">
@@ -272,6 +331,6 @@
       </article>
     </template>
 
-  <script type="module" src="./app.js?v=20260803-rare-surname-aliases-1"></script>
+  <script type="module" src="./app.js?v=20260803-how-page-credit-1"></script>
   </body>
 </html>
