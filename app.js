@@ -537,8 +537,58 @@ const BLOCKED_GIVEN_ROMAN_BY_HANGUL = new Map(Object.entries({
 }).map(([hangul, variants]) => [hangul, new Set(variants)]));
 
 const RARE_SURNAME_ROMAN_ALIASES = new Map(Object.entries({
+  가: [{ text: "Kah", score: 6, inputScore: 60 }, { text: "Gah", score: 6, inputScore: 60 }],
+  강: [{ text: "Kahng", score: 6, inputScore: 90 }],
+  경: [{ text: "Kyeong", score: 6, inputScore: 70 }, { text: "Kyong", score: 6, inputScore: 70 }],
+  곽: [{ text: "Kwack", score: 6, inputScore: 70 }, { text: "Gwag", score: 6, inputScore: 60 }],
+  공: [{ text: "Kohng", score: 6, inputScore: 70 }, { text: "Koung", score: 6, inputScore: 60 }, { text: "Goung", score: 6, inputScore: 60 }],
+  금: [{ text: "Guem", score: 6, inputScore: 70 }, { text: "Kuem", score: 6, inputScore: 70 }],
+  기: [{ text: "Khee", score: 6, inputScore: 60 }],
+  김: [{ text: "Kym", score: 6, inputScore: 90 }],
+  남: [{ text: "Nahm", score: 6, inputScore: 80 }],
+  남궁: [{ text: "Namkoung", score: 6, inputScore: 70 }],
+  노: [{ text: "Nho", score: 6, inputScore: 70 }],
+  마: [{ text: "Mah", score: 6, inputScore: 60 }],
+  명: [{ text: "Myong", score: 6, inputScore: 70 }],
+  모: [{ text: "Moh", score: 6, inputScore: 60 }],
+  민: [{ text: "Mihn", score: 6, inputScore: 70 }, { text: "Meen", score: 6, inputScore: 60 }],
+  반: [{ text: "Bahn", score: 6, inputScore: 70 }],
+  방: [{ text: "Bahng", score: 6, inputScore: 70 }],
+  배: [{ text: "Pae", score: 6, inputScore: 80 }],
+  백: [{ text: "Paek", score: 6, inputScore: 90 }],
+  변: [
+    { text: "Byon", score: 6, inputScore: 80 },
+    { text: "Pyun", score: 6, inputScore: 160 },
+    { text: "Byoun", score: 6, inputScore: 70 },
+    { text: "Pyon", score: 6, inputScore: 150 },
+  ],
+  선: [{ text: "Suhn", score: 6, inputScore: 70 }],
+  설: [{ text: "Seul", score: 6, inputScore: 70 }],
+  석: [{ text: "Sok", score: 6, inputScore: 70 }, { text: "Seuk", score: 6, inputScore: 60 }, { text: "Seak", score: 6, inputScore: 60 }],
+  손: [{ text: "Shon", score: 6, inputScore: 80 }, { text: "Soun", score: 6, inputScore: 60 }],
+  송: [{ text: "Soung", score: 6, inputScore: 70 }, { text: "Shong", score: 6, inputScore: 70 }],
+  신: [{ text: "Shinn", score: 6, inputScore: 80 }, { text: "Sheen", score: 6, inputScore: 80 }],
+  심: [{ text: "Seem", score: 6, inputScore: 70 }, { text: "Sheem", score: 6, inputScore: 70 }, { text: "Sihm", score: 6, inputScore: 70 }],
+  엄: [{ text: "Uhm", score: 6, inputScore: 80 }],
+  어: [{ text: "Eoh", score: 6, inputScore: 60 }],
+  예: [{ text: "Yeh", score: 6, inputScore: 60 }],
+  옥: [{ text: "Ohk", score: 6, inputScore: 60 }],
+  원: [{ text: "Weon", score: 6, inputScore: 70 }],
+  윤: [{ text: "Yune", score: 6, inputScore: 70 }, { text: "Yeun", score: 6, inputScore: 70 }],
+  인: [{ text: "Ihn", score: 6, inputScore: 60 }],
+  전: [{ text: "Chon", score: 6, inputScore: 80 }, { text: "Jeun", score: 6, inputScore: 70 }],
+  정: [{ text: "Joung", score: 6, inputScore: 80 }, { text: "Chong", score: 6, inputScore: 180 }, { text: "Cheong", score: 6, inputScore: 70 }],
+  채: [{ text: "Chea", score: 6, inputScore: 70 }],
+  차: [{ text: "Chah", score: 6, inputScore: 70 }],
+  탁: [{ text: "Tark", score: 6, inputScore: 60 }],
+  편: [{ text: "Pyon", score: 6, inputScore: 70 }, { text: "Pyoun", score: 6, inputScore: 60 }, { text: "Pyeun", score: 6, inputScore: 60 }],
+  하: [{ text: "Hah", score: 6, inputScore: 70 }],
+  한: [{ text: "Hann", score: 6, inputScore: 80 }],
+  현: [{ text: "Hyon", score: 6, inputScore: 80 }, { text: "Hyoun", score: 6, inputScore: 70 }],
+  황: [{ text: "Whang", score: 6, inputScore: 90 }],
   궉: [{ text: "Kuck", score: 6, inputScore: 120 }],
   지: [{ text: "Gee", score: 6, inputScore: 40 }],
+  장: [{ text: "Jahng", score: 6, inputScore: 90 }],
 }));
 
 const RARE_GIVEN_ROMAN_ALIASES = new Map(Object.entries({
@@ -573,6 +623,7 @@ const INITIAL_SOUND_LAW_SURNAME_PAIRS = new Set([
 
 const ATTESTED_FULL_NAME_ROMAN_ALIASES = new Map(Object.entries({
   궉채이: [{ text: "Kuck Cheayi", searchScore: 100, outputScore: 220 }],
+  장미: [{ text: "Mi Jahng", searchScore: 100, outputScore: 220 }],
 }));
 
 function isModernRomanText(text) {
@@ -3340,6 +3391,20 @@ function parseGivenLatinTokens(tokens) {
   return filterEvidenceBackedGivenCandidates(recoverRomanDuumGivenCandidates(combos));
 }
 
+function exactSingleSyllableGivenCandidatesForFullName(tokens) {
+  if ((tokens || []).length !== 1) return [];
+  const token = normalizeLatin(tokens[0]);
+  if (!token) return [];
+  const exactSource = contextualGivenRomanCandidates(state.data.syllableLatinIndex[token] || [], token);
+  return pruneWeakExactSyllableMatches(exactSource, token)
+    .filter((item) => isNameLikeGivenSyllable(item.hangul) && romanChunkFitValue(token, item.hangul) >= 360)
+    .map((item) => ({
+      units: [item.hangul],
+      score: Number(item.score) || 0,
+      chunks: [token],
+    }));
+}
+
 function knownGivenCandidatesFromRomanTokens(tokens) {
   const joined = normalizeLatin((tokens || []).join(""));
   if (!joined) return [];
@@ -3597,7 +3662,10 @@ function addLatinFullNameHypotheses(hypotheses, candidateMap) {
     const parsedGivenCandidates = parseGivenLatinTokens(hypothesis.givenTokens);
     givenCandidates = dedupeCandidateUnits(givenCandidates.concat(parsedGivenCandidates), 24);
     if (hypothesis.givenTokens.length === 1) {
-      givenCandidates = pruneRomanSingleTokenGivenCandidates(givenCandidates);
+      const prunedCandidates = pruneRomanSingleTokenGivenCandidates(givenCandidates);
+      givenCandidates = prunedCandidates.length
+        ? prunedCandidates
+        : exactSingleSyllableGivenCandidatesForFullName(hypothesis.givenTokens);
     }
     combineSurnameAndGivenCandidates(surnameCandidates, givenCandidates, candidateMap, hypothesis.boost, hypothesis.label);
   }
