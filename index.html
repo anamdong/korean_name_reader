@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&amp;family=Noto+Sans+JP:wght@400;500;600;700;800&amp;family=Noto+Sans+KR:wght@400;500;600;700;800&amp;family=Noto+Sans+TC:wght@400;500;600;700;800&amp;display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260803-how-page-credit-1" />
+    <link rel="stylesheet" href="./styles.css?v=20260813-hangnyeol-2" />
   </head>
   <body>
     <header class="utility-header">
@@ -129,6 +129,7 @@
               <span class="button-content" data-i18n="convert">Convert</span>
             </button>
           </div>
+          <div id="input-guidance" class="input-guidance" role="status" aria-live="polite"></div>
           <div class="examples-line">
             <span id="example-label" class="list-header-title example-label" data-i18n="examples">Examples</span>
             <div class="example-row">
@@ -149,12 +150,6 @@
         </form>
 
         <section class="results-section is-hidden" aria-hidden="true">
-          <div class="list-header section-head">
-            <div class="list-header-main">
-              <h2 class="list-header-title" data-i18n="rankedResults">Ranked results</h2>
-            </div>
-            <p id="query-interpretation" class="list-header-description query-interpretation"></p>
-          </div>
           <div id="results" class="results-list"></div>
         </section>
         </div>
@@ -235,8 +230,32 @@
               </li>
               <li>
                 <a href="https://www.ohmybaby.kr/rankings" target="_blank" rel="noreferrer">
-                  <span class="source-name" data-i18n="sourceNamesName">2025–2026 baby-name rankings</span>
-                  <span class="source-description" data-i18n="sourceNamesDescription">Supplementary modern-name and representative Hanja prior, based on Supreme Court birth registrations.</span>
+                  <span class="source-name" data-i18n="sourceNamesName">Oh My Baby · 2025–2026 name rankings</span>
+                  <span class="source-description" data-i18n="sourceNamesDescription">Rank-weighted modern-name and representative Hanja usage prior. It is not an official registry count.</span>
+                </a>
+              </li>
+              <li>
+                <a href="https://en.wikipedia.org/wiki/Category:South_Korean_people" target="_blank" rel="noreferrer">
+                  <span class="source-name" data-i18n="sourceWikipediaName">Wikipedia · Korean-person name corpus</span>
+                  <span class="source-description" data-i18n="sourceWikipediaDescription">Public biography pages provide observed Hangul, Roman, Hanja, and kana forms.</span>
+                </a>
+              </li>
+              <li>
+                <a href="https://ja.wikipedia.org/wiki/%E6%9C%9D%E9%AE%AE%E4%BA%BA%E3%81%AE%E5%A7%93%E3%81%AE%E4%B8%80%E8%A6%A7" target="_blank" rel="noreferrer">
+                  <span class="source-name" data-i18n="sourceJapaneseName">Japanese Wikipedia · Korean surname list</span>
+                  <span class="source-description" data-i18n="sourceJapaneseDescription">Preferred Japanese surname kana readings and supporting kana conventions.</span>
+                </a>
+              </li>
+              <li>
+                <a href="https://ph3588.tistory.com/4" target="_blank" rel="noreferrer">
+                  <span class="source-name" data-i18n="sourceClanIndexName">Korean bon-gwan clan index</span>
+                  <span class="source-description" data-i18n="sourceClanIndexDescription">Used to annotate bon-gwan Hanja labels; population counts remain from KOSIS.</span>
+                </a>
+              </li>
+              <li>
+                <a href="https://www.surname.info/local.html" target="_blank" rel="noreferrer">
+                  <span class="source-name" data-i18n="sourcePlaceIndexName">surname.info · Historical-place index</span>
+                  <span class="source-description" data-i18n="sourcePlaceIndexDescription">Used to cross-check bon-gwan place labels; population counts remain from KOSIS.</span>
                 </a>
               </li>
             </ul>
@@ -315,22 +334,26 @@
         </div>
         <div class="score-bar"><span></span></div>
         <div class="result-grid">
-          <section class="output-section">
-            <h4 data-i18n="romanAlphabet">Roman alphabet</h4>
-            <ol class="variant-list roman-list"></ol>
-          </section>
-          <section class="output-section">
+          <section class="output-section output-section-kana">
             <h4 data-i18n="japaneseKana">Japanese kana</h4>
             <ol class="variant-list kana-list"></ol>
           </section>
-          <section class="output-section">
-            <h4 data-i18n="hanja">Hanja</h4>
-            <ol class="variant-list hanja-list"></ol>
+          <section class="output-section output-section-disclosure">
+            <details>
+              <summary><span data-i18n="romanAlphabet">Roman alphabet</span></summary>
+              <ol class="variant-list roman-list"></ol>
+            </details>
+          </section>
+          <section class="output-section output-section-disclosure">
+            <details>
+              <summary><span data-i18n="hanja">Hanja</span></summary>
+              <ol class="variant-list hanja-list"></ol>
+            </details>
           </section>
         </div>
       </article>
     </template>
 
-  <script type="module" src="./app.js?v=20260803-how-page-credit-1"></script>
+  <script type="module" src="./app.js?v=20260813-hangnyeol-3"></script>
   </body>
 </html>
