@@ -2100,7 +2100,27 @@ html[data-language="zh"] .typewriter-wrap::before {
 
   .example-row {
     width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
     justify-content: flex-start;
+    padding: 0 48px 2px 0;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 48px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 48px), transparent 100%);
+  }
+
+  .example-row::-webkit-scrollbar,
+  .history-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .example-chip,
+  .history-item {
+    flex: 0 0 auto;
+    max-width: none;
+    white-space: nowrap;
   }
 
   .history-section {
@@ -2108,25 +2128,22 @@ html[data-language="zh"] .typewriter-wrap::before {
     margin-top: var(--space-6);
   }
 
+  .history-list,
   .history-section.is-results-visible .history-list {
-    max-height: calc(40px * 2 + 2px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding-right: 2px;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+    max-height: none;
+    padding: 0 48px 2px 0;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 48px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 48px), transparent 100%);
   }
 
   .history-section.has-overflow::after {
-    content: "";
-    position: absolute;
-    right: 6px;
-    bottom: 0;
-    left: 6px;
-    height: 34px;
-    pointer-events: none;
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--surface-page));
-    box-shadow: inset 0 -20px 20px -22px rgba(17, 17, 17, 0.2);
-    mask-image: linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 18px), transparent);
-    -webkit-mask-image: linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 18px), transparent);
+    display: none;
   }
 
   .results-section {
