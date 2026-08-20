@@ -6,6 +6,12 @@ export function clanIdForHangnyeol({ surnameHangul, surnameHanja, bonGwanName, b
   return [surnameHangul, surnameHanja, bonGwanName, bonGwanHanja].map((value) => String(value || "").trim()).join("|");
 }
 
+export function leadingSurnameHanja(queryText, surnameLength) {
+  const leading = String(queryText || "").trim().match(/^[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]+/)?.[0] || "";
+  const characters = hanjaCharacters(leading);
+  return characters.length >= surnameLength ? characters.slice(0, surnameLength).join("") : "";
+}
+
 export function findHangnyeolMatches(dataset, input) {
   const givenHangul = Array.from(String(input?.givenNameHangul || ""));
   const givenHanja = hanjaCharacters(input?.givenNameHanja);

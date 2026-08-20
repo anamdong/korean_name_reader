@@ -1344,6 +1344,37 @@ html[data-language="zh"] .typewriter-wrap::before {
   counter-increment: result;
 }
 
+.results-more-button {
+  width: 100%;
+  min-height: 52px;
+  padding: var(--space-3) var(--space-6);
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-page);
+  color: var(--color-primary);
+  font: inherit;
+  font-size: 14px;
+  line-height: 21px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--motion-button);
+}
+
+.results-more-button:hover,
+.results-more-button:focus-visible {
+  background: rgb(var(--color-primary-rgb) / 0.06);
+}
+
+.results-more-button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.results-more-list[hidden] {
+  display: none;
+}
+
 .result-top {
   min-height: 76px;
   grid-template-columns: auto minmax(0, 1fr) auto auto;

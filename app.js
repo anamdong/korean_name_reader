@@ -1,12 +1,12 @@
 import { analyzeLatinNameInput, createKoreanRomanSuggestionIndex, isKoreanRomanShorthand, keyboardWeightedDistance } from "./name_input_helpers.js?v=20260814-chinese-guidance-3";
-import { clanIdForHangnyeol, findHangnyeolMatches, sourceRecordsForHangnyeolMatch } from "./hangnyeol_matcher.js?v=20260813-hangnyeol-2";
+import { clanIdForHangnyeol, findHangnyeolMatches, leadingSurnameHanja, sourceRecordsForHangnyeolMatch } from "./hangnyeol_matcher.js?v=20260817-explicit-surname-hanja";
 
 const dataUrl = "./data/name_index.json?v=20260804-japanese-surname-priors";
 const hanjaReadingUrl = "./data/hanja_readings.json?v=20260721-unihan-khangul";
 const hanjaNameCharUrl = "./data/hanja_name_chars.json?v=20260721-top1000-name-hanja";
 const hanjaUsageRankUrl = "./data/hanja_usage_rank.json?v=20260721-ohmybaby-top50";
 const bonGwanDataUrl = "./data/bon_gwan_by_surname.json?v=20260721-kosis-2015-hanja";
-const hangnyeolDataUrl = "./data/hangnyeol_by_clan.json?v=20260813-corpus-6";
+const hangnyeolDataUrl = "./data/hangnyeol_by_clan.json?v=20260817-corpus-14";
 
 const LANGUAGE_STORAGE_KEY = "gildonghong.language";
 const SEARCH_HISTORY_STORAGE_KEY = "gildonghong.searchHistory";
@@ -41,6 +41,8 @@ const TRANSLATIONS = {
     removeHistoryItem: ({ name }) => `Remove ${name} from history`,
     rankedResults: "Ranked results",
     plausibility: "Plausibility",
+    seeMoreResults: "See more results",
+    hideAdditionalResults: "Hide additional results",
     romanAlphabet: "Roman alphabet",
     japaneseKana: "Japanese kana",
     hanja: "Hanja",
@@ -176,6 +178,8 @@ const TRANSLATIONS = {
     removeHistoryItem: ({ name }) => `「${name}」を履歴から削除`,
     rankedResults: "候補ランキング",
     plausibility: "確からしさ",
+    seeMoreResults: "候補をさらに表示",
+    hideAdditionalResults: "追加の候補を閉じる",
     romanAlphabet: "ローマ字",
     japaneseKana: "日本語カナ",
     hanja: "漢字",
@@ -311,6 +315,8 @@ const TRANSLATIONS = {
     removeHistoryItem: ({ name }) => `從紀錄移除${name}`,
     rankedResults: "候選結果",
     plausibility: "可信度",
+    seeMoreResults: "顯示更多候選",
+    hideAdditionalResults: "隱藏其他候選",
     romanAlphabet: "羅馬字母",
     japaneseKana: "日文假名",
     hanja: "漢字",
@@ -701,6 +707,8 @@ const MODERN_GIVEN_SYLLABLE_ROMAN_OUTPUT_ALLOWLIST = new Map(Object.entries({
 }).map(([hangul, variants]) => [hangul, new Set(variants)]));
 
 const EXPLICIT_H_SYLLABLE_BOUNDARY_PENALTY = 520;
+const JOINED_SURNAME_DIRECTION_DOMINANCE_RATIO = 1.2;
+const EXPLICIT_HYPHENATED_GIVEN_BOOST = 1500;
 
 const BLOCKED_GIVEN_ROMAN_BY_HANGUL = new Map(Object.entries({
   태: ["t"],
@@ -771,6 +779,9 @@ const RARE_GIVEN_ROMAN_ALIASES = new Map(Object.entries({
   병: [{ text: "byong", score: 8 }, { text: "byoung", score: 7 }],
   용: [{ text: "yueng", score: 8 }],
   연: [{ text: "ion", score: 6 }],
+  제: [{ text: "jei", score: 6 }],
+  세: [{ text: "sei", score: 6 }],
+  레: [{ text: "rei", score: 6 }],
   채: [{ text: "chea", score: 8 }],
   혜: [{ text: "hae", score: 8 }, { text: "hea", score: 8 }, { text: "hey", score: 7 }],
   원: [{ text: "one", score: 6 }],
@@ -800,7 +811,9 @@ const INITIAL_SOUND_LAW_SURNAME_PAIRS = new Set([
   "임|림",
 ]);
 
-const ATTESTED_GIVEN_NAME_ROMAN_ALIASES = new Map();
+const ATTESTED_GIVEN_NAME_ROMAN_ALIASES = new Map(Object.entries({
+  한나: [{ text: "Hannah", searchScore: 80 }],
+}));
 
 const ATTESTED_CHRISTIAN_GIVEN_KANA = new Map(Object.entries({
   다윗: [
@@ -1177,6 +1190,7 @@ function attachHanjaReadingData(data, hanjaReadingData) {
   const readings = hanjaReadingData?.readings;
   if (!data || !readings || typeof readings !== "object") return data;
   data.hanjaReadingIndex = readings;
+  data.hanjaReadingSyllables = new Set(Object.values(readings).flat().filter(Boolean));
   if (data.meta && hanjaReadingData.meta) {
     data.meta.hanjaReadingSource = hanjaReadingData.meta.source || "Unihan";
     data.meta.hanjaReadingField = hanjaReadingData.meta.field || "kHangul";
@@ -1547,6 +1561,38 @@ function forcedRomanHangulCandidates(token) {
 
 function hasRomanVowel(text) {
   return /[aeiouy]/.test(text);
+}
+
+function hasExactRomanGivenSyllableSegmentation(token, maxUnits = 3) {
+  const norm = normalizeLatin(token);
+  const { data, runtime } = state;
+  if (!norm || !data || !runtime) return false;
+  const memo = new Map();
+  const search = (position, used) => {
+    const key = `${position}:${used}`;
+    if (memo.has(key)) return memo.get(key);
+    if (position === norm.length) return true;
+    if (used >= maxUnits) return false;
+    for (const length of runtime.latinVariantLengths) {
+      if (position + length > norm.length) continue;
+      const chunk = norm.slice(position, position + length);
+      if (!hasRomanVowel(chunk)) continue;
+      const matches = data.syllableLatinIndex[chunk] || [];
+      if (!matches.some((item) => isNameLikeGivenSyllable(item.hangul))) continue;
+      if (search(position + length, used + 1)) {
+        memo.set(key, true);
+        return true;
+      }
+    }
+    memo.set(key, false);
+    return false;
+  };
+  return search(0, 0);
+}
+
+function hasDanglingRomanTerminalH(token) {
+  const norm = normalizeLatin(token);
+  return norm.length > 1 && norm.endsWith("h") && !hasExactRomanGivenSyllableSegmentation(norm);
 }
 
 function expandRomanTokenVariants(token) {
@@ -2471,8 +2517,12 @@ function hasHanjaGivenSupport(syllable) {
   return Number(data?.hanjaGivenCount || 0) > 0;
 }
 
+function hasUnihanKoreanReading(syllable) {
+  return !!state.data?.hanjaReadingSyllables?.has(syllable);
+}
+
 function isSinoAllowedSyllable(syllable) {
-  return !!state.data?.syllables?.[syllable]?.sinoAllowed;
+  return !!state.data?.syllables?.[syllable]?.sinoAllowed || hasUnihanKoreanReading(syllable);
 }
 
 function isNonSinoExceptionSyllable(syllable) {
@@ -2485,11 +2535,14 @@ function isAllowedNameSyllable(syllable) {
 }
 
 function isNameLikeGivenSyllable(syllable) {
-  return hasGivenNameEvidenceInData(syllable, state.data);
+  return hasGivenNameEvidenceInData(syllable, state.data) || hasUnihanKoreanReading(syllable);
 }
 
-function isNameLikeGivenUnits(units) {
+function isNameLikeGivenUnits(units, allowExplicitHanja = false) {
   if (!units?.length) return false;
+  // A supplied Hanja sequence has already been resolved through Korean readings.
+  // Do not require it to also appear in the modern-name corpus.
+  if (allowExplicitHanja) return true;
   if (hasSupportedWholeGivenName(units)) return true;
   if (hasUnattestedNonSinoGivenCombination(units)) return false;
   return units.every((syllable) => isNameLikeGivenSyllable(syllable));
@@ -2501,7 +2554,7 @@ function isNameLikeCandidate(candidate) {
     return !!state.runtime?.surnameByHangul?.has(candidate.hangul);
   }
   const units = candidateGivenUnits(candidate);
-  if (!isNameLikeGivenUnits(units)) return false;
+  if (!isNameLikeGivenUnits(units, candidate.explicitHanja)) return false;
   if (candidate.kind === "given") return true;
   const { surname, given } = splitNameUnits(candidate.hangul, state.runtime?.compoundSurnames);
   return !!given && !!state.runtime?.surnameByHangul?.has(surname);
@@ -2543,10 +2596,11 @@ function filterEvidenceBackedGivenCandidates(candidates) {
     (candidate) => candidate.units.every((syllable) => !isBlockedUnsupportedComplexCodaSyllable(syllable)),
   );
   const pool = filteredComplexCoda.filter(
-    (candidate) => !hasUnattestedNonSinoGivenCombination(candidate.units),
+    (candidate) => candidate.explicitHanja || !hasUnattestedNonSinoGivenCombination(candidate.units),
   );
   if (!pool.length) return [];
   const evidenceBacked = pool.filter((candidate) =>
+    candidate.explicitHanja ||
     hasSupportedWholeGivenName(candidate.units) ||
     candidate.units.every((syllable) => hasGivenSyllableEvidence(syllable) || isSinoLikeGivenSyllable(syllable)),
   );
@@ -2943,6 +2997,19 @@ function hasOddInitialHCluster(text) {
   return /^(?:nh|rh|lh|mh|bh|dh|gh|zh)/.test(text);
 }
 
+function isHOnlyRomanFuzzyDifference(left, right) {
+  const source = normalizeLatin(left);
+  const target = normalizeLatin(right);
+  if (Math.abs(source.length - target.length) !== 1) return false;
+  const longer = source.length > target.length ? source : target;
+  const shorter = source.length > target.length ? target : source;
+  for (let index = 0; index < longer.length; index += 1) {
+    if (longer[index] !== "h") continue;
+    if (`${longer.slice(0, index)}${longer.slice(index + 1)}` === shorter) return true;
+  }
+  return false;
+}
+
 function buildObservedGivenRomanIndex(data) {
   const surnameByHangul = new Map((data.surnames || []).map((item) => [item.hangul, item]));
   const index = new Map();
@@ -3155,6 +3222,7 @@ function addCandidate(candidateMap, hangul, score, evidence, meta = {}) {
   const key = candidateKey(hangul, kind);
   const current = candidateMap.get(key) || { hangul, kind, score: -Infinity, evidence: new Set(), exactIds: new Set() };
   current.score = Math.max(current.score, score);
+  current.explicitHanja ||= !!meta.explicitHanja;
   if (evidence) current.evidence.add(evidence);
   candidateMap.set(key, current);
 }
@@ -3343,6 +3411,9 @@ function fuzzyLookup(norm, index, keyMap, targetField, penalty = 0.72) {
   for (const key of keys) {
     if (!hasRomanVowel(key)) continue;
     if (Math.abs(key.length - norm.length) > 1) continue;
+    // Real h spellings are indexed explicitly. Treating a lone inserted h as
+    // a fuzzy typo makes impossible forms such as jungh resolve to jung.
+    if (isHOnlyRomanFuzzyDifference(norm, key)) continue;
     const distance = levenshtein(key, norm);
     if (distance > 1) continue;
     const adjacentKeyInsertion = norm.length === key.length + 1 && keyboardWeightedDistance(norm, key) <= 0.45;
@@ -3697,6 +3768,7 @@ function parseKanaReverseStopNasalization(norm, maxUnits = 3) {
 
 function parseGivenLatinTokens(tokens) {
   if (!tokens.length) return [];
+  if (tokens.some((token) => hasDanglingRomanTerminalH(token))) return [];
   if (tokens.length === 1) {
     const results = [];
     const observed = state.runtime?.givenRomanIndex?.get(normalizeLatin(tokens[0]));
@@ -3998,7 +4070,9 @@ function parseGivenHanja(text) {
     }
     combos = next.sort((a, b) => b.score - a.score).slice(0, 30);
   }
-  return filterEvidenceBackedGivenCandidates(dedupeCandidateUnits(combos, 30));
+  return filterEvidenceBackedGivenCandidates(
+    dedupeCandidateUnits(combos, 30).map((candidate) => ({ ...candidate, explicitHanja: true })),
+  );
 }
 
 function hanjaFallbackReadingScore(hangul) {
@@ -4030,6 +4104,18 @@ function parseJoinedRomanGivenToken(token) {
   const knownCandidates = knownGivenCandidatesFromRomanTokens([joined]);
   const parsedCandidates = parseGivenLatinTokens([joined]);
   return dedupeCandidateUnits(knownCandidates.concat(parsedCandidates), 24);
+}
+
+function explicitHyphenatedGivenCandidates(query) {
+  const groups = splitRomanGroups(query);
+  const tokens = groups.flat();
+  if (groups.length !== 1 || tokens.length !== 2 || !hasRomanHyphenBoundary(query)) return [];
+
+  return parseGivenLatinTokens(tokens).filter((candidate) =>
+    candidate.units.length === tokens.length &&
+    isNameLikeGivenUnits(candidate.units) &&
+    romanChunksFitAdjustment(tokens, candidate.units) != null,
+  );
 }
 
 function hasNonLatinScript(groups) {
@@ -4079,6 +4165,17 @@ function searchLatin(query, candidateMap) {
   if (!latin) return;
   const groups = splitRomanGroups(query);
   const tokens = groups.flat();
+  const hyphenatedGivenCandidates = explicitHyphenatedGivenCandidates(query);
+
+  if (hyphenatedGivenCandidates.length) {
+    addStandaloneGivenCandidates(
+      candidateMap,
+      hyphenatedGivenCandidates,
+      "Explicit hyphenated given-name parse",
+      EXPLICIT_HYPHENATED_GIVEN_BOOST,
+    );
+    return;
+  }
 
   if (groups.length === 1 && tokens.length === 1) {
     const directCandidates = pruneRomanSingleTokenGivenCandidates(parseGivenLatinTokens(tokens)).filter(
@@ -4186,14 +4283,59 @@ function searchLatin(query, candidateMap) {
   }
 
   if (tokens.length <= 1) {
+    const joinedSurnameFirstParses = [];
+    const joinedSurnameLastParses = [];
+    const highestSurnamePopulation = (surnameCandidates) => Math.max(
+      0,
+      ...(surnameCandidates || []).map((candidate) =>
+        Number(state.runtime?.surnameByHangul?.get(candidate.hangul)?.population || 0),
+      ),
+    );
+    const hasSupportedWholeGivenParse = (parses) => parses.some((parse) =>
+      parse.givenCandidates.some((candidate) => hasSupportedWholeGivenName(candidate.units)),
+    );
+
     for (const [variant, surnameCandidates] of Object.entries(state.data.surnameLatinIndex)) {
       if (latin.startsWith(variant) && latin.length !== variant.length) {
         const givenCandidates = parseJoinedRomanGivenToken(latin.slice(variant.length));
-        combineSurnameAndGivenCandidates(surnameCandidates, givenCandidates, candidateMap, 0.96, "Latin joined-string parse");
+        if (givenCandidates.some((candidate) => isNameLikeGivenUnits(candidate.units))) {
+          joinedSurnameFirstParses.push({ surnameCandidates, givenCandidates });
+        }
       }
+    }
+
+    for (const [variant, surnameCandidates] of Object.entries(state.data.surnameLatinIndex)) {
       if (latin.endsWith(variant) && latin.length !== variant.length) {
         const givenCandidates = parseJoinedRomanGivenToken(latin.slice(0, -variant.length));
-        combineSurnameAndGivenCandidates(surnameCandidates, givenCandidates, candidateMap, 0.94, "Latin suffix-surname parse");
+        if (givenCandidates.some((candidate) => isNameLikeGivenUnits(candidate.units))) {
+          joinedSurnameLastParses.push({ surnameCandidates, givenCandidates });
+        }
+      }
+    }
+
+    const highestFirstPopulation = Math.max(
+      0,
+      ...joinedSurnameFirstParses.map((parse) => highestSurnamePopulation(parse.surnameCandidates)),
+    );
+    const highestLastPopulation = Math.max(
+      0,
+      ...joinedSurnameLastParses.map((parse) => highestSurnamePopulation(parse.surnameCandidates)),
+    );
+    const preferSurnameFirst =
+      highestFirstPopulation > highestLastPopulation * JOINED_SURNAME_DIRECTION_DOMINANCE_RATIO;
+    const preferSurnameLast =
+      highestLastPopulation > highestFirstPopulation * JOINED_SURNAME_DIRECTION_DOMINANCE_RATIO;
+    const firstHasSupportedWholeGiven = hasSupportedWholeGivenParse(joinedSurnameFirstParses);
+    const lastHasSupportedWholeGiven = hasSupportedWholeGivenParse(joinedSurnameLastParses);
+
+    if (!preferSurnameLast || (firstHasSupportedWholeGiven && !lastHasSupportedWholeGiven)) {
+      for (const parse of joinedSurnameFirstParses) {
+        combineSurnameAndGivenCandidates(parse.surnameCandidates, parse.givenCandidates, candidateMap, 0.96, "Latin joined-string parse");
+      }
+    }
+    if (!preferSurnameFirst || (lastHasSupportedWholeGiven && !firstHasSupportedWholeGiven)) {
+      for (const parse of joinedSurnameLastParses) {
+        combineSurnameAndGivenCandidates(parse.surnameCandidates, parse.givenCandidates, candidateMap, 0.94, "Latin suffix-surname parse");
       }
     }
   }
@@ -4417,7 +4559,7 @@ function searchStandaloneHanja(query, candidateMap) {
 function combineSurnameAndGivenCandidates(surnameCandidates, givenCandidates, candidateMap, boost, label) {
   for (const surnameCandidate of surnameCandidates.slice(0, 10)) {
     for (const givenCandidate of givenCandidates.slice(0, 24)) {
-      if (!isNameLikeGivenUnits(givenCandidate.units)) continue;
+      if (!isNameLikeGivenUnits(givenCandidate.units, givenCandidate.explicitHanja)) continue;
       const givenPrior = givenUnitsNamePrior(givenCandidate.units);
       const hangul = `${surnameCandidate.hangul}${givenCandidate.units.join("")}`;
       const score =
@@ -4427,7 +4569,7 @@ function combineSurnameAndGivenCandidates(surnameCandidates, givenCandidates, ca
       const candidateEvidence = givenCandidate.supplementalRomanAlias
         ? "Supplemental attested Roman given-name match"
         : label;
-      addCandidate(candidateMap, hangul, score, candidateEvidence);
+      addCandidate(candidateMap, hangul, score, candidateEvidence, { explicitHanja: givenCandidate.explicitHanja });
     }
   }
 }
@@ -4867,11 +5009,18 @@ function populateResultCards(candidateMap) {
   }
 
   const candidatePercents = allocatePercentages(candidates, (candidate) => candidateRankingScore(candidate), { minPositive: 1 });
+  const candidateEntries = candidates.map((candidate, index) => ({ candidate, plausibility: candidatePercents[index] ?? 0 }));
+  let primaryEntries = candidateEntries.filter((entry) => entry.plausibility > 0);
+  let deferredEntries = candidateEntries.filter((entry) => entry.plausibility === 0);
+  if (!primaryEntries.length) {
+    primaryEntries = candidateEntries;
+    deferredEntries = [];
+  }
+
   resultsEl.innerHTML = "";
-  for (const [index, candidate] of candidates.entries()) {
+  const appendResultCard = ({ candidate, plausibility }, container) => {
     const exactRows = gatherExactRowsForHangul(candidate.hangul, candidate);
     const { romanOutputs, kanaOutputs, hanjaOutputs } = generateOutputsForCandidate(candidate, exactRows);
-    const plausibility = candidatePercents[index] ?? 0;
 
     const fragment = resultTemplate.content.cloneNode(true);
     fragment.querySelector(".result-hangul").textContent = candidate.hangul;
@@ -4904,7 +5053,38 @@ function populateResultCards(candidateMap) {
     fillVariantList(kanaList, kanaOutputs);
     fillHanjaVariantList(hanjaList, hanjaOutputs, !hanjaOutputs.length ? t("noHanjaObserved") : "", candidate.hangul);
 
-    resultsEl.appendChild(fragment);
+    container.appendChild(fragment);
+  };
+
+  const primaryFragment = document.createDocumentFragment();
+  for (const entry of primaryEntries) {
+    appendResultCard(entry, primaryFragment);
+  }
+  resultsEl.appendChild(primaryFragment);
+
+  if (deferredEntries.length) {
+    const moreButton = document.createElement("button");
+    moreButton.type = "button";
+    moreButton.className = "results-more-button";
+    moreButton.textContent = t("seeMoreResults");
+    moreButton.setAttribute("aria-expanded", "false");
+
+    const deferredList = document.createElement("div");
+    deferredList.className = "results-more-list";
+    deferredList.hidden = true;
+    const deferredFragment = document.createDocumentFragment();
+    for (const entry of deferredEntries) {
+      appendResultCard(entry, deferredFragment);
+    }
+    deferredList.appendChild(deferredFragment);
+
+    moreButton.addEventListener("click", () => {
+      const isExpanded = moreButton.getAttribute("aria-expanded") === "true";
+      moreButton.setAttribute("aria-expanded", String(!isExpanded));
+      moreButton.textContent = t(isExpanded ? "seeMoreResults" : "hideAdditionalResults");
+      deferredList.hidden = isExpanded;
+    });
+    resultsEl.append(deferredList, moreButton);
   }
 }
 
@@ -4992,7 +5172,9 @@ function pruneImplausibleCandidates(candidateMap) {
     const ultraRareCount = units.filter((syllable) => isUltraRareGivenSyllable(syllable)).length;
     const unsupportedCount = units.filter((syllable) => !isAllowedNameSyllable(syllable)).length;
     const unsupportedLongGiven = candidate.kind !== "surname" && units.length >= 3 && !hasSupportedWholeGivenName(units);
-    const hasExactEvidence = hasCandidateExactEvidence(candidate);
+    // Direct Hanja input is evidence of the intended spelling, even when the
+    // reading is absent from the curated modern-name frequency prior.
+    const hasExactEvidence = hasCandidateExactEvidence(candidate) || candidate.explicitHanja;
     if (!hasExactEvidence && !isNameLikeCandidate(candidate)) continue;
     const kanaDerivedOnly = !hasExactEvidence && [...candidate.evidence].some((item) => /Kana/.test(item));
     const singleRomanSyntheticFull =
@@ -5141,11 +5323,15 @@ function givenHanjaForHangnyeol(hanjaText, candidateHangul) {
 
 function hangnyeolMatchesForCandidate(candidateHangul, record, hanjaText) {
   const { surname, given } = splitNameUnits(candidateHangul, state.runtime.compoundSurnames);
-  const queryHanja = extractHanja(queryEl?.value || state.hangnyeolQueryHanja);
+  const queryText = queryEl?.value || state.hangnyeolQueryHanja;
+  const queryHanja = extractHanja(queryText);
   const queryHanjaCharacters = Array.from(queryHanja);
   const surnameLength = Array.from(surname).length;
   const givenLength = Array.from(given).length;
   const querySurnameHanja = queryHanjaCharacters.slice(0, surnameLength).join("");
+  // An explicit surname character must not be replaced by a same-reading candidate.
+  const explicitSurnameHanja = leadingSurnameHanja(queryText, surnameLength);
+  if (explicitSurnameHanja && explicitSurnameHanja !== String(record.hanja || "").trim()) return [];
   const knownGivenHanja = querySurnameHanja === String(record.hanja || "").trim() && queryHanjaCharacters.length >= surnameLength + givenLength
     ? queryHanjaCharacters.slice(surnameLength, surnameLength + givenLength).join("")
     : givenHanjaForHangnyeol(hanjaText, candidateHangul);
@@ -6157,6 +6343,27 @@ function hasDirectRomanNameResolution(query, candidateMap) {
   });
 }
 
+function hasInputAlignedJoinedRomanFullNameResolution(query, candidateMap) {
+  const groups = splitRomanGroups(query);
+  if (groups.length !== 1 || groups[0]?.length !== 1) return false;
+  const normalizedQuery = normalizeLatin(query);
+  if (!normalizedQuery) return false;
+
+  return [...candidateMap.values()].some((candidate) => {
+    if (candidate.kind !== "full") return false;
+    const { surname, given } = splitNameUnits(candidate.hangul, state.runtime?.compoundSurnames);
+    if (!surname || !given) return false;
+
+    return generateSurnameRomanOutputs(surname).some((surnameOutput) =>
+      generateGivenRomanOutputs(given).some((givenOutput) => {
+        const surnameRoman = normalizeLatin(surnameOutput.text);
+        const givenRoman = normalizeLatin(givenOutput.text);
+        return normalizedQuery === `${surnameRoman}${givenRoman}` || normalizedQuery === `${givenRoman}${surnameRoman}`;
+      }),
+    );
+  });
+}
+
 function hasInputAlignedRomanFullNameResolution(query, candidateMap) {
   const groups = splitRomanGroups(query);
   if (groups.length < 2 || groups[0].length !== 1) return false;
@@ -6227,7 +6434,9 @@ function renderInputGuidance(query, candidateMap) {
   if (state.dismissedInputGuidanceQuery === normalizedQuery) return;
   const hasDirectResolution =
     hasDirectRomanNameResolution(query, candidateMap) ||
-    hasInputAlignedRomanFullNameResolution(query, candidateMap);
+    hasInputAlignedJoinedRomanFullNameResolution(query, candidateMap) ||
+    hasInputAlignedRomanFullNameResolution(query, candidateMap) ||
+    explicitHyphenatedGivenCandidates(query).length > 0;
   if (hasDirectResolution) return;
   const querySuggestionIndex = buildQueryRomanSuggestionIndex(candidateMap);
   const runtimeSuggestionIndex = state.runtime?.romanSuggestionIndex;
