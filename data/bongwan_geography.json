@@ -1,0 +1,840 @@
+{
+  "meta": {
+    "schemaVersion": 1,
+    "geographicLevel": "province_or_equivalent",
+    "mappingMethod": "Historical Bon-gwan labels are retained verbatim and associated with a present-day province or equivalent only where the association is reasonably clear. Mappings are thematic, not cadastral boundaries.",
+    "sources": {
+      "geoboundariesKor": {
+        "title": "geoBoundaries KOR ADM1",
+        "source": "Natural Earth",
+        "license": "Public Domain",
+        "url": "https://www.geoboundaries.org/api/current/gbOpen/KOR/ADM1/"
+      },
+      "geoboundariesPrk": {
+        "title": "geoBoundaries PRK ADM1",
+        "source": "World Food Programme / OCHA ROAP",
+        "license": "CC BY 3.0 IGO",
+        "url": "https://www.geoboundaries.org/api/current/gbOpen/PRK/ADM1/"
+      },
+      "placeIndex": {
+        "title": "Korean historical-place index",
+        "url": "https://www.surname.info/local.html"
+      },
+      "surnameInfoLocal": {
+        "title": "Korean historical-place index (Surname.info)",
+        "url": "https://www.surname.info/local.html",
+        "accessedAt": "2026-08-21",
+        "method": "Exact or compatibility-normalized Hanja matching; linked historic localities take precedence over obsolete province labels. Documented historical aliases and current-region continuities are included."
+      },
+      "koreanWikipediaBonGwan": {
+        "title": "Korean Wikipedia Bon-gwan and historical-place articles",
+        "url": "https://ko.wikipedia.org/",
+        "accessedAt": "2026-08-21",
+        "method": "Used only for direct clan-form historical-place identities that the historical-place index does not resolve at the app's regional level."
+      }
+    },
+    "notes": "No coordinates are assigned to individual historical Bon-gwan places. Entries not confidently associated with a peninsula province remain searchable as uncertain; overseas origins are kept outside the peninsula map."
+  },
+  "regions": {
+    "KR-11": {
+      "hangul": "서울",
+      "roman": "Seoul",
+      "country": "South Korea"
+    },
+    "KR-26": {
+      "hangul": "부산",
+      "roman": "Busan",
+      "country": "South Korea"
+    },
+    "KR-27": {
+      "hangul": "대구",
+      "roman": "Daegu",
+      "country": "South Korea"
+    },
+    "KR-28": {
+      "hangul": "인천",
+      "roman": "Incheon",
+      "country": "South Korea"
+    },
+    "KR-29": {
+      "hangul": "광주",
+      "roman": "Gwangju",
+      "country": "South Korea"
+    },
+    "KR-30": {
+      "hangul": "대전",
+      "roman": "Daejeon",
+      "country": "South Korea"
+    },
+    "KR-31": {
+      "hangul": "울산",
+      "roman": "Ulsan",
+      "country": "South Korea"
+    },
+    "KR-50": {
+      "hangul": "세종",
+      "roman": "Sejong",
+      "country": "South Korea"
+    },
+    "KR-41": {
+      "hangul": "경기",
+      "roman": "Gyeonggi",
+      "country": "South Korea"
+    },
+    "KR-42": {
+      "hangul": "강원",
+      "roman": "Gangwon",
+      "country": "South Korea"
+    },
+    "KR-43": {
+      "hangul": "충북",
+      "roman": "North Chungcheong",
+      "country": "South Korea"
+    },
+    "KR-44": {
+      "hangul": "충남",
+      "roman": "South Chungcheong",
+      "country": "South Korea"
+    },
+    "KR-45": {
+      "hangul": "전북",
+      "roman": "North Jeolla",
+      "country": "South Korea"
+    },
+    "KR-46": {
+      "hangul": "전남",
+      "roman": "South Jeolla",
+      "country": "South Korea"
+    },
+    "KR-47": {
+      "hangul": "경북",
+      "roman": "North Gyeongsang",
+      "country": "South Korea"
+    },
+    "KR-48": {
+      "hangul": "경남",
+      "roman": "South Gyeongsang",
+      "country": "South Korea"
+    },
+    "KR-49": {
+      "hangul": "제주",
+      "roman": "Jeju",
+      "country": "South Korea"
+    },
+    "KP01": {
+      "hangul": "량강",
+      "roman": "Ryanggang",
+      "country": "North Korea"
+    },
+    "KP02": {
+      "hangul": "함경북도",
+      "roman": "North Hamgyong",
+      "country": "North Korea"
+    },
+    "KP03": {
+      "hangul": "함경남도",
+      "roman": "South Hamgyong",
+      "country": "North Korea"
+    },
+    "KP04": {
+      "hangul": "강원도",
+      "roman": "Kangwon",
+      "country": "North Korea"
+    },
+    "KP05": {
+      "hangul": "자강도",
+      "roman": "Jagang",
+      "country": "North Korea"
+    },
+    "KP06": {
+      "hangul": "평안북도",
+      "roman": "North Pyongan",
+      "country": "North Korea"
+    },
+    "KP07": {
+      "hangul": "평안남도",
+      "roman": "South Pyongan",
+      "country": "North Korea"
+    },
+    "KP08": {
+      "hangul": "황해북도",
+      "roman": "North Hwanghae",
+      "country": "North Korea"
+    },
+    "KP09": {
+      "hangul": "황해남도",
+      "roman": "South Hwanghae",
+      "country": "North Korea"
+    },
+    "KP10": {
+      "hangul": "평양",
+      "roman": "Pyongyang",
+      "country": "North Korea"
+    },
+    "KP11": {
+      "hangul": "남포",
+      "roman": "Nampo",
+      "country": "North Korea"
+    }
+  },
+  "peninsulaMappings": [
+    {
+      "regionId": "KR-11",
+      "confidence": "high",
+      "places": [
+        "금천|衿川",
+        "양천|陽川",
+        "한양|漢陽"
+      ]
+    },
+    {
+      "regionId": "KR-26",
+      "confidence": "high",
+      "places": [
+        "동래|東萊",
+        "부산|釜山",
+        "차성|車城"
+      ]
+    },
+    {
+      "regionId": "KR-27",
+      "confidence": "high",
+      "places": [
+        "달성|達城",
+        "대구|大丘",
+        "대구|大邱",
+        "부림|缶林",
+        "수성|壽城",
+        "하빈|河濱",
+        "효령|孝令"
+      ]
+    },
+    {
+      "regionId": "KR-28",
+      "confidence": "high",
+      "places": [
+        "강화|江華",
+        "교동|喬桐",
+        "부평|富平",
+        "인천|仁川",
+        "하음|河陰"
+      ]
+    },
+    {
+      "regionId": "KR-29",
+      "confidence": "high",
+      "places": [
+        "광산|光山",
+        "광주|光州"
+      ]
+    },
+    {
+      "regionId": "KR-30",
+      "confidence": "medium",
+      "places": [
+        "회덕|懷德"
+      ]
+    },
+    {
+      "regionId": "KR-31",
+      "confidence": "high",
+      "places": [
+        "언양|彦陽",
+        "울산|蔚山",
+        "학성|鶴城"
+      ]
+    },
+    {
+      "regionId": "KR-41",
+      "confidence": "high",
+      "places": [
+        "가평|加平",
+        "광주|廣州",
+        "교하|交河",
+        "남양|南陽",
+        "당성|唐城",
+        "덕수|德水",
+        "덕수|德秀",
+        "려흥|驪興",
+        "삭녕|朔寧",
+        "삭령|朔寧",
+        "삭영|朔寧",
+        "수성|隋城",
+        "수원|水原",
+        "안산|安山",
+        "안성|安城",
+        "양근|楊根",
+        "양성|陽城",
+        "양주|楊州",
+        "양지|陽智",
+        "여강|驪江",
+        "여양|驪陽",
+        "여주|驪州",
+        "여흥|驪興",
+        "영흥|驪興",
+        "용성|龍城",
+        "용인|龍仁",
+        "우봉|牛峰",
+        "이천|利川",
+        "적성|積城",
+        "죽산|竹山",
+        "진위|振威",
+        "추계|秋溪",
+        "축산|竺山",
+        "파주|坡州",
+        "파평|坡平",
+        "평택|平澤",
+        "풍양|豐壤",
+        "행주|幸州",
+        "화산|花山"
+      ]
+    },
+    {
+      "regionId": "KR-42",
+      "confidence": "high",
+      "places": [
+        "강능|江陵",
+        "강릉|江陵",
+        "고성|固城",
+        "금강|金岡",
+        "동주|東州",
+        "삼섭|三陟",
+        "삼척|三陟",
+        "영월|寧越",
+        "우계|羽溪",
+        "울진|蔚珍",
+        "원주|原州",
+        "정선|旌善",
+        "철성|鐵城",
+        "철원|鐵原",
+        "춘천|春川",
+        "통천|通川",
+        "평강|平康",
+        "평창|平昌",
+        "홍천|洪川",
+        "회진|會津",
+        "횡성|橫城"
+      ]
+    },
+    {
+      "regionId": "KR-43",
+      "confidence": "high",
+      "places": [
+        "관성|管城",
+        "괴산|槐山",
+        "단양|丹陽",
+        "문의|文義",
+        "보은|報恩",
+        "상산|常山",
+        "영동|永同",
+        "영산|永山",
+        "옥천|沃川",
+        "옥천|玉川",
+        "음성|陰城",
+        "제천|堤川",
+        "진천|眞川",
+        "진천|鎭川",
+        "청산|靑山",
+        "청안|淸安",
+        "청주|淸州",
+        "청풍|淸風",
+        "충주|忠州"
+      ]
+    },
+    {
+      "regionId": "KR-44",
+      "confidence": "high",
+      "places": [
+        "결성|結城",
+        "공산|公山",
+        "공주|公州",
+        "금산|錦山",
+        "당진|唐津",
+        "대흥|大興",
+        "덕산|德山",
+        "덕은|德恩",
+        "면천|沔川",
+        "목천|木川",
+        "부여|夫餘",
+        "부여|扶餘",
+        "서령|瑞山",
+        "서림|西林",
+        "서산|瑞山",
+        "서영|瑞山",
+        "서천|舒川",
+        "선성|宣城",
+        "신창|新昌",
+        "신평|新平",
+        "아산|牙山",
+        "연산|連山",
+        "예산|禮山",
+        "온양|溫陽",
+        "은진|恩津",
+        "임천|林川",
+        "직산|稷山",
+        "진산|珍山",
+        "천안|天安",
+        "청양|靑陽",
+        "태안|泰安",
+        "한산|韓山",
+        "해미|海美",
+        "홍주|洪州"
+      ]
+    },
+    {
+      "regionId": "KR-45",
+      "confidence": "high",
+      "places": [
+        "고부|古阜",
+        "고창|高敞",
+        "군산|群山",
+        "금구|金溝",
+        "김제|金堤",
+        "남원|南原",
+        "두릉|杜陵",
+        "려산|礪山",
+        "만경|萬頃",
+        "무송|茂松",
+        "무장|茂長",
+        "무주|茂朱",
+        "부안|扶安",
+        "순창|淳昌",
+        "시산|時山",
+        "여산|礪山",
+        "옥구|沃溝",
+        "옥야|沃野",
+        "완산|完山",
+        "용담|龍潭",
+        "우주|紆州",
+        "운봉|雲峰",
+        "익산|益山",
+        "장수|長水",
+        "전주|全州",
+        "진안|鎭安",
+        "태인|泰仁",
+        "함열|咸悅",
+        "흥덕|興德",
+        "흥성|興城"
+      ]
+    },
+    {
+      "regionId": "KR-46",
+      "confidence": "high",
+      "places": [
+        "강진|康津",
+        "고흥|高興",
+        "곡성|谷城",
+        "관산|冠山",
+        "광양|光陽",
+        "구례|求禮",
+        "금성|錦城",
+        "나주|羅州",
+        "낙안|樂安",
+        "남평|南平",
+        "낭주|朗州",
+        "능성|綾城",
+        "능주|綾城",
+        "능주|綾州",
+        "담양|潭陽",
+        "도강|道康",
+        "도광|道康",
+        "동복|同福",
+        "랑주|朗州",
+        "릉성|綾城",
+        "면성|綿城",
+        "무안|務安",
+        "반남|潘南",
+        "번남|潘南",
+        "보성|寶城",
+        "봉성|鳳城",
+        "순천|順天",
+        "순천|順川",
+        "승평|昇平",
+        "신안|新安",
+        "영광|靈光",
+        "영광|靈光",
+        "영성|靈城",
+        "영암|靈岩",
+        "영암|靈巖",
+        "장성|長城",
+        "장택|長澤",
+        "장흥|長興",
+        "조양|兆陽",
+        "진도|珍島",
+        "진원|珍原",
+        "탐진|耽津",
+        "함평|咸平",
+        "함풍|咸豐",
+        "해남|海南",
+        "화순|和順",
+        "흥양|興陽"
+      ]
+    },
+    {
+      "regionId": "KR-47",
+      "confidence": "high",
+      "places": [
+        "감천|甘泉",
+        "경산|京山",
+        "경산|慶山",
+        "경주|慶州",
+        "고령|高靈",
+        "곡강|曲江",
+        "광평|廣平",
+        "구산|龜山",
+        "군위|軍威",
+        "기계|杞溪",
+        "문경|聞慶",
+        "문소|聞詔",
+        "벽진|碧珍",
+        "봉화|奉化",
+        "비안|比安",
+        "상산|商山",
+        "상주|尙州",
+        "선산|善山",
+        "선상|善山",
+        "선상|廣平",
+        "성산|星山",
+        "성주|星州",
+        "순흥|順興",
+        "신광|神光",
+        "신녕|新寧",
+        "안동|安東",
+        "안정|安定",
+        "야성|野城",
+        "연일|延日",
+        "영덕|盈德",
+        "영순|永順",
+        "영양|永陽",
+        "영양|潁陽",
+        "영양|英陽",
+        "영일|迎日",
+        "영주|瀛州",
+        "영천|永川",
+        "영해|寧海",
+        "예안|禮安",
+        "예천|禮泉",
+        "예천|醴泉",
+        "오천|烏川",
+        "옥산|玉山",
+        "옥성|沃城",
+        "용궁|龍宮",
+        "월성|月城",
+        "의성|義城",
+        "의흥|義興",
+        "인동|仁同",
+        "일선|一善",
+        "일직|一直",
+        "장기|長鬐",
+        "정일|延日",
+        "진보|眞寶",
+        "진성|眞城",
+        "청도|淸道",
+        "청송|靑松",
+        "청하|淸河",
+        "평해|平海",
+        "풍기|豐基",
+        "풍산|豐山",
+        "풍천|豐川",
+        "하양|河陽",
+        "함창|咸昌",
+        "함창|咸昌",
+        "해평|海平",
+        "현풍|玄風",
+        "흥해|興海"
+      ]
+    },
+    {
+      "regionId": "KR-48",
+      "confidence": "high",
+      "places": [
+        "강양|江陽",
+        "거제|巨濟",
+        "거창|居昌",
+        "고성|固城",
+        "곤산|昆山",
+        "곤양|昆陽",
+        "금녕|金寧",
+        "금령|金寧",
+        "금릉|金寧",
+        "금영|金寧",
+        "기성|岐城",
+        "김녕|金寧",
+        "김령|金寧",
+        "김영|金寧",
+        "김해|金海",
+        "남해|南海",
+        "단성|丹城",
+        "동성|東城",
+        "령산|靈山",
+        "마산|馬山",
+        "밀성|密城",
+        "밀양|密陽",
+        "분성|盆城",
+        "사천|泗川",
+        "선녕|宣寧",
+        "선영|宜寧",
+        "섬천|陜川",
+        "아주|鵝洲",
+        "안음|安陰",
+        "안의|安義",
+        "야성|冶城",
+        "양산|梁山",
+        "영산|靈山",
+        "웅천|熊川",
+        "의녕|宜寧",
+        "의령|宜寧",
+        "의영|宜寧",
+        "의춘|宜春",
+        "진산|晉山",
+        "진양|晉陽",
+        "진주|晉州",
+        "진해|鎭海",
+        "창녕|昌寧",
+        "창령|昌寧",
+        "창영|昌寧",
+        "창원|昌原",
+        "초계|草溪",
+        "칠원|漆原",
+        "팔계|八溪",
+        "하동|河東",
+        "함안|咸安",
+        "함양|咸陽",
+        "합천|陜川",
+        "협천|陜川",
+        "회산|檜山"
+      ]
+    },
+    {
+      "regionId": "KR-50",
+      "confidence": "high",
+      "places": [
+        "전의|全義"
+      ]
+    },
+    {
+      "regionId": "KR-49",
+      "confidence": "high",
+      "places": [
+        "제주|濟州",
+        "탐라|耽羅"
+      ]
+    },
+    {
+      "regionId": "KP02",
+      "confidence": "medium",
+      "places": [
+        "경성|鏡城",
+        "경원|慶源",
+        "길주|吉州",
+        "명천|明川",
+        "무산|茂山",
+        "부녕|扶寧",
+        "부령|扶寧",
+        "부영|扶寧",
+        "온성|穩城",
+        "회령|會寧"
+      ]
+    },
+    {
+      "regionId": "KP03",
+      "confidence": "medium",
+      "places": [
+        "고원|高原",
+        "덕원|德源",
+        "문천|文川",
+        "북청|北靑",
+        "영흥|永興",
+        "정평|定平",
+        "청해|靑海",
+        "함녕|咸寧",
+        "함영|咸寧",
+        "함종|咸從",
+        "함흥|咸興"
+      ]
+    },
+    {
+      "regionId": "KP04",
+      "confidence": "medium",
+      "places": [
+        "금성|金城",
+        "김화|金化",
+        "안변|安邊",
+        "이천|伊川",
+        "철원|鐵原",
+        "통천|通川",
+        "평강|平康",
+        "회양|淮陽"
+      ]
+    },
+    {
+      "regionId": "KP06",
+      "confidence": "medium",
+      "places": [
+        "곽산|郭山",
+        "구성|龜城",
+        "박천|博川",
+        "삭주|朔州",
+        "선천|宣川",
+        "연주|延州",
+        "영변|寧邊",
+        "용천|龍川",
+        "의주|義州",
+        "정주|貞州",
+        "철산|鐵山",
+        "희천|熙川"
+      ]
+    },
+    {
+      "regionId": "KP07",
+      "confidence": "medium",
+      "places": [
+        "강서|江西",
+        "당악|唐岳",
+        "맹산|孟山",
+        "성천|成川",
+        "숙천|肅川",
+        "순천|順川",
+        "안주|安州",
+        "양덕|陽德",
+        "용강|龍岡",
+        "중화|中和",
+        "평원|平原"
+      ]
+    },
+    {
+      "regionId": "KP08",
+      "confidence": "medium",
+      "places": [
+        "개성|開城",
+        "곡산|谷山",
+        "금천|金川",
+        "봉산|鳳山",
+        "서흥|瑞興",
+        "설성|雪成",
+        "수안|遂安",
+        "신계|新溪",
+        "장단|長湍",
+        "제안|齊安",
+        "평산|平山",
+        "해풍|海豐",
+        "황주|黃州"
+      ]
+    },
+    {
+      "regionId": "KP09",
+      "confidence": "medium",
+      "places": [
+        "문화|文化",
+        "백천|白川",
+        "신천|信川",
+        "안악|安岳",
+        "연백|延白",
+        "연안|延安",
+        "은율|殷栗",
+        "장연|長淵",
+        "재녕|載寧",
+        "재령|載寧",
+        "재영|載寧",
+        "해주|海州"
+      ]
+    },
+    {
+      "regionId": "KP10",
+      "confidence": "high",
+      "places": [
+        "평양|平壤"
+      ]
+    },
+    {
+      "regionId": "KP11",
+      "confidence": "high",
+      "places": [
+        "남포|藍浦"
+      ]
+    }
+  ],
+  "outsidePeninsulaMappings": [
+    {
+      "modernNameHangul": "쑤저우",
+      "modernCountry": "China",
+      "confidence": "high",
+      "places": [
+        "소주|蘇州"
+      ]
+    },
+    {
+      "modernNameHangul": "취푸",
+      "modernCountry": "China",
+      "confidence": "high",
+      "places": [
+        "곡부|曲阜"
+      ]
+    },
+    {
+      "modernNameHangul": "포산",
+      "modernCountry": "China",
+      "confidence": "high",
+      "places": [
+        "포산|包山"
+      ]
+    },
+    {
+      "modernNameHangul": "타이위안",
+      "modernCountry": "China",
+      "confidence": "high",
+      "places": [
+        "태원|太原"
+      ]
+    },
+    {
+      "modernNameHangul": "산시",
+      "modernCountry": "China",
+      "confidence": "medium",
+      "places": [
+        "농서|隴西",
+        "롱서|隴西"
+      ]
+    },
+    {
+      "modernNameHangul": "저장",
+      "modernCountry": "China",
+      "confidence": "high",
+      "places": [
+        "절강|浙江"
+      ]
+    },
+    {
+      "modernNameHangul": "광둥",
+      "modernCountry": "China",
+      "confidence": "high",
+      "places": [
+        "광동|廣東"
+      ]
+    },
+    {
+      "modernNameHangul": "허난",
+      "modernCountry": "China",
+      "confidence": "medium",
+      "places": [
+        "하남|河南"
+      ]
+    },
+    {
+      "modernNameHangul": "쓰촨",
+      "modernCountry": "China",
+      "confidence": "medium",
+      "places": [
+        "서촉|西蜀"
+      ]
+    },
+    {
+      "modernNameHangul": "China",
+      "modernCountry": "China",
+      "confidence": "medium",
+      "places": [
+        "광천|廣川"
+      ]
+    }
+  ]
+}

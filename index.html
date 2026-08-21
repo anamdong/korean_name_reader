@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&amp;family=Noto+Sans+JP:wght@400;500;600;700;800&amp;family=Noto+Sans+KR:wght@400;500;600;700;800&amp;family=Noto+Sans+TC:wght@400;500;600;700;800&amp;display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260815-mobile-scroll" />
+    <link rel="stylesheet" href="./styles.css?v=20260821-bongwan-map" />
   </head>
   <body>
     <header class="utility-header">
@@ -27,6 +27,17 @@
             data-tab="home"
             data-i18n="home"
           >Home</button>
+          <button
+            id="bongwan-tab"
+            class="site-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="bongwan-panel"
+            tabindex="-1"
+            data-tab="bongwan"
+            data-i18n="bongwanMap"
+          >Bon-gwan map</button>
           <button
             id="about-tab"
             class="site-tab"
@@ -152,6 +163,50 @@
         <section class="results-section is-hidden" aria-hidden="true">
           <div id="results" class="results-list"></div>
         </section>
+        </div>
+      </section>
+
+      <section id="bongwan-panel" class="site-panel bongwan-panel" role="tabpanel" aria-labelledby="bongwan-tab" data-panel="bongwan" tabindex="0" hidden>
+        <div class="bongwan-explorer-content">
+          <header class="bongwan-explorer-header">
+            <h1 data-i18n="bongwanMapTitle">Bon-gwan map</h1>
+            <p data-i18n="bongwanMapIntro">Explore historical Bon-gwan origins across the Korean Peninsula.</p>
+          </header>
+          <div class="bongwan-search-wrap">
+            <label class="visually-hidden" for="bongwan-query" data-i18n="bongwanSearchLabel">Search surname or Bon-gwan</label>
+            <div class="bongwan-search-row">
+              <input id="bongwan-query" type="search" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="bongwan-suggestions" data-i18n-placeholder="bongwanSearchPlaceholder" placeholder="Search surname or Bon-gwan" />
+              <span id="bongwan-query-hint" class="bongwan-query-hint" aria-hidden="true"></span>
+              <button id="bongwan-search-clear" class="bongwan-icon-button" type="button" data-i18n-aria-label="close" aria-label="Clear search" hidden>×</button>
+            </div>
+            <div id="bongwan-suggestions" class="bongwan-suggestions" role="listbox" hidden></div>
+          </div>
+          <div class="bongwan-map-layout">
+            <section class="bongwan-map-section" aria-labelledby="bongwan-map-title">
+              <div class="bongwan-map-heading">
+                <h2 id="bongwan-map-title" data-i18n="bongwanMap">Bon-gwan map</h2>
+              </div>
+              <div id="bongwan-map-frame" class="bongwan-map-frame">
+                <svg id="bongwan-map" class="bongwan-map" viewBox="0 0 720 900" role="img" data-i18n-aria-label="bongwanMapAria" aria-label="Interactive map of the Korean Peninsula"></svg>
+                <div id="bongwan-region-popover" class="bongwan-region-popover" hidden></div>
+              </div>
+              <div class="bongwan-map-legend" aria-label="Map legend" data-i18n-aria-label="mapLegend">
+                <span data-i18n="populationIntensity">Population represented by matching clans</span>
+                <span class="bongwan-legend-scale" aria-hidden="true"><i></i><i></i><i></i></span>
+              </div>
+            </section>
+            <aside id="bongwan-region-panel" class="bongwan-region-panel" hidden></aside>
+          </div>
+          <section class="bongwan-results-section" aria-labelledby="bongwan-results-title">
+            <div class="bongwan-section-heading">
+              <h2 id="bongwan-results-title" data-i18n="matchingClans">Matching clans</h2>
+              <span id="bongwan-results-count" class="bongwan-results-count"></span>
+            </div>
+            <div id="bongwan-results" class="bongwan-results"></div>
+          </section>
+          <section id="bongwan-outside" class="bongwan-secondary-section" hidden></section>
+          <section id="bongwan-uncertain" class="bongwan-secondary-section" hidden></section>
+          <section id="bongwan-report" class="bongwan-report" aria-live="polite" hidden></section>
         </div>
       </section>
 
@@ -354,6 +409,6 @@
       </article>
     </template>
 
-  <script type="module" src="./app.js?v=20260813-hangnyeol-3"></script>
+  <script type="module" src="./app.js?v=20260821-bongwan-map"></script>
   </body>
 </html>

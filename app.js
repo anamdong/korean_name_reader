@@ -1,12 +1,15 @@
 import { analyzeLatinNameInput, createKoreanRomanSuggestionIndex, isKoreanRomanShorthand, keyboardWeightedDistance } from "./name_input_helpers.js?v=20260814-chinese-guidance-3";
 import { clanIdForHangnyeol, findHangnyeolMatches, leadingSurnameHanja, sourceRecordsForHangnyeolMatch } from "./hangnyeol_matcher.js?v=20260817-explicit-surname-hanja";
+import { initializeBongwanExplorerUi } from "./bongwan_explorer_ui.js?v=20260821-map-explorer-5";
 
 const dataUrl = "./data/name_index.json?v=20260804-japanese-surname-priors";
 const hanjaReadingUrl = "./data/hanja_readings.json?v=20260721-unihan-khangul";
 const hanjaNameCharUrl = "./data/hanja_name_chars.json?v=20260721-top1000-name-hanja";
 const hanjaUsageRankUrl = "./data/hanja_usage_rank.json?v=20260721-ohmybaby-top50";
 const bonGwanDataUrl = "./data/bon_gwan_by_surname.json?v=20260721-kosis-2015-hanja";
-const hangnyeolDataUrl = "./data/hangnyeol_by_clan.json?v=20260817-corpus-14";
+const hangnyeolDataUrl = "./data/hangnyeol_by_clan.json?v=20260821-branch-hanja-15";
+const bongwanGeographyUrl = "./data/bongwan_geography.json?v=20260821-map-explorer-1";
+const peninsulaRegionsUrl = "./data/peninsula_regions.geojson?v=20260821-map-explorer-1";
 
 const LANGUAGE_STORAGE_KEY = "gildonghong.language";
 const SEARCH_HISTORY_STORAGE_KEY = "gildonghong.searchHistory";
@@ -25,6 +28,38 @@ const TRANSLATIONS = {
     languageSelectorLabel: "Choose language",
     siteSectionsLabel: "Site sections",
     home: "Home",
+    bongwanMap: "Bon-gwan map",
+    bongwanMapTitle: "Bon-gwan map explorer",
+    bongwanMapIntro: "Explore historical Bon-gwan origins across the Korean Peninsula.",
+    bongwanSearchLabel: "Search surname or Bon-gwan",
+    bongwanSearchPlaceholder: "Search surname or Bon-gwan",
+    bongwanMapAria: "Interactive map of the Korean Peninsula",
+    bongwanSurnames: "Surnames",
+    bongwanPlaces: "Bon-gwan places",
+    bongwanClans: "Clans",
+    matchingClans: "Matching clans",
+    clansInRegion: "Clans in this region",
+    population: "Population",
+    censusPopulation: ({ year }) => `${year} census population`,
+    nationalRank: "National rank",
+    shareOfSurname: "Share of this surname",
+    geographicOrigin: "Geographic origin",
+    branches: "Branches",
+    generationNames: "Generation names",
+    selectBranchForGenerationNames: "Select a branch to view its generation names.",
+    sources: "Sources",
+    close: "Close",
+    noMatchingClans: "No matching clans.",
+    showMore: ({ count, remaining }) => `Show ${count} more (${remaining} remaining)`,
+    outsidePeninsula: "Origins outside the Korean Peninsula",
+    locationUncertain: "Location uncertain",
+    mapLegend: "Map legend",
+    populationIntensity: "Population represented by matching clans",
+    bongwanMapNote: "Map shading represents the population in the current results, not a person's ancestry.",
+    mappingConfidence: "Mapping confidence",
+    mappingConfidenceHigh: "High",
+    mappingConfidenceMedium: "Medium",
+    mappingConfidenceLow: "Limited",
     about: "About",
     howItWorks: "How it works",
     promptAriaLabel: "How do I read this Korean name?",
@@ -162,6 +197,38 @@ const TRANSLATIONS = {
     languageSelectorLabel: "言語を選択",
     siteSectionsLabel: "サイト内メニュー",
     home: "ホーム",
+    bongwanMap: "本貫マップ",
+    bongwanMapTitle: "本貫マップを探す",
+    bongwanMapIntro: "朝鮮半島全体にある歴史的な本貫の地理を調べます。",
+    bongwanSearchLabel: "姓または本貫を検索",
+    bongwanSearchPlaceholder: "姓または本貫を検索",
+    bongwanMapAria: "朝鮮半島のインタラクティブ地図",
+    bongwanSurnames: "姓",
+    bongwanPlaces: "本貫の地名",
+    bongwanClans: "本貫",
+    matchingClans: "該当する本貫",
+    clansInRegion: "この地域の本貫",
+    population: "人口",
+    censusPopulation: ({ year }) => `${year}年国勢調査人口`,
+    nationalRank: "全国順位",
+    shareOfSurname: "この姓の中での割合",
+    geographicOrigin: "地理的な由来",
+    branches: "派",
+    generationNames: "行列字",
+    selectBranchForGenerationNames: "派を選択すると行列字を表示します。",
+    sources: "出典",
+    close: "閉じる",
+    noMatchingClans: "該当する本貫はありません。",
+    showMore: ({ count, remaining }) => `さらに${count}件表示（残り${remaining}件）`,
+    outsidePeninsula: "朝鮮半島外に由来する本貫",
+    locationUncertain: "所在地が不明確",
+    mapLegend: "地図の凡例",
+    populationIntensity: "検索結果に含まれる人口",
+    bongwanMapNote: "地図の濃淡は検索結果に含まれる人口であり、個人の祖先を示すものではありません。",
+    mappingConfidence: "対応付けの確度",
+    mappingConfidenceHigh: "高い",
+    mappingConfidenceMedium: "中程度",
+    mappingConfidenceLow: "限定的",
     about: "このツールについて",
     howItWorks: "仕組み",
     promptAriaLabel: "この韓国人名はどう読みますか？",
@@ -299,6 +366,38 @@ const TRANSLATIONS = {
     languageSelectorLabel: "選擇語言",
     siteSectionsLabel: "網站分頁",
     home: "首頁",
+    bongwanMap: "本貫地圖",
+    bongwanMapTitle: "本貫地圖探索",
+    bongwanMapIntro: "探索整個朝鮮半島的歷史本貫地理來源。",
+    bongwanSearchLabel: "搜尋姓氏或本貫",
+    bongwanSearchPlaceholder: "搜尋姓氏或本貫",
+    bongwanMapAria: "朝鮮半島互動地圖",
+    bongwanSurnames: "姓氏",
+    bongwanPlaces: "本貫地名",
+    bongwanClans: "本貫",
+    matchingClans: "相符的本貫",
+    clansInRegion: "此地區的本貫",
+    population: "人口",
+    censusPopulation: ({ year }) => `${year}年人口普查人口`,
+    nationalRank: "全國排名",
+    shareOfSurname: "此姓氏中的比例",
+    geographicOrigin: "地理來源",
+    branches: "派",
+    generationNames: "行列字",
+    selectBranchForGenerationNames: "選擇派別以查看行列字。",
+    sources: "來源",
+    close: "關閉",
+    noMatchingClans: "沒有相符的本貫。",
+    showMore: ({ count, remaining }) => `再顯示 ${count} 項（剩餘 ${remaining} 項）`,
+    outsidePeninsula: "朝鮮半島以外的本貫來源",
+    locationUncertain: "地點不確定",
+    mapLegend: "地圖圖例",
+    populationIntensity: "搜尋結果所代表的人口",
+    bongwanMapNote: "地圖深淺代表目前結果所含人口，並非個人的祖源。",
+    mappingConfidence: "對應信心",
+    mappingConfidenceHigh: "高",
+    mappingConfidenceMedium: "中",
+    mappingConfidenceLow: "有限",
     about: "關於",
     howItWorks: "運作方式",
     promptAriaLabel: "這個韓國姓名怎麼讀？",
@@ -456,6 +555,7 @@ const state = {
   runtime: null,
   bonGwanData: null,
   hangnyeolData: null,
+  bongwanUi: null,
   hangnyeolQueryHanja: "",
   queryMeta: null,
   dismissedInputGuidanceQuery: null,
@@ -590,6 +690,7 @@ function setLanguage(language, options = {}) {
   }
   applyTranslations();
   updateLanguageSelector();
+  state.bongwanUi?.render();
   renderSearchHistory();
   setLanguageMenuOpen(false);
   if (rerender && state.runtime && queryEl?.value.trim()) {
@@ -6539,13 +6640,15 @@ function levenshtein(a, b) {
 }
 
 async function init() {
-  const [response, hanjaReadingData, hanjaNameCharData, hanjaUsageRankData, bonGwanData, hangnyeolData] = await Promise.all([
+  const [response, hanjaReadingData, hanjaNameCharData, hanjaUsageRankData, bonGwanData, hangnyeolData, bongwanGeography, peninsulaRegions] = await Promise.all([
     fetch(dataUrl),
     fetchOptionalJson(hanjaReadingUrl),
     fetchOptionalJson(hanjaNameCharUrl),
     fetchOptionalJson(hanjaUsageRankUrl),
     fetchOptionalJson(bonGwanDataUrl),
     fetchOptionalJson(hangnyeolDataUrl),
+    fetchOptionalJson(bongwanGeographyUrl),
+    fetchOptionalJson(peninsulaRegionsUrl),
   ]);
   state.data = await response.json();
   state.bonGwanData = bonGwanData;
@@ -6559,6 +6662,15 @@ async function init() {
   rebuildSurnameHanjaIndex(state.data);
   state.runtime = buildRuntime(state.data);
   state.runtime.romanSuggestionIndex = buildRomanSuggestionIndex(state.data);
+  state.bongwanUi = initializeBongwanExplorerUi({
+    bonGwanData: state.bonGwanData,
+    geography: bongwanGeography,
+    hangnyeolData: state.hangnyeolData,
+    regionGeoJson: peninsulaRegions,
+    t,
+    formatNumber,
+    getLocale: () => LANGUAGE_CONFIG[state.language]?.intlLocale || "en",
+  });
   const generatedNames = shuffled(buildGeneratedExampleNames());
   hydrateRandomExamples(generatedNames);
   hydrateTypewriterPrompt(generatedNames);
