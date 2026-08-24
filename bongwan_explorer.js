@@ -57,14 +57,24 @@ function sortByPopulation(left, right) {
     || left.displayHangul.localeCompare(right.displayHangul, "ko");
 }
 
-function makeLocationIndex(geography) {
+function makeLocationIndex(geography, coordinateData) {
   const locations = new Map();
+  const coordinates = coordinateData?.places || {};
   for (const group of geography?.peninsulaMappings || []) {
     for (const key of group.places || []) {
+      const coordinate = coordinates[key];
+      const canonicalKey = coordinate?.locationKey || key;
+      const [canonicalNameHangul, canonicalNameHanja] = canonicalKey.split("|");
       locations.set(key, {
         locationType: "peninsula",
         regionId: group.regionId,
         mappingConfidence: group.confidence || "medium",
+        coordinateKey: coordinate ? canonicalKey : "",
+        locationNameHangul: canonicalNameHangul,
+        locationNameHanja: canonicalNameHanja || "",
+        latitude: Number.isFinite(Number(coordinate?.latitude)) ? Number(coordinate.latitude) : null,
+        longitude: Number.isFinite(Number(coordinate?.longitude)) ? Number(coordinate.longitude) : null,
+        coordinateConfidence: coordinate?.mappingConfidence || "",
         sourceIds: ["placeIndex"],
       });
     }
@@ -138,8 +148,8 @@ function makeSearchFields(entry) {
   };
 }
 
-export function createBongwanExplorer({ bonGwanData, geography, hangnyeolData }) {
-  const locationIndex = makeLocationIndex(geography);
+export function createBongwanExplorer({ bonGwanData, geography, hangnyeolData, placeCoordinates }) {
+  const locationIndex = makeLocationIndex(geography, placeCoordinates);
   const surnameTotals = new Map();
   const entries = [];
   for (const [surnameKey, surnameRecord] of Object.entries(bonGwanData?.surnames || {})) {
@@ -178,13 +188,19 @@ export function createBongwanExplorer({ bonGwanData, geography, hangnyeolData })
   const dedupedEntries = uniqueBy(entries, (entry) => entry.clanId).sort(sortByPopulation);
   const byId = new Map(dedupedEntries.map((entry) => [entry.clanId, entry]));
   const regionEntries = new Map();
+  const locationEntries = new Map();
   for (const entry of dedupedEntries) {
     if (entry.location.locationType !== "peninsula" || !entry.location.regionId) continue;
     const list = regionEntries.get(entry.location.regionId) || [];
     list.push(entry);
     regionEntries.set(entry.location.regionId, list);
+    if (!entry.location.coordinateKey) continue;
+    const locations = locationEntries.get(entry.location.coordinateKey) || [];
+    locations.push(entry);
+    locationEntries.set(entry.location.coordinateKey, locations);
   }
   for (const list of regionEntries.values()) list.sort(sortByPopulation);
+  for (const list of locationEntries.values()) list.sort(sortByPopulation);
   const recordsByClan = new Map();
   for (const record of hangnyeolData?.records || []) {
     if (!new Set(["verified", "corroborated"]).has(record.status)) continue;
@@ -196,6 +212,7 @@ export function createBongwanExplorer({ bonGwanData, geography, hangnyeolData })
     entries: dedupedEntries,
     byId,
     regionEntries,
+    locationEntries,
     regions: geography?.regions || {},
     geographyMeta: geography?.meta || {},
     hangnyeolSources: hangnyeolData?.sources || {},
@@ -267,6 +284,36 @@ export function aggregateMatchesByRegion(explorer, matches) {
     ...region,
     entries: region.entries.sort(sortByPopulation),
   })).sort((left, right) => right.population - left.population);
+}
+
+export function aggregateMatchesByLocation(explorer, matches) {
+  const locationMap = new Map();
+  const seen = new Set();
+  for (const item of matches || []) {
+    const entry = item.entry || item;
+    const location = entry?.location;
+    if (!entry?.clanId || seen.has(entry.clanId) || !location?.coordinateKey) continue;
+    seen.add(entry.clanId);
+    const locationKey = location.coordinateKey;
+    const value = locationMap.get(locationKey) || {
+      locationKey,
+      name: location.locationNameHangul || location.originNameHangul,
+      hanja: location.locationNameHanja || location.originNameHanja,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      population: 0,
+      clanIds: [],
+      entries: [],
+    };
+    value.population += Number(entry.population || 0);
+    value.clanIds.push(entry.clanId);
+    value.entries.push(entry);
+    locationMap.set(locationKey, value);
+  }
+  return [...locationMap.values()].map((location) => ({
+    ...location,
+    entries: location.entries.sort(sortByPopulation),
+  })).sort((left, right) => right.population - left.population || left.name.localeCompare(right.name, "ko"));
 }
 
 export function heatIntensity(population, maxPopulation) {

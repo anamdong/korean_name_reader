@@ -1,9 +1,8 @@
 import {
-  aggregateMatchesByRegion,
+  aggregateMatchesByLocation,
   bongwanSuggestions,
   createBongwanExplorer,
   getBongwanReport,
-  heatIntensity,
   searchBongwan,
 } from "./bongwan_explorer.js?v=20260821-branch-selector-1";
 
@@ -12,6 +11,17 @@ const MAX_REGION_CLANS = 6;
 const RESULT_PAGE_SIZE = 16;
 const MAX_RESULTS = RESULT_PAGE_SIZE;
 const QUERY_HINT_EXAMPLES = ["김", "경주", "金海", "김해 김씨"];
+const MAP_GRID_STEP = 17;
+const MAP_GRID_RADIUS = 5.4;
+const MAP_VIEWBOX_WIDTH = 720;
+const MAP_VIEWBOX_HEIGHT = 900;
+const MAP_MAX_ZOOM = 4.5;
+const MAP_PROJECTION_ORIGIN_X = 104;
+const MAP_REFERENCE_ISLANDS = [
+  { id: "ulleungdo", longitude: 130.905, latitude: 37.485 },
+  { id: "ulleungdo-east", longitude: 130.925, latitude: 37.485 },
+  { id: "dokdo", longitude: 131.867, latitude: 37.242 },
+];
 
 function svgElement(name, attributes = {}) {
   const element = document.createElementNS(SVG_NS, name);
@@ -19,16 +29,51 @@ function svgElement(name, attributes = {}) {
   return element;
 }
 
+function projectCoordinate([longitude, latitude]) {
+  return [MAP_PROJECTION_ORIGIN_X + (longitude - 124) * 70, 860 - (latitude - 32.5) * 75];
+}
+
 function geometryPath(geometry) {
-  // Preserve the peninsula's tall geographic aspect rather than stretching the SVG.
-  const project = ([longitude, latitude]) => [62 + (longitude - 124) * 70, 860 - (latitude - 32.5) * 75];
   const ring = (coordinates) => coordinates.map((coordinate, index) => {
-    const [x, y] = project(coordinate);
+    const [x, y] = projectCoordinate(coordinate);
     return `${index ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`;
   }).join(" ") + " Z";
   if (geometry?.type === "Polygon") return geometry.coordinates.map(ring).join(" ");
   if (geometry?.type === "MultiPolygon") return geometry.coordinates.flatMap((polygon) => polygon.map(ring)).join(" ");
   return "";
+}
+
+function pointInRing(point, ring) {
+  const [x, y] = point;
+  let inside = false;
+  let previous = ring[ring.length - 1];
+  for (const current of ring) {
+    const [currentX, currentY] = current;
+    const [previousX, previousY] = previous;
+    if ((currentY > y) !== (previousY > y) && x < (previousX - currentX) * (y - currentY) / (previousY - currentY) + currentX) inside = !inside;
+    previous = current;
+  }
+  return inside;
+}
+
+function pointInGeometry(point, geometry) {
+  const polygons = geometry?.type === "MultiPolygon" ? geometry.coordinates : geometry?.type === "Polygon" ? [geometry.coordinates] : [];
+  return polygons.some((polygon) => polygon.length && pointInRing(point, polygon[0]) && !polygon.slice(1).some((hole) => pointInRing(point, hole)));
+}
+
+function buildDotGrid(features) {
+  const grid = [];
+  for (let y = 52, row = 0; y <= 868; y += MAP_GRID_STEP, row += 1) {
+    for (let x = 45 + (row % 2 ? MAP_GRID_STEP / 2 : 0); x <= 690; x += MAP_GRID_STEP) {
+      const geographicPoint = [124 + (x - MAP_PROJECTION_ORIGIN_X) / 70, 32.5 + (860 - y) / 75];
+      if (features.some((feature) => pointInGeometry(geographicPoint, feature.geometry))) grid.push({ id: `${x.toFixed(1)}:${y.toFixed(1)}`, x, y });
+    }
+  }
+  for (const island of MAP_REFERENCE_ISLANDS) {
+    const [x, y] = projectCoordinate([island.longitude, island.latitude]);
+    grid.push({ id: island.id, x, y });
+  }
+  return grid;
 }
 
 function confidenceKey(value) {
@@ -47,7 +92,7 @@ function formatPercent(value, locale) {
   return new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 2 }).format(Number(value || 0));
 }
 
-export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolData, regionGeoJson, t, formatNumber, getLocale }) {
+export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolData, placeCoordinates, regionGeoJson, t, formatNumber, getLocale }) {
   const elements = {
     panel: document.querySelector("#bongwan-panel"),
     query: document.querySelector("#bongwan-query"),
@@ -58,6 +103,7 @@ export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolD
     mapFrame: document.querySelector("#bongwan-map-frame"),
     popover: document.querySelector("#bongwan-region-popover"),
     regionPanel: document.querySelector("#bongwan-region-panel"),
+    resultsSection: document.querySelector("#bongwan-results-section"),
     resultCount: document.querySelector("#bongwan-results-count"),
     results: document.querySelector("#bongwan-results"),
     outside: document.querySelector("#bongwan-outside"),
@@ -66,12 +112,180 @@ export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolD
   };
   if (!elements.panel || !elements.query || !elements.map) return null;
 
-  const explorer = createBongwanExplorer({ bonGwanData, geography, hangnyeolData });
-  const state = { selectedClanId: "", selectedBranchId: "", selectedRegionId: "", activeQuery: "", lastMatches: explorer.entries.map((entry) => ({ entry, relevance: 1 })), resultLimit: MAX_RESULTS };
-  const features = new Map((regionGeoJson?.features || []).map((feature) => [feature.properties?.shapeISO, feature]));
+  const explorer = createBongwanExplorer({ bonGwanData, geography, hangnyeolData, placeCoordinates });
+  const state = { selectedClanId: "", selectedBranchId: "", selectedLocationKey: "", activeQuery: "", lastMatches: explorer.entries.map((entry) => ({ entry, relevance: 1 })), resultLimit: MAX_RESULTS };
+  const features = regionGeoJson?.features || [];
+  const dotGrid = buildDotGrid(features);
+  const mapViewport = { scale: 1, centerX: MAP_VIEWBOX_WIDTH / 2, centerY: MAP_VIEWBOX_HEIGHT / 2 };
+  const mapViewportTarget = { ...mapViewport };
+  const mapPointers = new Map();
+  let lastPinch = null;
+  let suppressMapClickUntil = 0;
   let queryHintIndex = -1;
   let queryHintTimer = null;
   let queryHintFadeTimer = null;
+  let mapViewportAnimationFrame = 0;
+  let mapRenderKey = null;
+  const scrollbarFadeTimers = new WeakMap();
+
+  function setConditionalSectionVisibility(element, show) {
+    if (!element || element.hidden === !show) return;
+    element.hidden = !show;
+    if (!show || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    element.classList.remove("is-entering");
+    void element.offsetWidth;
+    element.classList.add("is-entering");
+    element.addEventListener("animationend", () => element.classList.remove("is-entering"), { once: true });
+  }
+
+  function viewportBoundsFor(viewport) {
+    const width = MAP_VIEWBOX_WIDTH / viewport.scale;
+    const height = MAP_VIEWBOX_HEIGHT / viewport.scale;
+    return { width, height, left: viewport.centerX - width / 2, top: viewport.centerY - height / 2 };
+  }
+
+  function viewportBounds() {
+    return viewportBoundsFor(mapViewport);
+  }
+
+  function constrainMapViewport(viewport = mapViewport) {
+    const { width, height } = viewportBoundsFor(viewport);
+    viewport.centerX = Math.max(width / 2, Math.min(MAP_VIEWBOX_WIDTH - width / 2, viewport.centerX));
+    viewport.centerY = Math.max(height / 2, Math.min(MAP_VIEWBOX_HEIGHT - height / 2, viewport.centerY));
+  }
+
+  function updateMapViewport() {
+    constrainMapViewport();
+    const { left, top, width, height } = viewportBounds();
+    elements.map.setAttribute("viewBox", `${left.toFixed(2)} ${top.toFixed(2)} ${width.toFixed(2)} ${height.toFixed(2)}`);
+  }
+
+  function mapPointFromClient(clientX, clientY, viewport = mapViewport) {
+    const bounds = elements.map.getBoundingClientRect();
+    const boundsForViewport = viewportBoundsFor(viewport);
+    return {
+      x: boundsForViewport.left + (clientX - bounds.left) / bounds.width * boundsForViewport.width,
+      y: boundsForViewport.top + (clientY - bounds.top) / bounds.height * boundsForViewport.height,
+    };
+  }
+
+  function cancelMapViewportAnimation({ keepTarget = false } = {}) {
+    if (mapViewportAnimationFrame) cancelAnimationFrame(mapViewportAnimationFrame);
+    mapViewportAnimationFrame = 0;
+    if (!keepTarget) Object.assign(mapViewportTarget, mapViewport);
+  }
+
+  function animateMapViewport(target) {
+    constrainMapViewport(target);
+    cancelMapViewportAnimation({ keepTarget: true });
+    Object.assign(mapViewportTarget, target);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      Object.assign(mapViewport, target);
+      updateMapViewport();
+      return;
+    }
+    const start = { ...mapViewport };
+    const startedAt = performance.now();
+    const duration = 180;
+    const step = (now) => {
+      const progress = Math.min(1, (now - startedAt) / duration);
+      const eased = 1 - (1 - progress) ** 3;
+      mapViewport.scale = start.scale + (target.scale - start.scale) * eased;
+      mapViewport.centerX = start.centerX + (target.centerX - start.centerX) * eased;
+      mapViewport.centerY = start.centerY + (target.centerY - start.centerY) * eased;
+      updateMapViewport();
+      if (progress < 1) mapViewportAnimationFrame = requestAnimationFrame(step);
+      else mapViewportAnimationFrame = 0;
+    };
+    mapViewportAnimationFrame = requestAnimationFrame(step);
+  }
+
+  function zoomMapAt(point, factor, { animate = true } = {}) {
+    const source = animate ? mapViewportTarget : mapViewport;
+    const previous = viewportBoundsFor(source);
+    const nextScale = Math.max(1, Math.min(MAP_MAX_ZOOM, source.scale * factor));
+    if (nextScale === source.scale) return;
+    const relativeX = (point.x - previous.left) / previous.width;
+    const relativeY = (point.y - previous.top) / previous.height;
+    const target = { scale: nextScale, centerX: source.centerX, centerY: source.centerY };
+    const next = viewportBoundsFor(target);
+    target.centerX = point.x - relativeX * next.width + next.width / 2;
+    target.centerY = point.y - relativeY * next.height + next.height / 2;
+    if (animate) animateMapViewport(target);
+    else {
+      cancelMapViewportAnimation();
+      Object.assign(mapViewport, target);
+      Object.assign(mapViewportTarget, target);
+      updateMapViewport();
+    }
+  }
+
+  function initializeMapGestures() {
+    updateMapViewport();
+    elements.map.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      zoomMapAt(mapPointFromClient(event.clientX, event.clientY, mapViewportTarget), Math.exp(-event.deltaY * 0.0015));
+    }, { passive: false });
+    elements.map.addEventListener("pointerdown", (event) => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      mapPointers.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY, moved: false });
+      if (event.pointerType !== "mouse") elements.map.setPointerCapture?.(event.pointerId);
+    });
+    elements.map.addEventListener("pointermove", (event) => {
+      const previous = mapPointers.get(event.pointerId);
+      if (!previous) return;
+      const next = { clientX: event.clientX, clientY: event.clientY, moved: previous.moved };
+      mapPointers.set(event.pointerId, next);
+      const pointers = [...mapPointers.values()];
+      if (pointers.length >= 2) {
+        const [first, second] = pointers;
+        const distance = Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY);
+        const midpoint = { clientX: (first.clientX + second.clientX) / 2, clientY: (first.clientY + second.clientY) / 2 };
+        if (lastPinch && distance > 0) {
+          zoomMapAt(mapPointFromClient(midpoint.clientX, midpoint.clientY), distance / lastPinch.distance, { animate: false });
+          next.moved = true;
+        }
+        lastPinch = { distance, midpoint };
+        return;
+      }
+      lastPinch = null;
+      const bounds = elements.map.getBoundingClientRect();
+      const viewport = viewportBounds();
+      const distanceX = event.clientX - previous.clientX;
+      const distanceY = event.clientY - previous.clientY;
+      if (Math.hypot(distanceX, distanceY) < 2) return;
+      next.moved = true;
+      elements.map.classList.add("is-dragging");
+      cancelMapViewportAnimation();
+      mapViewport.centerX -= distanceX / bounds.width * viewport.width;
+      mapViewport.centerY -= distanceY / bounds.height * viewport.height;
+      updateMapViewport();
+      Object.assign(mapViewportTarget, mapViewport);
+    });
+    const endGesture = (event) => {
+      const pointer = mapPointers.get(event.pointerId);
+      if (pointer?.moved || mapPointers.size > 1) suppressMapClickUntil = Date.now() + 250;
+      mapPointers.delete(event.pointerId);
+      if (!mapPointers.size) elements.map.classList.remove("is-dragging");
+      lastPinch = null;
+    };
+    elements.map.addEventListener("pointerup", endGesture);
+    elements.map.addEventListener("pointercancel", endGesture);
+  }
+
+  function initializeFadingPanelScrollbars() {
+    for (const panel of [elements.regionPanel, elements.report]) {
+      if (!panel) continue;
+      panel.addEventListener("scroll", () => {
+        panel.classList.add("is-scrolling");
+        window.clearTimeout(scrollbarFadeTimers.get(panel));
+        scrollbarFadeTimers.set(panel, window.setTimeout(() => {
+          panel.classList.remove("is-scrolling");
+          scrollbarFadeTimers.delete(panel);
+        }, 700));
+      }, { passive: true });
+    }
+  }
 
   function setQueryHint(text, immediate = false) {
     if (!elements.queryHint) return;
@@ -119,17 +333,53 @@ export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolD
     return state.activeQuery ? result.matches : explorer.entries.map((entry) => ({ entry, relevance: 1 }));
   }
 
-  function selectedRegionData() {
-    return aggregateMatchesByRegion(explorer, state.lastMatches).find((region) => region.regionId === state.selectedRegionId) || null;
+  function selectedLocationData() {
+    return aggregateMatchesByLocation(explorer, state.lastMatches).find((location) => location.locationKey === state.selectedLocationKey) || null;
+  }
+
+  function morphReportFrom(sourceBounds) {
+    if (!sourceBounds || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    window.requestAnimationFrame(() => {
+      const report = elements.report;
+      if (!report || report.hidden) return;
+      const targetBounds = report.getBoundingClientRect();
+      if (!targetBounds.width || !targetBounds.height) return;
+      const translateX = sourceBounds.left - targetBounds.left;
+      const translateY = sourceBounds.top - targetBounds.top;
+      const scaleX = Math.max(0.18, sourceBounds.width / targetBounds.width);
+      const scaleY = Math.max(0.18, sourceBounds.height / targetBounds.height);
+      report.classList.add("is-morphing");
+      report.style.transformOrigin = "top left";
+      report.style.transition = "none";
+      report.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`;
+      report.style.opacity = "0.86";
+      void report.offsetWidth;
+      window.requestAnimationFrame(() => {
+        report.style.transition = "transform 300ms cubic-bezier(0.2, 0, 0, 1), opacity 220ms ease-out";
+        report.style.transform = "translate(0, 0) scale(1, 1)";
+        report.style.opacity = "1";
+      });
+      const cleanup = () => {
+        report.classList.remove("is-morphing");
+        report.style.removeProperty("transform-origin");
+        report.style.removeProperty("transition");
+        report.style.removeProperty("transform");
+        report.style.removeProperty("opacity");
+      };
+      window.setTimeout(cleanup, 340);
+    });
   }
 
   function openClan(clanId) {
+    const sourceBounds = elements.regionPanel && !elements.regionPanel.hidden
+      ? elements.regionPanel.getBoundingClientRect()
+      : null;
     state.selectedClanId = clanId;
     state.selectedBranchId = "";
     const entry = explorer.byId.get(clanId);
-    state.selectedRegionId = entry?.location?.regionId || "";
+    state.selectedLocationKey = entry?.location?.coordinateKey || "";
     renderAll();
-    elements.report?.scrollIntoView({ behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth", block: "start" });
+    morphReportFrom(sourceBounds);
   }
 
   function makeClanButton(entry, className = "bongwan-clan-row") {
@@ -145,9 +395,11 @@ export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolD
     hanja.textContent = entry.displayHanja;
     const meta = document.createElement("span");
     meta.className = "bongwan-clan-meta";
-    const origin = entry.location.locationType === "peninsula"
-      ? explorer.regions[entry.location.regionId]?.hangul || entry.bonGwanName
-      : entry.location.modernNameHangul || entry.bonGwanName;
+    const origin = entry.location.coordinateKey
+      ? entry.bonGwanName
+      : entry.location.locationType === "peninsula"
+        ? explorer.regions[entry.location.regionId]?.hangul || entry.bonGwanName
+        : entry.location.modernNameHangul || entry.bonGwanName;
     meta.textContent = `${t("population")} ${formatNumber(entry.population)} · ${origin}`;
     button.append(heading, hanja, meta);
     button.addEventListener("click", () => openClan(entry.clanId));
@@ -192,7 +444,7 @@ export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolD
             elements.query.value = exactQuery;
             state.activeQuery = exactQuery;
             state.selectedClanId = "";
-            state.selectedRegionId = "";
+            state.selectedLocationKey = "";
             renderAll();
           }
           elements.query.focus();
@@ -206,63 +458,126 @@ export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolD
     elements.query.setAttribute("aria-expanded", String(hasSuggestions));
   }
 
-  function renderMap() {
-    const aggregated = aggregateMatchesByRegion(explorer, state.lastMatches);
-    const byRegion = new Map(aggregated.map((region) => [region.regionId, region]));
-    const maxPopulation = aggregated[0]?.population || 0;
-    elements.map.replaceChildren();
-    for (const [regionId, region] of Object.entries(explorer.regions)) {
-      const feature = features.get(regionId);
-      if (!feature) continue;
-      const regionData = byRegion.get(regionId);
-      const path = svgElement("path", {
-        d: geometryPath(feature.geometry),
-        class: "bongwan-region",
-        "data-region-id": regionId,
-        tabindex: "0",
-        role: "button",
-        "aria-pressed": String(state.selectedRegionId === regionId),
-        "aria-label": `${region.hangul}: ${regionData ? `${formatNumber(regionData.population)} ${t("population")}` : t("noMatchingClans")}`,
-      });
-      if (regionData) path.style.setProperty("--map-intensity", heatIntensity(regionData.population, maxPopulation).toFixed(3));
-      if (state.selectedRegionId === regionId) path.classList.add("is-selected");
-      const show = (event) => showRegionPopover(regionId, event);
-      path.addEventListener("pointerenter", show);
-      path.addEventListener("focus", show);
-      path.addEventListener("pointerleave", () => { if (!state.selectedRegionId) hideRegionPopover(); });
-      path.addEventListener("click", () => selectRegion(regionId));
-      path.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          selectRegion(regionId);
-        }
-      });
-      elements.map.append(path);
+  function updateMapSelection() {
+    const dimOtherLocations = Boolean(state.selectedLocationKey);
+    for (const marker of elements.map.querySelectorAll(".bongwan-heat-dot, .bongwan-location-pulse")) {
+      const selected = marker.dataset.locationKeys?.split("\u001f").includes(state.selectedLocationKey) || false;
+      marker.classList.toggle("is-selected", selected);
+      marker.classList.toggle("is-dimmed", dimOtherLocations && !selected);
+    }
+    for (const hit of elements.map.querySelectorAll(".bongwan-location-hit")) {
+      const selected = hit.dataset.locationKeys?.split("\u001f").includes(state.selectedLocationKey) || false;
+      hit.classList.toggle("is-selected", selected);
+      hit.setAttribute("aria-pressed", String(selected));
     }
   }
 
-  function regionContent(regionId, persistent = false) {
-    const data = aggregateMatchesByRegion(explorer, state.lastMatches).find((region) => region.regionId === regionId);
-    const region = explorer.regions[regionId];
+  function renderMap() {
+    elements.map.classList.toggle("has-active-query", Boolean(state.activeQuery));
+    const renderKey = state.lastMatches.map(({ entry }) => entry.clanId).join("\u001f");
+    if (renderKey === mapRenderKey) {
+      updateMapSelection();
+      return;
+    }
+    mapRenderKey = renderKey;
+    const locations = aggregateMatchesByLocation(explorer, state.lastMatches).map((location) => {
+      const [x, y] = projectCoordinate([location.longitude, location.latitude]);
+      return { ...location, x, y, weight: 0.8 + Math.log10(Math.max(1, location.population)) };
+    });
+    const pointBuckets = new Map();
+    for (const location of locations) {
+      let nearest = null;
+      let distanceSquared = Infinity;
+      for (const dot of dotGrid) {
+        const candidateDistance = (dot.x - location.x) ** 2 + (dot.y - location.y) ** 2;
+        if (candidateDistance < distanceSquared) {
+          nearest = dot;
+          distanceSquared = candidateDistance;
+        }
+      }
+      if (nearest) {
+        const bucket = pointBuckets.get(nearest.id) || [];
+        bucket.push(location);
+        pointBuckets.set(nearest.id, bucket);
+      }
+    }
+    const maxHeat = Math.max(1, ...dotGrid.map((dot) => locations.reduce((sum, location) => {
+      const distanceSquared = (dot.x - location.x) ** 2 + (dot.y - location.y) ** 2;
+      return sum + location.weight * Math.exp(-distanceSquared / 1250);
+    }, 0)));
+    elements.map.replaceChildren();
+    for (const dot of dotGrid) {
+      const bucket = pointBuckets.get(dot.id);
+      const heat = locations.reduce((sum, location) => {
+        const distanceSquared = (dot.x - location.x) ** 2 + (dot.y - location.y) ** 2;
+        return sum + location.weight * Math.exp(-distanceSquared / 1250);
+      }, 0) / maxHeat;
+      const circle = svgElement("circle", {
+        cx: dot.x.toFixed(1), cy: dot.y.toFixed(1), r: MAP_GRID_RADIUS,
+        "class": `bongwan-heat-dot${bucket?.length ? " is-selectable" : ""}`,
+      });
+      circle.dataset.locationKeys = bucket?.map((location) => location.locationKey).join("\u001f") || "";
+      circle.style.setProperty("--heat-intensity", heat.toFixed(3));
+      elements.map.append(circle);
+      if (!bucket?.length) continue;
+      const pulse = svgElement("circle", {
+        cx: dot.x.toFixed(1), cy: dot.y.toFixed(1), r: "10",
+        "class": "bongwan-location-pulse",
+        "aria-hidden": "true",
+      });
+      pulse.dataset.locationKeys = bucket.map((location) => location.locationKey).join("\u001f");
+      pulse.style.setProperty("--pulse-delay", `${-((dot.x + dot.y) / MAP_GRID_STEP % 7) * 0.3}s`);
+      elements.map.append(pulse);
+      const selected = bucket.some((location) => location.locationKey === state.selectedLocationKey);
+      const hit = svgElement("circle", {
+        cx: dot.x.toFixed(1), cy: dot.y.toFixed(1), r: "10",
+        "class": `bongwan-location-hit${selected ? " is-selected" : ""}`,
+        tabindex: "0", role: "button", "aria-pressed": String(selected),
+        "aria-label": bucket.map((location) => `${location.name} ${location.hanja}`).join(", "),
+      });
+      hit.dataset.locationKeys = bucket.map((location) => location.locationKey).join("\u001f");
+      const show = (event) => {
+        if (!state.selectedLocationKey) showLocationPopover(bucket, event);
+      };
+      hit.addEventListener("pointerenter", show);
+      hit.addEventListener("focus", show);
+      hit.addEventListener("pointerleave", () => { if (!state.selectedLocationKey) hideRegionPopover(); });
+      hit.addEventListener("click", () => {
+        if (Date.now() >= suppressMapClickUntil) selectLocation(bucket[0].locationKey);
+      });
+      hit.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          selectLocation(bucket[0].locationKey);
+        }
+      });
+      elements.map.append(hit);
+    }
+    updateMapSelection();
+  }
+
+  function locationContent(location, persistent = false) {
     const content = document.createElement("div");
-    if (!region) return content;
-    appendText(content, "bongwan-region-title", region.hangul, "h3");
-    if (!data) {
+    if (!location) return content;
+    appendText(content, "bongwan-region-title", `${location.name} ${location.hanja}`.trim(), "h3");
+    if (!location.entries.length) {
       appendText(content, "bongwan-region-empty", t("noMatchingClans"));
       return content;
     }
-    appendText(content, "bongwan-region-total", `${formatNumber(data.population)} · ${data.entries.length} ${t("bongwanClans")}`);
-    appendText(content, "bongwan-region-label", persistent ? t("clansInRegion") : t("matchingClans"));
+    appendText(content, "bongwan-region-total", `${formatNumber(location.population)} · ${location.entries.length} ${t("bongwanClans")}`);
+    appendText(content, "bongwan-region-label", t("matchingClans"));
     const list = document.createElement("div");
     list.className = "bongwan-region-clans";
-    for (const entry of data.entries.slice(0, MAX_REGION_CLANS)) list.append(makeClanButton(entry, "bongwan-region-clan"));
+    for (const entry of location.entries.slice(0, MAX_REGION_CLANS)) list.append(makeClanButton(entry, "bongwan-region-clan"));
     content.append(list);
-    if (data.entries.length > MAX_REGION_CLANS) appendText(content, "bongwan-region-more", t("showMore", { count: data.entries.length - MAX_REGION_CLANS }));
+    if (location.entries.length > MAX_REGION_CLANS) appendText(content, "bongwan-region-more", t("showMore", { count: location.entries.length - MAX_REGION_CLANS }));
     return content;
   }
 
-  function showRegionPopover(regionId, event) {
-    const content = regionContent(regionId);
+  function showLocationPopover(locations, event) {
+    const content = document.createElement("div");
+    content.className = "bongwan-popover-locations";
+    for (const location of locations) content.append(locationContent(location));
     elements.popover.replaceChildren(content);
     elements.popover.hidden = false;
     const frame = elements.mapFrame.getBoundingClientRect();
@@ -276,27 +591,35 @@ export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolD
     elements.popover.hidden = true;
   }
 
-  function selectRegion(regionId) {
-    state.selectedRegionId = state.selectedRegionId === regionId ? "" : regionId;
+  function selectLocation(locationKey) {
+    hideRegionPopover();
+    state.selectedLocationKey = state.selectedLocationKey === locationKey ? "" : locationKey;
     state.selectedClanId = "";
     renderAll();
   }
 
   function renderRegionPanel() {
-    const data = selectedRegionData();
+    const data = selectedLocationData();
     elements.regionPanel.replaceChildren();
-    elements.regionPanel.hidden = !data;
-    if (!data) return;
+    elements.regionPanel.hidden = !data || Boolean(state.selectedClanId);
+    if (!data || state.selectedClanId) return;
     const close = document.createElement("button");
     close.type = "button";
     close.className = "bongwan-panel-close";
     close.textContent = "×";
     close.setAttribute("aria-label", t("close"));
-    close.addEventListener("click", () => { state.selectedRegionId = ""; renderAll(); });
-    elements.regionPanel.append(close, regionContent(data.regionId, true));
+    close.addEventListener("click", () => { state.selectedLocationKey = ""; renderAll(); });
+    elements.regionPanel.append(close, locationContent(data, true));
   }
 
   function renderResults() {
+    const shouldShow = Boolean(state.activeQuery && !state.selectedClanId && elements.suggestions.hidden);
+    setConditionalSectionVisibility(elements.resultsSection, shouldShow);
+    if (!shouldShow) {
+      elements.resultCount.textContent = "";
+      elements.results.replaceChildren();
+      return;
+    }
     const matches = state.lastMatches;
     elements.resultCount.textContent = matches.length ? formatNumber(matches.length) : "";
     elements.results.replaceChildren();
@@ -325,8 +648,9 @@ export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolD
     const render = (element, titleKey, filter) => {
       const filtered = entries.filter(filter).slice(0, 8);
       element.replaceChildren();
-      element.hidden = !filtered.length;
-      if (!filtered.length) return;
+      const shouldShow = Boolean(state.activeQuery) && filtered.length > 0;
+      setConditionalSectionVisibility(element, shouldShow);
+      if (!shouldShow) return;
       appendText(element, "bongwan-secondary-title", t(titleKey), "h2");
       const list = document.createElement("div");
       list.className = "bongwan-secondary-list";
@@ -345,8 +669,19 @@ export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolD
     const { entry } = report;
     const header = document.createElement("header");
     header.className = "bongwan-report-header";
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "bongwan-report-close";
+    close.textContent = "×";
+    close.setAttribute("aria-label", t("close"));
+    close.addEventListener("click", () => {
+      state.selectedClanId = "";
+      state.selectedBranchId = "";
+      renderAll();
+    });
     appendText(header, "bongwan-report-name", entry.displayHangul, "h2");
     appendText(header, "bongwan-report-hanja", entry.displayHanja);
+    header.append(close);
     elements.report.append(header);
     const stats = document.createElement("dl");
     stats.className = "bongwan-report-stats";
@@ -474,7 +809,7 @@ export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolD
 
   elements.query.addEventListener("input", () => {
     state.selectedClanId = "";
-    state.selectedRegionId = "";
+    state.selectedLocationKey = "";
     state.resultLimit = MAX_RESULTS;
     syncQueryHint();
     renderAll();
@@ -483,7 +818,7 @@ export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolD
     if (event.key === "Escape") {
       elements.query.value = "";
       state.selectedClanId = "";
-      state.selectedRegionId = "";
+      state.selectedLocationKey = "";
       state.resultLimit = MAX_RESULTS;
       resetQueryHintRotation();
       syncQueryHint();
@@ -493,7 +828,7 @@ export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolD
   elements.clear.addEventListener("click", () => {
     elements.query.value = "";
     state.selectedClanId = "";
-    state.selectedRegionId = "";
+    state.selectedLocationKey = "";
     state.resultLimit = MAX_RESULTS;
     resetQueryHintRotation();
     syncQueryHint();
@@ -504,8 +839,11 @@ export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolD
     if (elements.suggestions.hidden || elements.query.closest(".bongwan-search-wrap")?.contains(event.target)) return;
     elements.suggestions.hidden = true;
     elements.query.setAttribute("aria-expanded", "false");
+    renderResults();
   });
   resetQueryHintRotation();
+  initializeMapGestures();
+  initializeFadingPanelScrollbars();
   renderAll();
-  return { render: renderAll, explorer };
+  return { render: renderAll, openClan, explorer };
 }

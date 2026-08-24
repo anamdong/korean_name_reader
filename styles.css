@@ -1971,6 +1971,28 @@ html[data-language="zh"] .typewriter-wrap::before {
   outline-offset: 2px;
 }
 
+.hangnyeol-map-action {
+  min-height: 28px;
+  margin-top: var(--space-2);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: 6px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 11px;
+  line-height: 17px;
+  font-weight: 700;
+}
+
+.hangnyeol-map-action:hover {
+  filter: brightness(0.94);
+}
+
+.hangnyeol-map-action:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .bon-gwan-share {
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
@@ -2228,7 +2250,7 @@ html[data-language="zh"] .typewriter-wrap::before {
   overflow: hidden;
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background: var(--color-gray-100);
+  background: #f6f8f6;
 }
 
 .bongwan-map {
@@ -2238,30 +2260,15 @@ html[data-language="zh"] .typewriter-wrap::before {
   min-height: 560px;
 }
 
-.bongwan-region {
-  --map-alpha: calc(0.08 + (var(--map-intensity, 0) * 0.72));
-  fill: rgb(var(--color-primary-rgb) / var(--map-alpha));
-  stroke: var(--surface-raised);
-  stroke-width: 1.6;
-  vector-effect: non-scaling-stroke;
-  transition: fill 0.16s ease-out, stroke-width 0.16s ease-out;
+.bongwan-heat-dot {
+  fill: rgb(var(--color-primary-rgb) / calc(0.18 + (var(--heat-intensity, 0) * 0.74)));
+  pointer-events: none;
+  transition: fill 160ms ease-out;
 }
 
-.bongwan-region:not([style]) {
-  fill: var(--color-gray-200);
-}
-
-.bongwan-region:hover,
-.bongwan-region:focus-visible,
-.bongwan-region.is-selected {
-  stroke: var(--color-primary);
-  stroke-width: 3;
-  outline: 0;
-}
-
-.bongwan-region.is-selected {
-  filter: drop-shadow(0 0 4px rgba(var(--color-primary-rgb) / 0.45));
-}
+.bongwan-location-hit { fill: transparent; cursor: pointer; outline: 0; }
+.bongwan-location-hit:focus-visible { stroke: var(--color-primary); stroke-width: 2; }
+.bongwan-location-hit.is-selected { stroke: var(--color-primary); stroke-width: 3; }
 
 .bongwan-map-legend {
   display: flex;
@@ -2279,18 +2286,11 @@ html[data-language="zh"] .typewriter-wrap::before {
   gap: 3px;
 }
 
-.bongwan-legend-scale i {
-  width: 20px;
-  height: 10px;
-  border: 1px solid rgba(var(--color-primary-rgb) / 0.2);
-  background: rgb(var(--color-primary-rgb) / 0.22);
-}
-
+.bongwan-legend-scale i { width: 10px; height: 10px; border-radius: 50%; background: rgb(var(--color-primary-rgb) / 0.22); }
 .bongwan-legend-scale i:nth-child(2) { background: rgb(var(--color-primary-rgb) / 0.48); }
-.bongwan-legend-scale i:nth-child(3) { background: rgb(var(--color-primary-rgb) / 0.76); }
+.bongwan-legend-scale i:nth-child(3) { background: rgb(var(--color-primary-rgb) / 0.84); }
 
 .bongwan-region-popover,
-.bongwan-region-panel,
 .bongwan-report {
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
@@ -2305,12 +2305,26 @@ html[data-language="zh"] .typewriter-wrap::before {
   overflow: auto;
   padding: var(--space-3);
   box-shadow: 0 8px 24px rgba(17, 17, 17, 0.16);
+  scrollbar-width: none;
+}
+
+.bongwan-region-popover::-webkit-scrollbar {
+  display: none;
+}
+
+.bongwan-popover-locations > * + * {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .bongwan-region-panel {
   position: relative;
   min-height: 180px;
   padding: var(--space-4);
+  border: 0;
+  border-radius: 8px;
+  background: var(--surface-raised);
 }
 
 .bongwan-panel-close {
@@ -2343,7 +2357,9 @@ html[data-language="zh"] .typewriter-wrap::before {
 }
 
 .bongwan-region-clans {
-  margin-top: var(--space-1);
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 
 .bongwan-results-section,
@@ -2352,10 +2368,33 @@ html[data-language="zh"] .typewriter-wrap::before {
   margin-top: var(--space-8);
 }
 
+@keyframes bongwan-section-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bongwan-results-section.is-entering,
+.bongwan-secondary-section.is-entering {
+  animation: bongwan-section-enter 220ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bongwan-results-section.is-entering,
+  .bongwan-secondary-section.is-entering {
+    animation: none;
+  }
+}
+
 .bongwan-results {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-top: 1px solid var(--border-subtle);
+  gap: var(--space-2);
 }
 
 .bongwan-clan-row,
@@ -2364,34 +2403,27 @@ html[data-language="zh"] .typewriter-wrap::before {
   display: grid;
   gap: 2px;
   width: 100%;
-  padding: var(--space-3) 0;
+  min-height: 106px;
+  padding: var(--space-4);
   border: 0;
-  border-bottom: 1px solid var(--border-subtle);
-  background: transparent;
+  border-radius: 8px;
+  background: var(--surface-raised);
+  box-shadow: 0 1px 3px rgba(17, 17, 17, 0.10);
   text-align: left;
-}
-
-.bongwan-clan-row,
-.bongwan-secondary-row {
-  padding-right: var(--space-5);
-}
-
-.bongwan-clan-row:not(:nth-child(4n)),
-.bongwan-secondary-row:not(:nth-child(4n)) {
-  border-right: 1px solid var(--border-subtle);
-}
-
-.bongwan-clan-row:nth-child(4n + 2),
-.bongwan-clan-row:nth-child(4n + 3),
-.bongwan-clan-row:nth-child(4n + 4),
-.bongwan-secondary-row:nth-child(4n + 2),
-.bongwan-secondary-row:nth-child(4n + 3),
-.bongwan-secondary-row:nth-child(4n + 4) {
-  padding-left: var(--space-5);
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .bongwan-region-clan {
-  padding: var(--space-2) 0;
+  min-height: 0;
+  padding: var(--space-3);
+}
+
+.bongwan-clan-row:hover,
+.bongwan-secondary-row:hover,
+.bongwan-region-clan:hover {
+  background: var(--surface-subtle);
+  box-shadow: 0 5px 12px rgba(17, 17, 17, 0.12);
+  transform: translateY(-1px);
 }
 
 .bongwan-clan-row:hover .bongwan-clan-name,
@@ -2407,7 +2439,7 @@ html[data-language="zh"] .typewriter-wrap::before {
 .bongwan-secondary-row:focus-visible,
 .bongwan-region-clan:focus-visible {
   outline: 2px solid var(--color-primary);
-  outline-offset: -2px;
+  outline-offset: 2px;
 }
 
 .bongwan-clan-name { color: var(--text-primary); font-size: 15px; line-height: 22px; font-weight: 700; }
@@ -2423,26 +2455,30 @@ html[data-language="zh"] .typewriter-wrap::before {
   min-height: 52px;
   padding: var(--space-3) var(--space-4);
   border: 0;
-  border-bottom: 1px solid var(--border-subtle);
-  background: transparent;
+  border-radius: 8px;
+  background: var(--surface-raised);
+  box-shadow: 0 1px 3px rgba(17, 17, 17, 0.10);
   color: var(--color-primary);
   font-size: 14px;
   line-height: 21px;
   font-weight: 700;
   text-align: center;
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .bongwan-result-more:hover,
 .bongwan-result-more:focus-visible {
-  background: rgba(var(--color-primary-rgb) / 0.08);
+  background: var(--surface-subtle);
+  box-shadow: 0 5px 12px rgba(17, 17, 17, 0.12);
   outline: 0;
+  transform: translateY(-1px);
 }
 
 .bongwan-secondary-title { margin-bottom: var(--space-2); }
 .bongwan-secondary-list {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-top: 1px solid var(--border-subtle);
+  gap: var(--space-2);
 }
 
 .bongwan-report {
@@ -2492,11 +2528,7 @@ html[data-language="zh"] .typewriter-wrap::before {
   .bongwan-clan-row,
   .bongwan-secondary-row,
   .bongwan-clan-row:nth-child(n),
-  .bongwan-secondary-row:nth-child(n) { padding: var(--space-3) 0; border-right: 0; }
-  .bongwan-clan-row:not(:nth-child(2n)),
-  .bongwan-secondary-row:not(:nth-child(2n)) { padding-right: var(--space-3); border-right: 1px solid var(--border-subtle); }
-  .bongwan-clan-row:nth-child(2n),
-  .bongwan-secondary-row:nth-child(2n) { padding-left: var(--space-3); }
+  .bongwan-secondary-row:nth-child(n) { min-height: 0; padding: var(--space-3); border-right: 0; }
   .bongwan-report { padding: var(--space-4); }
   .bongwan-report-stats { grid-template-columns: 1fr; gap: var(--space-3); }
 }
@@ -2760,25 +2792,32 @@ html[data-language="zh"] .typewriter-wrap::before {
   gap: 2px;
   min-height: 56px;
   padding: var(--space-3);
-  border: 1px solid var(--border-strong);
+  border: 0;
   border-radius: 8px;
   background: var(--surface-raised);
+  box-shadow: 0 1px 3px rgba(17, 17, 17, 0.10);
   color: var(--text-primary);
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: var(--motion-button);
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .bongwan-branch-button:hover {
-  border-color: rgb(var(--color-primary-rgb) / 0.5);
-  background: rgb(var(--color-primary-rgb) / 0.05);
+  background: var(--surface-subtle);
+  box-shadow: 0 5px 12px rgba(17, 17, 17, 0.12);
+  transform: translateY(-1px);
 }
 
 .bongwan-branch-button.is-selected,
 .bongwan-branch-button[aria-pressed="true"] {
-  border-color: var(--color-primary);
   background: rgb(var(--color-primary-rgb) / 0.12);
+  box-shadow: 0 3px 8px rgb(var(--color-primary-rgb) / 0.16);
+}
+
+.bongwan-branch-button.is-selected .bongwan-branch-name,
+.bongwan-branch-button[aria-pressed="true"] .bongwan-branch-name {
+  color: var(--color-primary);
 }
 
 .bongwan-branch-button:focus-visible {
@@ -2865,4 +2904,81 @@ html[data-language="zh"] .typewriter-wrap::before {
   .typewriter-name {
     border-right: 0;
   }
+}
+
+/* Full-screen Bon-gwan map workspace. */
+#bongwan-panel.bongwan-panel { min-height: 100dvh; overflow: hidden; background: #edf3ee; }
+.bongwan-explorer-content { width: 100%; min-height: 100dvh; margin: 0; padding: 0; }
+.bongwan-explorer-header { position: fixed; z-index: 5; top: 88px; left: 32px; width: min(360px, calc(100vw - 64px)); margin: 0; padding: var(--space-4); border-radius: 8px; background: rgb(255 255 255 / 0.94); box-shadow: 0 8px 28px rgba(17, 17, 17, 0.12); backdrop-filter: blur(12px); }
+.bongwan-explorer-header h1 { font-size: 18px; line-height: 26px; }
+.bongwan-explorer-header p { margin-top: 2px; font-size: 13px; line-height: 19px; }
+.bongwan-search-wrap { position: fixed; z-index: 6; top: 194px; left: 32px; width: min(360px, calc(100vw - 64px)); margin: 0; }
+.bongwan-search-row input { background: rgb(255 255 255 / 0.96); box-shadow: 0 6px 20px rgba(17, 17, 17, 0.10); }
+.bongwan-map-layout { display: block; }
+.bongwan-map-heading { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.bongwan-map-frame { position: fixed; z-index: 0; inset: 0; min-height: 100dvh; border: 0; border-radius: 0; background: #edf3ee; }
+.bongwan-map { width: 100%; height: 100dvh; min-height: 0; }
+.bongwan-heat-dot { fill: rgb(var(--color-primary-rgb) / calc(0.14 + (var(--heat-intensity, 0) * 0.76))); transition: fill 160ms ease-out, opacity 160ms ease-out; }
+.bongwan-heat-dot:not(.is-selectable) { fill: rgb(var(--color-primary-rgb) / 0.12); transition: none; }
+.bongwan-heat-dot.is-selectable { fill: var(--color-primary); filter: drop-shadow(0 0 3px rgb(var(--color-primary-rgb) / 0.72)); }
+.bongwan-heat-dot.is-selected { fill: var(--color-primary); opacity: 1; filter: drop-shadow(0 0 4px rgb(var(--color-primary-rgb) / 0.72)); }
+.bongwan-heat-dot.is-dimmed { opacity: 0.46; filter: none; }
+.bongwan-map.has-active-query .bongwan-heat-dot:not(.is-selectable) { fill: rgb(var(--color-primary-rgb) / 0.1); }
+.bongwan-map.has-active-query .bongwan-heat-dot.is-selectable:not(.is-selected) { fill: rgb(var(--color-primary-rgb) / calc(0.28 + (var(--heat-intensity, 0) * 0.66))); filter: drop-shadow(0 0 3px rgb(var(--color-primary-rgb) / calc(0.1 + (var(--heat-intensity, 0) * 0.38)))); }
+.bongwan-location-pulse { fill: none; stroke: var(--color-primary); stroke-width: 1.4; opacity: 0.6; pointer-events: none; transform-box: fill-box; transform-origin: center; animation: bongwan-location-pulse 2.2s ease-out infinite; }
+.bongwan-location-pulse.is-dimmed { opacity: 0; animation: none; }
+.bongwan-map.has-active-query .bongwan-location-pulse:not(.is-selected) { opacity: 0; animation: none; }
+@keyframes bongwan-location-pulse { 0%, 38% { opacity: 0.7; transform: scale(0.72); } 70% { opacity: 0; transform: scale(1.6); } 100% { opacity: 0; transform: scale(1.6); } }
+.bongwan-map-legend { position: fixed; z-index: 4; bottom: 24px; left: 32px; width: max-content; max-width: calc(100vw - 64px); margin: 0; padding: 10px 12px; border-radius: 8px; background: rgb(255 255 255 / 0.92); box-shadow: 0 6px 20px rgba(17, 17, 17, 0.10); backdrop-filter: blur(10px); }
+.bongwan-region-panel { position: fixed; z-index: 5; top: 88px; right: 32px; width: min(360px, calc(100vw - 64px)); max-height: calc(100dvh - 120px); overflow: auto; padding: var(--space-4); box-shadow: 0 8px 28px rgba(17, 17, 17, 0.14); }
+.bongwan-region-popover { z-index: 7; }
+.bongwan-results-section { position: fixed; z-index: 5; top: 266px; left: 32px; width: min(360px, calc(100vw - 64px)); max-height: calc(100dvh - 350px); margin: 0; padding: var(--space-3); overflow: auto; border-radius: 8px; background: rgb(255 255 255 / 0.94); box-shadow: 0 8px 28px rgba(17, 17, 17, 0.12); backdrop-filter: blur(12px); }
+.bongwan-results { grid-template-columns: 1fr; }
+.bongwan-secondary-list { grid-template-columns: 1fr; }
+.bongwan-clan-row { min-height: 0; padding: var(--space-3); }
+.bongwan-secondary-section { position: fixed; z-index: 5; right: 32px; bottom: 24px; width: min(360px, calc(100vw - 64px)); max-height: 38dvh; margin: 0; overflow: auto; }
+.bongwan-report { position: fixed; z-index: 6; right: 32px; bottom: 24px; width: min(440px, calc(100vw - 64px)); max-height: min(66dvh, 680px); margin: 0; overflow: auto; box-shadow: 0 10px 32px rgba(17, 17, 17, 0.16); }
+
+@media (max-width: 720px) {
+  .bongwan-explorer-header { top: 68px; left: 16px; width: calc(100vw - 32px); padding: 12px 14px; }
+  .bongwan-explorer-header p { display: none; }
+  .bongwan-search-wrap { top: 126px; left: 16px; width: calc(100vw - 32px); }
+  .bongwan-map-frame, .bongwan-map { min-height: 100dvh; }
+  .bongwan-map-legend { bottom: 16px; left: 16px; max-width: calc(100vw - 32px); }
+  .bongwan-region-panel { top: auto; right: 16px; bottom: 16px; left: 16px; width: auto; max-height: 46dvh; }
+  .bongwan-results-section { top: 192px; left: 16px; width: calc(100vw - 32px); max-height: 44dvh; }
+  .bongwan-secondary-section, .bongwan-report { right: 16px; bottom: 16px; left: 16px; width: auto; max-height: 55dvh; }
+}
+
+/* Keep the map visible around compact, dismissible mobile overlays. */
+.bongwan-search-wrap { top: 88px; }
+.bongwan-location-pulse { animation-delay: var(--pulse-delay, 0s); }
+@keyframes bongwan-location-pulse { 0% { opacity: 0; transform: scale(0.72); } 16% { opacity: 0.7; } 64%, 100% { opacity: 0; transform: scale(1.6); } }
+.bongwan-report-header { position: relative; padding-right: 42px; }
+.bongwan-report-close { position: absolute; top: -2px; right: -2px; width: 32px; height: 32px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--text-secondary); font-size: 22px; line-height: 1; }
+.bongwan-report-close:hover, .bongwan-report-close:focus-visible { background: var(--surface-subtle); color: var(--text-primary); outline: 0; }
+
+@media (max-width: 720px) {
+  .bongwan-search-wrap { top: 72px; }
+  .bongwan-results-section { top: 132px; max-height: min(34dvh, 300px); }
+  .bongwan-secondary-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bongwan-region-panel { max-height: 42dvh; }
+  .bongwan-report { max-height: 48dvh; }
+}
+
+/* Map navigation. */
+.bongwan-map { touch-action: none; cursor: grab; }
+.bongwan-map.is-dragging, .bongwan-map.is-dragging .bongwan-location-hit { cursor: grabbing; }
+.bongwan-search-row input, .bongwan-search-row input:focus, .bongwan-search-row input:focus-visible { background: #fff; }
+.bongwan-location-hit { cursor: pointer; }
+.bongwan-report.is-morphing { will-change: transform, opacity; pointer-events: none; }
+.bongwan-region-panel, .bongwan-report { scrollbar-width: thin; scrollbar-color: transparent transparent; transition: scrollbar-color 160ms ease-out; }
+.bongwan-region-panel:hover, .bongwan-region-panel:focus-within, .bongwan-region-panel.is-scrolling, .bongwan-report:hover, .bongwan-report:focus-within, .bongwan-report.is-scrolling { scrollbar-color: rgb(105 112 121 / 0.52) transparent; }
+.bongwan-region-panel::-webkit-scrollbar, .bongwan-report::-webkit-scrollbar { width: 8px; }
+.bongwan-region-panel::-webkit-scrollbar-track, .bongwan-report::-webkit-scrollbar-track { background: transparent; }
+.bongwan-region-panel::-webkit-scrollbar-thumb, .bongwan-report::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 8px; background: transparent; background-clip: padding-box; transition: background-color 160ms ease-out; }
+.bongwan-region-panel:hover::-webkit-scrollbar-thumb, .bongwan-region-panel:focus-within::-webkit-scrollbar-thumb, .bongwan-region-panel.is-scrolling::-webkit-scrollbar-thumb, .bongwan-report:hover::-webkit-scrollbar-thumb, .bongwan-report:focus-within::-webkit-scrollbar-thumb, .bongwan-report.is-scrolling::-webkit-scrollbar-thumb { background-color: rgb(105 112 121 / 0.52); }
+
+@media (max-width: 720px) {
+  .bongwan-search-wrap { top: 72px; }
 }

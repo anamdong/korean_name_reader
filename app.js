@@ -1,6 +1,6 @@
 import { analyzeLatinNameInput, createKoreanRomanSuggestionIndex, isKoreanRomanShorthand, keyboardWeightedDistance } from "./name_input_helpers.js?v=20260814-chinese-guidance-3";
 import { clanIdForHangnyeol, findHangnyeolMatches, leadingSurnameHanja, sourceRecordsForHangnyeolMatch } from "./hangnyeol_matcher.js?v=20260817-explicit-surname-hanja";
-import { initializeBongwanExplorerUi } from "./bongwan_explorer_ui.js?v=20260821-map-explorer-5";
+import { initializeBongwanExplorerUi } from "./bongwan_explorer_ui.js?v=20260824-map-search-heat-1";
 
 const dataUrl = "./data/name_index.json?v=20260804-japanese-surname-priors";
 const hanjaReadingUrl = "./data/hanja_readings.json?v=20260721-unihan-khangul";
@@ -9,6 +9,7 @@ const hanjaUsageRankUrl = "./data/hanja_usage_rank.json?v=20260721-ohmybaby-top5
 const bonGwanDataUrl = "./data/bon_gwan_by_surname.json?v=20260721-kosis-2015-hanja";
 const hangnyeolDataUrl = "./data/hangnyeol_by_clan.json?v=20260821-branch-hanja-15";
 const bongwanGeographyUrl = "./data/bongwan_geography.json?v=20260821-map-explorer-1";
+const bongwanPlaceCoordinatesUrl = "./data/bongwan_place_coordinates.json?v=20260824-locality-heatmap-1";
 const peninsulaRegionsUrl = "./data/peninsula_regions.geojson?v=20260821-map-explorer-1";
 
 const LANGUAGE_STORAGE_KEY = "gildonghong.language";
@@ -30,7 +31,6 @@ const TRANSLATIONS = {
     home: "Home",
     bongwanMap: "Bon-gwan map",
     bongwanMapTitle: "Bon-gwan map explorer",
-    bongwanMapIntro: "Explore historical Bon-gwan origins across the Korean Peninsula.",
     bongwanSearchLabel: "Search surname or Bon-gwan",
     bongwanSearchPlaceholder: "Search surname or Bon-gwan",
     bongwanMapAria: "Interactive map of the Korean Peninsula",
@@ -190,6 +190,7 @@ const TRANSLATIONS = {
     hangnyeolExactHanjaReason: "The Hanja used in this name exactly matches the published generation character.",
     hangnyeolReadingReason: "This is a Hangul-reading match. The Hanja used in this name is not known, so the match is not exact.",
     hangnyeolSource: "Source",
+    hangnyeolViewInMap: "View in Bon-gwan map",
     hangnyeolLimit: "This does not establish a person's bon-gwan or ancestry. Modern names can coincidentally match traditional generation-name patterns.",
     loadFailed: "Could not load the search data. Reload the page and try again.",
   },
@@ -199,7 +200,6 @@ const TRANSLATIONS = {
     home: "ホーム",
     bongwanMap: "本貫マップ",
     bongwanMapTitle: "本貫マップを探す",
-    bongwanMapIntro: "朝鮮半島全体にある歴史的な本貫の地理を調べます。",
     bongwanSearchLabel: "姓または本貫を検索",
     bongwanSearchPlaceholder: "姓または本貫を検索",
     bongwanMapAria: "朝鮮半島のインタラクティブ地図",
@@ -359,6 +359,7 @@ const TRANSLATIONS = {
     hangnyeolExactHanjaReason: "この名前で使われている漢字は、公開されている行列字と完全に一致します。",
     hangnyeolReadingReason: "これはハングルの読みが一致する候補です。この名前に使われた漢字は不明なため、完全一致ではありません。",
     hangnyeolSource: "出典",
+    hangnyeolViewInMap: "本貫マップで見る",
     hangnyeolLimit: "これは本貫や祖先関係を証明するものではありません。現代の名前が伝統的な行列字と偶然一致することがあります。",
     loadFailed: "検索データを読み込めませんでした。ページを再読み込みしてください。",
   },
@@ -368,7 +369,6 @@ const TRANSLATIONS = {
     home: "首頁",
     bongwanMap: "本貫地圖",
     bongwanMapTitle: "本貫地圖探索",
-    bongwanMapIntro: "探索整個朝鮮半島的歷史本貫地理來源。",
     bongwanSearchLabel: "搜尋姓氏或本貫",
     bongwanSearchPlaceholder: "搜尋姓氏或本貫",
     bongwanMapAria: "朝鮮半島互動地圖",
@@ -528,6 +528,7 @@ const TRANSLATIONS = {
     hangnyeolExactHanjaReason: "此姓名所用漢字與已公布的行列字完全相符。",
     hangnyeolReadingReason: "這是韓文讀音相符；此姓名所用漢字未知，因此並非完全相符。",
     hangnyeolSource: "來源",
+    hangnyeolViewInMap: "在本貫地圖中查看",
     hangnyeolLimit: "這不代表能證明個人的本貫或祖源。現代姓名可能偶然符合傳統行列字格式。",
     loadFailed: "無法載入搜尋資料。請重新整理頁面後再試。",
   },
@@ -897,6 +898,17 @@ const RARE_GIVEN_ROMAN_ALIASES = new Map(Object.entries({
   필: [{ text: "phil", score: 5 }],
 }));
 
+// These uncommon Sino-Korean name syllables are corroborated by the app's
+// Unihan readings and verified generation-name records, but are absent from
+// the modern baby-name ranking input used to build name_index.json.
+const SUPPLEMENTAL_SINO_GIVEN_SYLLABLES = new Map(Object.entries({
+  락: {
+    latin: [{ text: "rak", score: 14 }, { text: "lak", score: 8 }],
+    kana: [{ text: "ラク", score: 7 }],
+    hanjaGivenCount: 1,
+  },
+}));
+
 const LEGACY_UCK_ROMAN_VOWELS = new Set(["ㅓ", "ㅕ"]);
 
 const INITIAL_SOUND_LAW_SURNAME_PAIRS = new Set([
@@ -1076,6 +1088,27 @@ function attachRareGivenRomanAliases(data) {
     }
     syllable.latin = latin.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
   }
+}
+
+function attachSupplementalSinoGivenSyllables(data) {
+  if (!data?.syllables) return data;
+  for (const [hangul, supplemental] of SUPPLEMENTAL_SINO_GIVEN_SYLLABLES) {
+    if (data.syllables[hangul]) continue;
+    data.syllables[hangul] = {
+      latin: supplemental.latin || [],
+      kana: supplemental.kana || [],
+      nameCount: 0,
+      givenCount: 0,
+      initialCount: 0,
+      surnamePopulation: 0,
+      hanjaGivenCount: Number(supplemental.hanjaGivenCount || 0),
+      sinoAllowed: true,
+      nonSinoException: false,
+      decadeWeight: 0,
+      decadePeriods: 0,
+    };
+  }
+  return data;
 }
 
 function attachLegacyUckRomanAliases(data) {
@@ -5463,6 +5496,19 @@ function hangnyeolMatchSummary(matches) {
   return t(key, { count: matches.length });
 }
 
+function openHangnyeolClanInBongwanMap(record, clan) {
+  const clanId = clanIdForHangnyeol({
+    surnameHangul: record.hangul,
+    surnameHanja: record.hanja,
+    bonGwanName: clan.name,
+    bonGwanHanja: clan.hanja,
+  });
+  if (!state.bongwanUi?.openClan) return;
+  setActiveSiteTab("bongwan");
+  state.bongwanUi.openClan(clanId);
+  window.requestAnimationFrame(() => document.querySelector("#bongwan-report .bongwan-report-close")?.focus());
+}
+
 function buildHangnyeolExplanation(match, given, record, clan) {
   const explanation = document.createElement("section");
   explanation.className = "hangnyeol-explanation";
@@ -5486,6 +5532,15 @@ function buildHangnyeolExplanation(match, given, record, clan) {
     match.generation ? t("hangnyeolGeneration", { generation: match.generation }) : "",
   ].filter(Boolean).join(" · ");
   if (metadata.textContent) explanation.appendChild(metadata);
+
+  if (match.evidenceType !== "exact_hanja") {
+    const mapButton = document.createElement("button");
+    mapButton.type = "button";
+    mapButton.className = "hangnyeol-map-action";
+    mapButton.textContent = t("hangnyeolViewInMap");
+    mapButton.addEventListener("click", () => openHangnyeolClanInBongwanMap(record, clan));
+    explanation.appendChild(mapButton);
+  }
 
   const patternLabel = document.createElement("h6");
   patternLabel.textContent = t("hangnyeolPublishedPattern");
@@ -6640,7 +6695,7 @@ function levenshtein(a, b) {
 }
 
 async function init() {
-  const [response, hanjaReadingData, hanjaNameCharData, hanjaUsageRankData, bonGwanData, hangnyeolData, bongwanGeography, peninsulaRegions] = await Promise.all([
+  const [response, hanjaReadingData, hanjaNameCharData, hanjaUsageRankData, bonGwanData, hangnyeolData, bongwanGeography, bongwanPlaceCoordinates, peninsulaRegions] = await Promise.all([
     fetch(dataUrl),
     fetchOptionalJson(hanjaReadingUrl),
     fetchOptionalJson(hanjaNameCharUrl),
@@ -6648,6 +6703,7 @@ async function init() {
     fetchOptionalJson(bonGwanDataUrl),
     fetchOptionalJson(hangnyeolDataUrl),
     fetchOptionalJson(bongwanGeographyUrl),
+    fetchOptionalJson(bongwanPlaceCoordinatesUrl),
     fetchOptionalJson(peninsulaRegionsUrl),
   ]);
   state.data = await response.json();
@@ -6656,6 +6712,7 @@ async function init() {
   attachHanjaReadingData(state.data, hanjaReadingData);
   attachHanjaNameCharData(state.data, hanjaNameCharData);
   attachHanjaUsageRankData(state.data, hanjaUsageRankData);
+  attachSupplementalSinoGivenSyllables(state.data);
   attachBonGwanSurnameHanjaData(state.data, state.bonGwanData);
   attachInitialSoundLawSurnameHanjaAliases(state.data, state.bonGwanData);
   sanitizeModernKoreanRomanData(state.data);
@@ -6665,6 +6722,7 @@ async function init() {
   state.bongwanUi = initializeBongwanExplorerUi({
     bonGwanData: state.bonGwanData,
     geography: bongwanGeography,
+    placeCoordinates: bongwanPlaceCoordinates,
     hangnyeolData: state.hangnyeolData,
     regionGeoJson: peninsulaRegions,
     t,

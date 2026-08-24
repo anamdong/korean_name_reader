@@ -1,0 +1,2897 @@
+{
+  "meta": {
+    "schemaVersion": 1,
+    "source": "OpenStreetMap Nominatim, curated historical continuity, and regional map geometry",
+    "method": "Geocoded coordinates are accepted only when a current locality result falls inside the validated peninsula region. Curated historical continuities and aliases, including Hanyang to Seoul and 扶寧 to Buan, are retained with their source note. Remaining origins with a validated province/equivalent receive a deterministic point inside that region and are labeled regional_approximation; they are not claims of an exact locality."
+  },
+  "places": {
+    "가평|加平": {
+      "latitude": 37.814518,
+      "longitude": 127.510762,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "가평 경기도"
+    },
+    "감천|甘泉": {
+      "latitude": 36.199175,
+      "longitude": 128.243909,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "감천 경상북도"
+    },
+    "강능|江陵": {
+      "latitude": 37.758145,
+      "longitude": 128.914131,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "강능 강원특별자치도"
+    },
+    "강릉|江陵": {
+      "latitude": 37.76452,
+      "longitude": 128.899398,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "강릉 강원특별자치도"
+    },
+    "강양|江陽": {
+      "latitude": 35.690201,
+      "longitude": 127.918553,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "강양 경상남도"
+    },
+    "강진|康津": {
+      "latitude": 34.628388,
+      "longitude": 126.772293,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "강진 전라남도"
+    },
+    "거제|巨濟": {
+      "latitude": 34.888559,
+      "longitude": 128.623199,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "거제 경상남도"
+    },
+    "거창|居昌": {
+      "latitude": 35.687484,
+      "longitude": 127.910858,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "거창 경상남도"
+    },
+    "결성|結城": {
+      "latitude": 36.54898,
+      "longitude": 126.54708,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "결성 충청남도"
+    },
+    "경산|京山": {
+      "latitude": 35.819329,
+      "longitude": 128.727612,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "경산 경상북도"
+    },
+    "경산|慶山": {
+      "latitude": 35.819329,
+      "longitude": 128.727612,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "경산 경상북도"
+    },
+    "경성|鏡城": {
+      "latitude": 41.584628,
+      "longitude": 129.609108,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "경성 함경북도"
+    },
+    "경원|慶源": {
+      "latitude": 42.813589,
+      "longitude": 130.20651,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "경원 함경북도"
+    },
+    "경주|慶州": {
+      "latitude": 35.798269,
+      "longitude": 129.138963,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "경주 경상북도"
+    },
+    "고령|高靈": {
+      "latitude": 35.791058,
+      "longitude": 128.381597,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "고령 경상북도"
+    },
+    "고부|古阜": {
+      "latitude": 35.619194,
+      "longitude": 126.773212,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "고부 전북특별자치도"
+    },
+    "고성|固城": {
+      "latitude": 35.181324,
+      "longitude": 127.995726,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "고성|固城"
+    },
+    "고원|高原": {
+      "latitude": 39.440627,
+      "longitude": 127.249548,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "고원 함경남도"
+    },
+    "고창|高敞": {
+      "latitude": 36.08927,
+      "longitude": 126.886603,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "고창 전북특별자치도"
+    },
+    "고흥|高興": {
+      "latitude": 34.760769,
+      "longitude": 126.398248,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "고흥 전라남도"
+    },
+    "곡산|谷山": {
+      "latitude": 38.77345,
+      "longitude": 126.679808,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "곡산 황해북도"
+    },
+    "곡성|谷城": {
+      "latitude": 35.283456,
+      "longitude": 127.304458,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "곡성 전라남도"
+    },
+    "곤양|昆陽": {
+      "latitude": 35.06771,
+      "longitude": 127.98117,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "곤양 경상남도"
+    },
+    "공주|公州": {
+      "latitude": 36.332237,
+      "longitude": 127.096637,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "공주 충청남도"
+    },
+    "곽산|郭山": {
+      "latitude": 39.684743,
+      "longitude": 125.079287,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "곽산 평안북도"
+    },
+    "관성|管城": {
+      "latitude": 37.031481,
+      "longitude": 127.569055,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "관성 충청북도"
+    },
+    "광양|光陽": {
+      "latitude": 34.956145,
+      "longitude": 127.587824,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "광양 전라남도"
+    },
+    "광주|光州": {
+      "latitude": 35.167044,
+      "longitude": 126.910688,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "광주 광주광역시"
+    },
+    "광주|廣州": {
+      "latitude": 37.405854,
+      "longitude": 127.262199,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "광주 경기도"
+    },
+    "광평|廣平": {
+      "latitude": 36.11262,
+      "longitude": 128.362769,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "광평 경상북도"
+    },
+    "괴산|槐山": {
+      "latitude": 36.810521,
+      "longitude": 127.79146,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "괴산 충청북도"
+    },
+    "교동|喬桐": {
+      "latitude": 37.508283,
+      "longitude": 126.735373,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "교동 인천광역시"
+    },
+    "교하|交河": {
+      "latitude": 37.726094,
+      "longitude": 126.701926,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "교하 경기도"
+    },
+    "구례|求禮": {
+      "latitude": 35.25733,
+      "longitude": 127.497429,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "구례 전라남도"
+    },
+    "구산|龜山": {
+      "latitude": 36.63861,
+      "longitude": 128.22351,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "구산 경상북도"
+    },
+    "구성|龜城": {
+      "latitude": 39.982791,
+      "longitude": 125.259217,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "구성 평안북도"
+    },
+    "군위|軍威": {
+      "latitude": 36.163276,
+      "longitude": 128.54846,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "군위 경상북도"
+    },
+    "금강|金岡": {
+      "latitude": 38.084752,
+      "longitude": 128.651856,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "금강 강원특별자치도"
+    },
+    "금구|金溝": {
+      "latitude": 35.774334,
+      "longitude": 127.011122,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "금구 전북특별자치도"
+    },
+    "금산|錦山": {
+      "latitude": 36.859983,
+      "longitude": 126.977354,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "금산 충청남도"
+    },
+    "금성|金城": {
+      "latitude": 39.388249,
+      "longitude": 127.344954,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "금성 강원도"
+    },
+    "금성|錦城": {
+      "latitude": 34.940651,
+      "longitude": 127.271305,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "금성 전라남도"
+    },
+    "금천|衿川": {
+      "latitude": 37.514126,
+      "longitude": 126.908488,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "금천 서울특별시"
+    },
+    "금천|金川": {
+      "latitude": 38.163646,
+      "longitude": 126.475087,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "금천 황해북도"
+    },
+    "기계|杞溪": {
+      "latitude": 36.072268,
+      "longitude": 129.203542,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "기계 경상북도"
+    },
+    "기성|岐城": {
+      "latitude": 34.850745,
+      "longitude": 128.589085,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "기성 경상남도"
+    },
+    "길주|吉州": {
+      "latitude": 40.964244,
+      "longitude": 129.333732,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "길주 함경북도"
+    },
+    "김제|金堤": {
+      "latitude": 35.793162,
+      "longitude": 126.904218,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "김제 전북특별자치도"
+    },
+    "김해|金海": {
+      "latitude": 35.265307,
+      "longitude": 128.875163,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "김해 경상남도"
+    },
+    "김화|金化": {
+      "latitude": 38.42057,
+      "longitude": 127.59452,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "김화 강원도"
+    },
+    "나주|羅州": {
+      "latitude": 35.013927,
+      "longitude": 126.717485,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "나주 전라남도"
+    },
+    "낙안|樂安": {
+      "latitude": 34.908914,
+      "longitude": 127.342252,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "낙안 전라남도"
+    },
+    "남양|南陽": {
+      "latitude": 37.205802,
+      "longitude": 126.821517,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "남양 경기도"
+    },
+    "남원|南原": {
+      "latitude": 35.411251,
+      "longitude": 127.361333,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "남원 전북특별자치도"
+    },
+    "남평|南平": {
+      "latitude": 35.044734,
+      "longitude": 126.846849,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "남평 전라남도"
+    },
+    "남포|藍浦": {
+      "latitude": 38.733807,
+      "longitude": 125.413012,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "남포 남포특별시"
+    },
+    "남해|南海": {
+      "latitude": 34.838767,
+      "longitude": 127.892405,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "남해 경상남도"
+    },
+    "능주|綾城": {
+      "latitude": 34.991616,
+      "longitude": 126.958023,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "능주 전라남도"
+    },
+    "능주|綾州": {
+      "latitude": 34.991616,
+      "longitude": 126.958023,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "능주 전라남도"
+    },
+    "단성|丹城": {
+      "latitude": 35.297288,
+      "longitude": 127.956074,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "단성 경상남도"
+    },
+    "단양|丹陽": {
+      "latitude": 36.973104,
+      "longitude": 128.34404,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "단양 충청북도"
+    },
+    "달성|達城": {
+      "latitude": 35.858047,
+      "longitude": 128.554825,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "달성 대구광역시"
+    },
+    "담양|潭陽": {
+      "latitude": 35.309813,
+      "longitude": 126.982982,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "담양 전라남도"
+    },
+    "당성|唐城": {
+      "latitude": 37.195383,
+      "longitude": 126.714263,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "당성 경기도"
+    },
+    "당진|唐津": {
+      "latitude": 36.989166,
+      "longitude": 126.706858,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "당진 충청남도"
+    },
+    "대구|大丘": {
+      "latitude": 35.876001,
+      "longitude": 128.596055,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "대구 대구광역시"
+    },
+    "대구|大邱": {
+      "latitude": 35.876001,
+      "longitude": 128.596055,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "대구 대구광역시"
+    },
+    "대흥|大興": {
+      "latitude": 36.62683,
+      "longitude": 126.81703,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "대흥 충청남도"
+    },
+    "덕은|德恩": {
+      "latitude": 36.171009,
+      "longitude": 127.190922,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "덕은 충청남도"
+    },
+    "동래|東萊": {
+      "latitude": 35.204651,
+      "longitude": 129.07736,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "동래 부산광역시"
+    },
+    "동성|東城": {
+      "latitude": 35.192134,
+      "longitude": 128.085062,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "동성 경상남도"
+    },
+    "무송|茂松": {
+      "latitude": 35.34357,
+      "longitude": 126.63679,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "무송 전북특별자치도"
+    },
+    "무안|務安": {
+      "latitude": 34.962798,
+      "longitude": 126.517578,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "무안 전라남도"
+    },
+    "무장|茂長": {
+      "latitude": 35.41436,
+      "longitude": 126.57091,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "무장 전북특별자치도"
+    },
+    "무주|茂朱": {
+      "latitude": 36.012105,
+      "longitude": 127.669237,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "무주 전북특별자치도"
+    },
+    "문경|聞慶": {
+      "latitude": 36.720262,
+      "longitude": 128.110201,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "문경 경상북도"
+    },
+    "문소|聞詔": {
+      "latitude": 36.354989,
+      "longitude": 128.694288,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "문소 경상북도"
+    },
+    "문의|文義": {
+      "latitude": 36.493168,
+      "longitude": 127.508703,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "문의 충청북도"
+    },
+    "문천|文川": {
+      "latitude": 40.468336,
+      "longitude": 127.629498,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "문천 함경남도"
+    },
+    "문화|文化": {
+      "latitude": 38.353194,
+      "longitude": 125.385104,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "문화 황해남도"
+    },
+    "밀성|密城": {
+      "latitude": 35.502614,
+      "longitude": 128.75196,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "밀성 경상남도"
+    },
+    "밀양|密陽": {
+      "latitude": 35.474851,
+      "longitude": 128.771418,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "밀양 경상남도"
+    },
+    "반남|潘南": {
+      "latitude": 34.911429,
+      "longitude": 126.659047,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "반남 전라남도"
+    },
+    "부령|扶寧": {
+      "latitude": 35.72665,
+      "longitude": 126.738319,
+      "mappingConfidence": "historical_alias",
+      "source": "Surname.info cached 부안김씨 page: 扶寧 is now 부안",
+      "query": "扶寧 부안",
+      "locationKey": "부안|扶安"
+    },
+    "부산|釜山": {
+      "latitude": 35.115553,
+      "longitude": 129.042587,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "부산 부산광역시"
+    },
+    "부안|扶安": {
+      "latitude": 35.72665,
+      "longitude": 126.738319,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "부안 전북특별자치도"
+    },
+    "부여|夫餘": {
+      "latitude": 36.286099,
+      "longitude": 126.922514,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "부여 충청남도"
+    },
+    "부여|扶餘": {
+      "latitude": 36.286099,
+      "longitude": 126.922514,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "부여 충청남도"
+    },
+    "부평|富平": {
+      "latitude": 37.489454,
+      "longitude": 126.724559,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "부평 인천광역시"
+    },
+    "북청|北靑": {
+      "latitude": 40.241672,
+      "longitude": 128.309576,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "북청 함경남도"
+    },
+    "분성|盆城": {
+      "latitude": 35.231958,
+      "longitude": 128.853272,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "분성 경상남도"
+    },
+    "사천|泗川": {
+      "latitude": 35.093397,
+      "longitude": 128.090383,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "사천 경상남도"
+    },
+    "삭영|朔寧": {
+      "latitude": 37.848891,
+      "longitude": 126.981236,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "삭영 경기도"
+    },
+    "삭주|朔州": {
+      "latitude": 40.386672,
+      "longitude": 125.046513,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "삭주 평안북도"
+    },
+    "삼척|三陟": {
+      "latitude": 37.429881,
+      "longitude": 129.178588,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "삼척 강원특별자치도"
+    },
+    "상산|商山": {
+      "latitude": 36.641614,
+      "longitude": 128.645078,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "상산 경상북도"
+    },
+    "상산|常山": {
+      "latitude": 36.854648,
+      "longitude": 127.443161,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "상산 충청북도"
+    },
+    "함열|咸悅": {
+      "latitude": 36.080167,
+      "longitude": 126.95657,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "함열 전북특별자치도"
+    },
+    "함창|咸昌": {
+      "latitude": 36.569628,
+      "longitude": 128.174871,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "함창 경상북도"
+    },
+    "함평|咸平": {
+      "latitude": 35.023684,
+      "longitude": 126.539079,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "함평 전라남도"
+    },
+    "함흥|咸興": {
+      "latitude": 39.911786,
+      "longitude": 127.545563,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "함흥 함경남도"
+    },
+    "합천|陜川": {
+      "latitude": 35.177028,
+      "longitude": 128.815251,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "합천 경상남도"
+    },
+    "해남|海南": {
+      "latitude": 34.636998,
+      "longitude": 126.6373,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "해남 전라남도"
+    },
+    "해미|海美": {
+      "latitude": 36.708764,
+      "longitude": 126.5457,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "해미 충청남도"
+    },
+    "해주|海州": {
+      "latitude": 38.006751,
+      "longitude": 125.778556,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "해주 황해남도"
+    },
+    "해평|海平": {
+      "latitude": 36.18731,
+      "longitude": 128.37852,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "해평 경상북도"
+    },
+    "행주|幸州": {
+      "latitude": 37.596557,
+      "longitude": 126.808206,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "행주 경기도"
+    },
+    "홍주|洪州": {
+      "latitude": 36.592609,
+      "longitude": 126.661964,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "홍주 충청남도"
+    },
+    "홍천|洪川": {
+      "latitude": 37.698322,
+      "longitude": 127.891168,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "홍천 강원특별자치도"
+    },
+    "화산|花山": {
+      "latitude": 37.216408,
+      "longitude": 126.995625,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "화산 경기도"
+    },
+    "화순|和順": {
+      "latitude": 35.065334,
+      "longitude": 126.984744,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "화순 전라남도"
+    },
+    "황주|黃州": {
+      "latitude": 38.694507,
+      "longitude": 125.760644,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "황주 황해북도"
+    },
+    "흥덕|興德": {
+      "latitude": 35.51728,
+      "longitude": 126.703247,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "흥덕 전북특별자치도"
+    },
+    "흥양|興陽": {
+      "latitude": 34.610552,
+      "longitude": 127.367399,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "흥양 전라남도"
+    },
+    "흥해|興海": {
+      "latitude": 36.114169,
+      "longitude": 129.346453,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "흥해 경상북도"
+    },
+    "희천|熙川": {
+      "latitude": 39.784381,
+      "longitude": 125.929609,
+      "mappingConfidence": "geocoded",
+      "source": "OpenStreetMap Nominatim",
+      "query": "희천 평안북도"
+    },
+    "한양|漢陽": {
+      "latitude": 37.5665,
+      "longitude": 126.978,
+      "mappingConfidence": "curated_exact",
+      "source": "Historic Hanyang / modern Seoul continuity",
+      "query": "한양 서울"
+    },
+    "양천|陽川": {
+      "latitude": 37.450422,
+      "longitude": 127.003046,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "양천|陽川"
+    },
+    "차성|車城": {
+      "latitude": 35.215218,
+      "longitude": 129.082721,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "차성|車城"
+    },
+    "부림|缶林": {
+      "latitude": 35.79643,
+      "longitude": 128.529528,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "부림|缶林"
+    },
+    "수성|壽城": {
+      "latitude": 35.830468,
+      "longitude": 128.669744,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "수성|壽城"
+    },
+    "하빈|河濱": {
+      "latitude": 35.841165,
+      "longitude": 128.611343,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "하빈|河濱"
+    },
+    "효령|孝令": {
+      "latitude": 36.005311,
+      "longitude": 128.679689,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "효령|孝令"
+    },
+    "강화|江華": {
+      "latitude": 37.477922,
+      "longitude": 126.386188,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "강화|江華"
+    },
+    "인천|仁川": {
+      "latitude": 37.403436,
+      "longitude": 126.763056,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "인천|仁川"
+    },
+    "하음|河陰": {
+      "latitude": 37.393974,
+      "longitude": 126.752495,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "하음|河陰"
+    },
+    "광산|光山": {
+      "latitude": 35.157865,
+      "longitude": 126.923915,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "광산|光山"
+    },
+    "회덕|懷德": {
+      "latitude": 36.459845,
+      "longitude": 127.345724,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "회덕|懷德"
+    },
+    "언양|彦陽": {
+      "latitude": 35.451616,
+      "longitude": 129.155319,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "언양|彦陽"
+    },
+    "울산|蔚山": {
+      "latitude": 35.414748,
+      "longitude": 129.354524,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "울산|蔚山"
+    },
+    "학성|鶴城": {
+      "latitude": 35.4204,
+      "longitude": 129.318045,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "학성|鶴城"
+    },
+    "덕수|德水": {
+      "latitude": 38.077099,
+      "longitude": 126.983,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "덕수|德水"
+    },
+    "덕수|德秀": {
+      "latitude": 37.605973,
+      "longitude": 127.137371,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "덕수|德秀"
+    },
+    "려흥|驪興": {
+      "latitude": 37.528193,
+      "longitude": 127.474494,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "려흥|驪興"
+    },
+    "삭녕|朔寧": {
+      "latitude": 37.443085,
+      "longitude": 127.491796,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "삭녕|朔寧"
+    },
+    "삭령|朔寧": {
+      "latitude": 38.002251,
+      "longitude": 127.099539,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "삭령|朔寧"
+    },
+    "수성|隋城": {
+      "latitude": 37.502379,
+      "longitude": 127.227754,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "수성|隋城"
+    },
+    "수원|水原": {
+      "latitude": 37.818919,
+      "longitude": 126.936751,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "수원|水原"
+    },
+    "안산|安山": {
+      "latitude": 38.103393,
+      "longitude": 127.057828,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "안산|安山"
+    },
+    "안성|安城": {
+      "latitude": 37.412021,
+      "longitude": 127.009837,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "안성|安城"
+    },
+    "양근|楊根": {
+      "latitude": 37.327192,
+      "longitude": 126.751783,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "양근|楊根"
+    },
+    "양성|陽城": {
+      "latitude": 38.04178,
+      "longitude": 126.884829,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "양성|陽城"
+    },
+    "양주|楊州": {
+      "latitude": 37.2033,
+      "longitude": 127.384561,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "양주|楊州"
+    },
+    "양지|陽智": {
+      "latitude": 37.19029,
+      "longitude": 126.973122,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "양지|陽智"
+    },
+    "여강|驪江": {
+      "latitude": 36.996125,
+      "longitude": 126.942547,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "여강|驪江"
+    },
+    "여양|驪陽": {
+      "latitude": 37.700707,
+      "longitude": 126.900156,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "여양|驪陽"
+    },
+    "여주|驪州": {
+      "latitude": 37.986218,
+      "longitude": 127.111651,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "여주|驪州"
+    },
+    "여흥|驪興": {
+      "latitude": 37.837822,
+      "longitude": 126.792239,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "여흥|驪興"
+    },
+    "영흥|驪興": {
+      "latitude": 37.826044,
+      "longitude": 126.742049,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영흥|驪興"
+    },
+    "용성|龍城": {
+      "latitude": 37.650709,
+      "longitude": 126.646892,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "용성|龍城"
+    },
+    "용인|龍仁": {
+      "latitude": 36.883783,
+      "longitude": 127.252829,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "용인|龍仁"
+    },
+    "우봉|牛峰": {
+      "latitude": 37.407171,
+      "longitude": 127.12204,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "우봉|牛峰"
+    },
+    "이천|利川": {
+      "latitude": 37.904555,
+      "longitude": 127.10611,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "이천|利川"
+    },
+    "적성|積城": {
+      "latitude": 37.583202,
+      "longitude": 127.488306,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "적성|積城"
+    },
+    "죽산|竹山": {
+      "latitude": 37.229206,
+      "longitude": 127.395609,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "죽산|竹山"
+    },
+    "진위|振威": {
+      "latitude": 37.571929,
+      "longitude": 126.596824,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "진위|振威"
+    },
+    "추계|秋溪": {
+      "latitude": 37.437297,
+      "longitude": 127.108099,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "추계|秋溪"
+    },
+    "축산|竺山": {
+      "latitude": 37.458553,
+      "longitude": 127.355743,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "축산|竺山"
+    },
+    "파주|坡州": {
+      "latitude": 37.255122,
+      "longitude": 127.402385,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "파주|坡州"
+    },
+    "파평|坡平": {
+      "latitude": 37.649599,
+      "longitude": 127.49433,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "파평|坡平"
+    },
+    "평택|平澤": {
+      "latitude": 37.646816,
+      "longitude": 126.432142,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "평택|平澤"
+    },
+    "풍양|豐壤": {
+      "latitude": 37.35452,
+      "longitude": 127.02078,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "풍양|豐壤"
+    },
+    "동주|東州": {
+      "latitude": 38.233754,
+      "longitude": 127.17201,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "동주|東州"
+    },
+    "삼섭|三陟": {
+      "latitude": 37.318366,
+      "longitude": 128.909983,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "삼섭|三陟"
+    },
+    "영월|寧越": {
+      "latitude": 37.26986,
+      "longitude": 128.57249,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영월|寧越"
+    },
+    "우계|羽溪": {
+      "latitude": 37.73219,
+      "longitude": 128.358487,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "우계|羽溪"
+    },
+    "울진|蔚珍": {
+      "latitude": 37.029568,
+      "longitude": 129.19144,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "울진|蔚珍"
+    },
+    "원주|原州": {
+      "latitude": 37.574727,
+      "longitude": 128.511485,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "원주|原州"
+    },
+    "정선|旌善": {
+      "latitude": 36.904292,
+      "longitude": 129.252508,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "정선|旌善"
+    },
+    "철성|鐵城": {
+      "latitude": 38.068106,
+      "longitude": 128.090176,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "철성|鐵城"
+    },
+    "철원|鐵原": {
+      "latitude": 38.613017,
+      "longitude": 128.165712,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "철원|鐵原"
+    },
+    "춘천|春川": {
+      "latitude": 38.199363,
+      "longitude": 127.512086,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "춘천|春川"
+    },
+    "통천|通川": {
+      "latitude": 39.365262,
+      "longitude": 127.195256,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "통천|通川"
+    },
+    "평강|平康": {
+      "latitude": 39.15735,
+      "longitude": 127.409146,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "평강|平康"
+    },
+    "평창|平昌": {
+      "latitude": 36.782606,
+      "longitude": 129.422783,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "평창|平昌"
+    },
+    "회진|會津": {
+      "latitude": 37.219848,
+      "longitude": 128.114293,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "회진|會津"
+    },
+    "횡성|橫城": {
+      "latitude": 37.263358,
+      "longitude": 127.819331,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "횡성|橫城"
+    },
+    "보은|報恩": {
+      "latitude": 36.454683,
+      "longitude": 127.777754,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "보은|報恩"
+    },
+    "영동|永同": {
+      "latitude": 37.001495,
+      "longitude": 128.43878,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영동|永同"
+    },
+    "영산|永山": {
+      "latitude": 36.992524,
+      "longitude": 127.775624,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영산|永山"
+    },
+    "옥천|沃川": {
+      "latitude": 37.050138,
+      "longitude": 127.58086,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "옥천|沃川"
+    },
+    "옥천|玉川": {
+      "latitude": 36.985532,
+      "longitude": 127.640269,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "옥천|玉川"
+    },
+    "음성|陰城": {
+      "latitude": 36.176452,
+      "longitude": 127.829758,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "음성|陰城"
+    },
+    "제천|堤川": {
+      "latitude": 37.017469,
+      "longitude": 127.641158,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "제천|堤川"
+    },
+    "진천|眞川": {
+      "latitude": 36.679062,
+      "longitude": 127.900203,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "진천|眞川"
+    },
+    "진천|鎭川": {
+      "latitude": 36.75996,
+      "longitude": 127.904122,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "진천|鎭川"
+    },
+    "청산|靑山": {
+      "latitude": 36.956738,
+      "longitude": 128.158918,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "청산|靑山"
+    },
+    "청안|淸安": {
+      "latitude": 36.34669,
+      "longitude": 127.736299,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "청안|淸安"
+    },
+    "청주|淸州": {
+      "latitude": 36.639601,
+      "longitude": 127.504856,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "청주|淸州"
+    },
+    "청풍|淸風": {
+      "latitude": 37.048579,
+      "longitude": 127.564598,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "청풍|淸風"
+    },
+    "충주|忠州": {
+      "latitude": 36.051225,
+      "longitude": 127.756834,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "충주|忠州"
+    },
+    "공산|公山": {
+      "latitude": 36.932558,
+      "longitude": 126.607317,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "공산|公山"
+    },
+    "덕산|德山": {
+      "latitude": 36.641046,
+      "longitude": 126.983594,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "덕산|德山"
+    },
+    "면천|沔川": {
+      "latitude": 36.092278,
+      "longitude": 127.26903,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "면천|沔川"
+    },
+    "목천|木川": {
+      "latitude": 36.554861,
+      "longitude": 126.760059,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "목천|木川"
+    },
+    "서령|瑞山": {
+      "latitude": 36.076117,
+      "longitude": 126.803426,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "서령|瑞山"
+    },
+    "서림|西林": {
+      "latitude": 36.117945,
+      "longitude": 126.85262,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "서림|西林"
+    },
+    "서산|瑞山": {
+      "latitude": 36.412101,
+      "longitude": 126.670289,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "서산|瑞山"
+    },
+    "서영|瑞山": {
+      "latitude": 36.654796,
+      "longitude": 127.074099,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "서영|瑞山"
+    },
+    "서천|舒川": {
+      "latitude": 36.552936,
+      "longitude": 127.0291,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "서천|舒川"
+    },
+    "선성|宣城": {
+      "latitude": 36.236316,
+      "longitude": 127.309291,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "선성|宣城"
+    },
+    "신창|新昌": {
+      "latitude": 36.518922,
+      "longitude": 126.651346,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "신창|新昌"
+    },
+    "신평|新平": {
+      "latitude": 36.725763,
+      "longitude": 126.432845,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "신평|新平"
+    },
+    "아산|牙山": {
+      "latitude": 36.158515,
+      "longitude": 127.203022,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "아산|牙山"
+    },
+    "연산|連山": {
+      "latitude": 36.833627,
+      "longitude": 126.377382,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "연산|連山"
+    },
+    "예산|禮山": {
+      "latitude": 36.11208,
+      "longitude": 127.279396,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "예산|禮山"
+    },
+    "온양|溫陽": {
+      "latitude": 36.243111,
+      "longitude": 127.144413,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "온양|溫陽"
+    },
+    "은진|恩津": {
+      "latitude": 36.726267,
+      "longitude": 126.401625,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "은진|恩津"
+    },
+    "임천|林川": {
+      "latitude": 36.577791,
+      "longitude": 127.062917,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "임천|林川"
+    },
+    "직산|稷山": {
+      "latitude": 36.089382,
+      "longitude": 127.497783,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "직산|稷山"
+    },
+    "진산|珍山": {
+      "latitude": 36.477647,
+      "longitude": 126.501065,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "진산|珍山"
+    },
+    "천안|天安": {
+      "latitude": 36.730246,
+      "longitude": 126.226409,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "천안|天安"
+    },
+    "청양|靑陽": {
+      "latitude": 36.452411,
+      "longitude": 127.217632,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "청양|靑陽"
+    },
+    "태안|泰安": {
+      "latitude": 36.318095,
+      "longitude": 127.144722,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "태안|泰安"
+    },
+    "한산|韓山": {
+      "latitude": 36.167438,
+      "longitude": 127.056356,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "한산|韓山"
+    },
+    "군산|群山": {
+      "latitude": 35.869086,
+      "longitude": 127.401344,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "군산|群山"
+    },
+    "두릉|杜陵": {
+      "latitude": 35.584986,
+      "longitude": 127.114213,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "두릉|杜陵"
+    },
+    "려산|礪山": {
+      "latitude": 35.480291,
+      "longitude": 127.01273,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "려산|礪山"
+    },
+    "만경|萬頃": {
+      "latitude": 35.631175,
+      "longitude": 127.584471,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "만경|萬頃"
+    },
+    "순창|淳昌": {
+      "latitude": 35.85768,
+      "longitude": 127.841102,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "순창|淳昌"
+    },
+    "시산|時山": {
+      "latitude": 35.401795,
+      "longitude": 127.460336,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "시산|時山"
+    },
+    "여산|礪山": {
+      "latitude": 35.69226,
+      "longitude": 127.140273,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "여산|礪山"
+    },
+    "옥구|沃溝": {
+      "latitude": 35.406131,
+      "longitude": 126.731262,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "옥구|沃溝"
+    },
+    "옥야|沃野": {
+      "latitude": 35.371564,
+      "longitude": 127.5972,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "옥야|沃野"
+    },
+    "완산|完山": {
+      "latitude": 35.61128,
+      "longitude": 126.717438,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "완산|完山"
+    },
+    "용담|龍潭": {
+      "latitude": 35.647715,
+      "longitude": 127.45726,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "용담|龍潭"
+    },
+    "우주|紆州": {
+      "latitude": 35.434392,
+      "longitude": 127.086173,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "우주|紆州"
+    },
+    "운봉|雲峰": {
+      "latitude": 35.492254,
+      "longitude": 127.55337,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "운봉|雲峰"
+    },
+    "익산|益山": {
+      "latitude": 35.599876,
+      "longitude": 126.476207,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "익산|益山"
+    },
+    "장수|長水": {
+      "latitude": 35.435711,
+      "longitude": 127.367921,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "장수|長水"
+    },
+    "전주|全州": {
+      "latitude": 35.441302,
+      "longitude": 127.295747,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "전주|全州"
+    },
+    "진안|鎭安": {
+      "latitude": 35.754235,
+      "longitude": 127.241635,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "진안|鎭安"
+    },
+    "태인|泰仁": {
+      "latitude": 35.758252,
+      "longitude": 127.5082,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "태인|泰仁"
+    },
+    "흥성|興城": {
+      "latitude": 35.840962,
+      "longitude": 126.985374,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "흥성|興城"
+    },
+    "관산|冠山": {
+      "latitude": 34.831863,
+      "longitude": 127.247402,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "관산|冠山"
+    },
+    "낭주|朗州": {
+      "latitude": 34.209021,
+      "longitude": 126.899406,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "낭주|朗州"
+    },
+    "능성|綾城": {
+      "latitude": 35.273353,
+      "longitude": 127.189302,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "능성|綾城"
+    },
+    "도강|道康": {
+      "latitude": 34.466783,
+      "longitude": 127.303693,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "도강|道康"
+    },
+    "도광|道康": {
+      "latitude": 35.186624,
+      "longitude": 126.625621,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "도광|道康"
+    },
+    "동복|同福": {
+      "latitude": 34.507864,
+      "longitude": 126.912785,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "동복|同福"
+    },
+    "랑주|朗州": {
+      "latitude": 34.983924,
+      "longitude": 127.012646,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "랑주|朗州"
+    },
+    "릉성|綾城": {
+      "latitude": 35.177321,
+      "longitude": 126.703239,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "릉성|綾城"
+    },
+    "면성|綿城": {
+      "latitude": 34.92319,
+      "longitude": 126.637618,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "면성|綿城"
+    },
+    "번남|潘南": {
+      "latitude": 34.76707,
+      "longitude": 126.865014,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "번남|潘南"
+    },
+    "보성|寶城": {
+      "latitude": 34.881031,
+      "longitude": 126.986461,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "보성|寶城"
+    },
+    "봉성|鳳城": {
+      "latitude": 34.705606,
+      "longitude": 127.103216,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "봉성|鳳城"
+    },
+    "순천|順天": {
+      "latitude": 34.8842,
+      "longitude": 127.510044,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "순천|順天"
+    },
+    "순천|順川": {
+      "latitude": 39.310442,
+      "longitude": 126.681791,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "순천|順川"
+    },
+    "승평|昇平": {
+      "latitude": 34.493874,
+      "longitude": 127.325541,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "승평|昇平"
+    },
+    "신안|新安": {
+      "latitude": 34.850227,
+      "longitude": 126.824735,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "신안|新安"
+    },
+    "영광|靈光": {
+      "latitude": 35.191505,
+      "longitude": 126.71488,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영광|靈光"
+    },
+    "영성|靈城": {
+      "latitude": 34.683566,
+      "longitude": 127.568551,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영성|靈城"
+    },
+    "영암|靈岩": {
+      "latitude": 34.892578,
+      "longitude": 127.253687,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영암|靈岩"
+    },
+    "영암|靈巖": {
+      "latitude": 34.692869,
+      "longitude": 126.349443,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영암|靈巖"
+    },
+    "장성|長城": {
+      "latitude": 34.46338,
+      "longitude": 126.820774,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "장성|長城"
+    },
+    "장택|長澤": {
+      "latitude": 34.506301,
+      "longitude": 126.501818,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "장택|長澤"
+    },
+    "장흥|長興": {
+      "latitude": 34.80073,
+      "longitude": 127.349132,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "장흥|長興"
+    },
+    "조양|兆陽": {
+      "latitude": 35.092003,
+      "longitude": 127.092783,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "조양|兆陽"
+    },
+    "진도|珍島": {
+      "latitude": 34.495304,
+      "longitude": 126.483505,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "진도|珍島"
+    },
+    "진원|珍原": {
+      "latitude": 34.452714,
+      "longitude": 127.480645,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "진원|珍原"
+    },
+    "탐진|耽津": {
+      "latitude": 34.941626,
+      "longitude": 127.479234,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "탐진|耽津"
+    },
+    "함풍|咸豐": {
+      "latitude": 34.53874,
+      "longitude": 126.948975,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "함풍|咸豐"
+    },
+    "곡강|曲江": {
+      "latitude": 36.657865,
+      "longitude": 128.122605,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "곡강|曲江"
+    },
+    "벽진|碧珍": {
+      "latitude": 35.604438,
+      "longitude": 128.558263,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "벽진|碧珍"
+    },
+    "봉화|奉化": {
+      "latitude": 36.349702,
+      "longitude": 129.227836,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "봉화|奉化"
+    },
+    "비안|比安": {
+      "latitude": 36.229999,
+      "longitude": 128.82749,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "비안|比安"
+    },
+    "상주|尙州": {
+      "latitude": 36.588837,
+      "longitude": 129.267617,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "상주|尙州"
+    },
+    "선산|善山": {
+      "latitude": 36.485827,
+      "longitude": 128.601144,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "선산|善山"
+    },
+    "선상|善山": {
+      "latitude": 36.613,
+      "longitude": 127.911069,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "선상|善山"
+    },
+    "선상|廣平": {
+      "latitude": 36.121387,
+      "longitude": 128.369552,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "선상|廣平"
+    },
+    "성산|星山": {
+      "latitude": 36.736415,
+      "longitude": 128.548673,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "성산|星山"
+    },
+    "성주|星州": {
+      "latitude": 36.414719,
+      "longitude": 128.671644,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "성주|星州"
+    },
+    "순흥|順興": {
+      "latitude": 36.400231,
+      "longitude": 129.40373,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "순흥|順興"
+    },
+    "신광|神光": {
+      "latitude": 36.716151,
+      "longitude": 129.085676,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "신광|神光"
+    },
+    "신녕|新寧": {
+      "latitude": 36.026251,
+      "longitude": 128.779739,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "신녕|新寧"
+    },
+    "안동|安東": {
+      "latitude": 36.277534,
+      "longitude": 127.857218,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "안동|安東"
+    },
+    "안정|安定": {
+      "latitude": 36.47467,
+      "longitude": 129.039476,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "안정|安定"
+    },
+    "야성|野城": {
+      "latitude": 35.760365,
+      "longitude": 128.78142,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "야성|野城"
+    },
+    "연일|延日": {
+      "latitude": 35.714559,
+      "longitude": 128.390747,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "연일|延日"
+    },
+    "영덕|盈德": {
+      "latitude": 36.091547,
+      "longitude": 128.040717,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영덕|盈德"
+    },
+    "영순|永順": {
+      "latitude": 35.988971,
+      "longitude": 128.032166,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영순|永順"
+    },
+    "영양|永陽": {
+      "latitude": 36.557561,
+      "longitude": 128.766588,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영양|永陽"
+    },
+    "영양|潁陽": {
+      "latitude": 36.41088,
+      "longitude": 128.034624,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영양|潁陽"
+    },
+    "영양|英陽": {
+      "latitude": 37.065829,
+      "longitude": 128.800419,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영양|英陽"
+    },
+    "영일|迎日": {
+      "latitude": 37.009277,
+      "longitude": 128.8089,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영일|迎日"
+    },
+    "영주|瀛州": {
+      "latitude": 36.840172,
+      "longitude": 128.45153,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영주|瀛州"
+    },
+    "영천|永川": {
+      "latitude": 36.772747,
+      "longitude": 128.747531,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영천|永川"
+    },
+    "영해|寧海": {
+      "latitude": 36.595958,
+      "longitude": 128.879925,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영해|寧海"
+    },
+    "예안|禮安": {
+      "latitude": 36.295043,
+      "longitude": 128.506207,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "예안|禮安"
+    },
+    "예천|禮泉": {
+      "latitude": 35.617373,
+      "longitude": 128.788777,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "예천|禮泉"
+    },
+    "예천|醴泉": {
+      "latitude": 36.544739,
+      "longitude": 128.94309,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "예천|醴泉"
+    },
+    "오천|烏川": {
+      "latitude": 35.907664,
+      "longitude": 128.818843,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "오천|烏川"
+    },
+    "옥산|玉山": {
+      "latitude": 36.055642,
+      "longitude": 128.859478,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "옥산|玉山"
+    },
+    "옥성|沃城": {
+      "latitude": 36.961861,
+      "longitude": 128.854671,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "옥성|沃城"
+    },
+    "용궁|龍宮": {
+      "latitude": 36.710577,
+      "longitude": 128.430237,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "용궁|龍宮"
+    },
+    "월성|月城": {
+      "latitude": 36.424736,
+      "longitude": 129.113734,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "월성|月城"
+    },
+    "의성|義城": {
+      "latitude": 36.878944,
+      "longitude": 128.777042,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "의성|義城"
+    },
+    "의흥|義興": {
+      "latitude": 36.250869,
+      "longitude": 129.363495,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "의흥|義興"
+    },
+    "인동|仁同": {
+      "latitude": 36.000963,
+      "longitude": 129.47199,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "인동|仁同"
+    },
+    "일선|一善": {
+      "latitude": 36.139667,
+      "longitude": 128.736876,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "일선|一善"
+    },
+    "일직|一直": {
+      "latitude": 35.95521,
+      "longitude": 129.085824,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "일직|一直"
+    },
+    "장기|長鬐": {
+      "latitude": 36.228266,
+      "longitude": 129.127656,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "장기|長鬐"
+    },
+    "정일|延日": {
+      "latitude": 36.75021,
+      "longitude": 129.132531,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "정일|延日"
+    },
+    "진보|眞寶": {
+      "latitude": 35.943264,
+      "longitude": 128.810752,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "진보|眞寶"
+    },
+    "진성|眞城": {
+      "latitude": 35.764657,
+      "longitude": 128.419916,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "진성|眞城"
+    },
+    "청도|淸道": {
+      "latitude": 36.27384,
+      "longitude": 129.096658,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "청도|淸道"
+    },
+    "청송|靑松": {
+      "latitude": 36.526862,
+      "longitude": 128.95114,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "청송|靑松"
+    },
+    "청하|淸河": {
+      "latitude": 36.28862,
+      "longitude": 127.854471,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "청하|淸河"
+    },
+    "평해|平海": {
+      "latitude": 36.593243,
+      "longitude": 128.888637,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "평해|平海"
+    },
+    "풍기|豐基": {
+      "latitude": 36.031284,
+      "longitude": 128.980915,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "풍기|豐基"
+    },
+    "풍산|豐山": {
+      "latitude": 36.206144,
+      "longitude": 129.330886,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "풍산|豐山"
+    },
+    "풍천|豐川": {
+      "latitude": 35.707756,
+      "longitude": 128.963312,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "풍천|豐川"
+    },
+    "하양|河陽": {
+      "latitude": 35.835523,
+      "longitude": 128.037196,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "하양|河陽"
+    },
+    "현풍|玄風": {
+      "latitude": 36.402546,
+      "longitude": 128.497379,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "현풍|玄風"
+    },
+    "곤산|昆山": {
+      "latitude": 35.244957,
+      "longitude": 127.934538,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "곤산|昆山"
+    },
+    "금녕|金寧": {
+      "latitude": 35.268817,
+      "longitude": 128.110157,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "금녕|金寧"
+    },
+    "금령|金寧": {
+      "latitude": 35.36336,
+      "longitude": 128.982325,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "금령|金寧"
+    },
+    "금릉|金寧": {
+      "latitude": 35.398738,
+      "longitude": 128.356862,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "금릉|金寧"
+    },
+    "금영|金寧": {
+      "latitude": 35.20632,
+      "longitude": 128.342456,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "금영|金寧"
+    },
+    "김녕|金寧": {
+      "latitude": 35.127189,
+      "longitude": 128.358187,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "김녕|金寧"
+    },
+    "김령|金寧": {
+      "latitude": 35.250925,
+      "longitude": 128.434664,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "김령|金寧"
+    },
+    "김영|金寧": {
+      "latitude": 34.799703,
+      "longitude": 128.008559,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "김영|金寧"
+    },
+    "령산|靈山": {
+      "latitude": 35.522365,
+      "longitude": 128.444658,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "령산|靈山"
+    },
+    "마산|馬山": {
+      "latitude": 35.338612,
+      "longitude": 128.204437,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "마산|馬山"
+    },
+    "선녕|宣寧": {
+      "latitude": 35.489652,
+      "longitude": 127.86174,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "선녕|宣寧"
+    },
+    "선영|宜寧": {
+      "latitude": 35.735466,
+      "longitude": 127.969693,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "선영|宜寧"
+    },
+    "섬천|陜川": {
+      "latitude": 35.503309,
+      "longitude": 128.842009,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "섬천|陜川"
+    },
+    "아주|鵝洲": {
+      "latitude": 35.284649,
+      "longitude": 128.781752,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "아주|鵝洲"
+    },
+    "안음|安陰": {
+      "latitude": 35.530578,
+      "longitude": 128.434425,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "안음|安陰"
+    },
+    "안의|安義": {
+      "latitude": 35.40611,
+      "longitude": 128.497192,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "안의|安義"
+    },
+    "야성|冶城": {
+      "latitude": 35.629273,
+      "longitude": 127.707425,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "야성|冶城"
+    },
+    "양산|梁山": {
+      "latitude": 34.893981,
+      "longitude": 128.006154,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "양산|梁山"
+    },
+    "영산|靈山": {
+      "latitude": 34.926997,
+      "longitude": 128.349958,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영산|靈山"
+    },
+    "웅천|熊川": {
+      "latitude": 35.048173,
+      "longitude": 128.057041,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "웅천|熊川"
+    },
+    "의녕|宜寧": {
+      "latitude": 35.368478,
+      "longitude": 128.062772,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "의녕|宜寧"
+    },
+    "의령|宜寧": {
+      "latitude": 35.551055,
+      "longitude": 128.498005,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "의령|宜寧"
+    },
+    "의영|宜寧": {
+      "latitude": 34.93676,
+      "longitude": 128.246041,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "의영|宜寧"
+    },
+    "의춘|宜春": {
+      "latitude": 35.807445,
+      "longitude": 127.801708,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "의춘|宜春"
+    },
+    "진산|晉山": {
+      "latitude": 35.366069,
+      "longitude": 128.335693,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "진산|晉山"
+    },
+    "진양|晉陽": {
+      "latitude": 35.393327,
+      "longitude": 128.294598,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "진양|晉陽"
+    },
+    "진주|晉州": {
+      "latitude": 35.313753,
+      "longitude": 127.936429,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "진주|晉州"
+    },
+    "진해|鎭海": {
+      "latitude": 35.243999,
+      "longitude": 128.336179,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "진해|鎭海"
+    },
+    "창녕|昌寧": {
+      "latitude": 35.179809,
+      "longitude": 128.920869,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "창녕|昌寧"
+    },
+    "창령|昌寧": {
+      "latitude": 35.235972,
+      "longitude": 127.770374,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "창령|昌寧"
+    },
+    "창영|昌寧": {
+      "latitude": 35.098487,
+      "longitude": 128.077785,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "창영|昌寧"
+    },
+    "창원|昌原": {
+      "latitude": 34.786757,
+      "longitude": 128.59116,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "창원|昌原"
+    },
+    "초계|草溪": {
+      "latitude": 35.506502,
+      "longitude": 128.900132,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "초계|草溪"
+    },
+    "칠원|漆原": {
+      "latitude": 35.528706,
+      "longitude": 127.710288,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "칠원|漆原"
+    },
+    "팔계|八溪": {
+      "latitude": 35.101872,
+      "longitude": 127.949634,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "팔계|八溪"
+    },
+    "하동|河東": {
+      "latitude": 35.356164,
+      "longitude": 129.149714,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "하동|河東"
+    },
+    "함안|咸安": {
+      "latitude": 35.10549,
+      "longitude": 128.065287,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "함안|咸安"
+    },
+    "함양|咸陽": {
+      "latitude": 34.839341,
+      "longitude": 128.526091,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "함양|咸陽"
+    },
+    "협천|陜川": {
+      "latitude": 35.190445,
+      "longitude": 128.11532,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "협천|陜川"
+    },
+    "회산|檜山": {
+      "latitude": 35.509839,
+      "longitude": 127.696902,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "회산|檜山"
+    },
+    "전의|全義": {
+      "latitude": 36.618144,
+      "longitude": 127.143321,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "전의|全義"
+    },
+    "제주|濟州": {
+      "latitude": 33.310092,
+      "longitude": 126.620233,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "제주|濟州"
+    },
+    "탐라|耽羅": {
+      "latitude": 33.332056,
+      "longitude": 126.290818,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "탐라|耽羅"
+    },
+    "명천|明川": {
+      "latitude": 42.678369,
+      "longitude": 129.995991,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "명천|明川"
+    },
+    "무산|茂山": {
+      "latitude": 42.608795,
+      "longitude": 129.914652,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "무산|茂山"
+    },
+    "부녕|扶寧": {
+      "latitude": 35.72665,
+      "longitude": 126.738319,
+      "mappingConfidence": "historical_alias",
+      "source": "Surname.info cached 부안김씨 page: 扶寧 is now 부안",
+      "query": "扶寧 부안",
+      "locationKey": "부안|扶安"
+    },
+    "부영|扶寧": {
+      "latitude": 35.72665,
+      "longitude": 126.738319,
+      "mappingConfidence": "historical_alias",
+      "source": "Surname.info cached 부안김씨 page: 扶寧 is now 부안",
+      "query": "扶寧 부안",
+      "locationKey": "부안|扶安"
+    },
+    "온성|穩城": {
+      "latitude": 41.787127,
+      "longitude": 129.756079,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "온성|穩城"
+    },
+    "회령|會寧": {
+      "latitude": 41.57351,
+      "longitude": 129.243,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "회령|會寧"
+    },
+    "덕원|德源": {
+      "latitude": 40.148228,
+      "longitude": 127.378499,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "덕원|德源"
+    },
+    "영흥|永興": {
+      "latitude": 40.572028,
+      "longitude": 127.667564,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영흥|永興"
+    },
+    "정평|定平": {
+      "latitude": 40.115107,
+      "longitude": 127.752879,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "정평|定平"
+    },
+    "청해|靑海": {
+      "latitude": 40.238747,
+      "longitude": 128.312257,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "청해|靑海"
+    },
+    "함녕|咸寧": {
+      "latitude": 40.000873,
+      "longitude": 127.884056,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "함녕|咸寧"
+    },
+    "함영|咸寧": {
+      "latitude": 40.000873,
+      "longitude": 127.884056,
+      "mappingConfidence": "compatibility_alias",
+      "source": "KOSIS compatibility label sharing the 함녕 咸寧 locality",
+      "query": "함녕|咸寧",
+      "locationKey": "함녕|咸寧"
+    },
+    "함종|咸從": {
+      "latitude": 39.669356,
+      "longitude": 126.741899,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "함종|咸從"
+    },
+    "안변|安邊": {
+      "latitude": 38.461444,
+      "longitude": 127.817774,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "안변|安邊"
+    },
+    "이천|伊川": {
+      "latitude": 38.895575,
+      "longitude": 126.957926,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "이천|伊川"
+    },
+    "회양|淮陽": {
+      "latitude": 38.759685,
+      "longitude": 127.484441,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "회양|淮陽"
+    },
+    "박천|博川": {
+      "latitude": 39.822483,
+      "longitude": 125.21463,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "박천|博川"
+    },
+    "선천|宣川": {
+      "latitude": 40.163339,
+      "longitude": 125.1066,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "선천|宣川"
+    },
+    "연주|延州": {
+      "latitude": 40.14329,
+      "longitude": 126.015149,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "연주|延州"
+    },
+    "영변|寧邊": {
+      "latitude": 40.080683,
+      "longitude": 125.42952,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "영변|寧邊"
+    },
+    "용천|龍川": {
+      "latitude": 39.678035,
+      "longitude": 125.785828,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "용천|龍川"
+    },
+    "의주|義州": {
+      "latitude": 40.643847,
+      "longitude": 125.373552,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "의주|義州"
+    },
+    "정주|貞州": {
+      "latitude": 40.449361,
+      "longitude": 125.508341,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "정주|貞州"
+    },
+    "철산|鐵山": {
+      "latitude": 40.154696,
+      "longitude": 125.776264,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "철산|鐵山"
+    },
+    "강서|江西": {
+      "latitude": 39.338266,
+      "longitude": 126.46962,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "강서|江西"
+    },
+    "당악|唐岳": {
+      "latitude": 39.54023,
+      "longitude": 126.219241,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "당악|唐岳"
+    },
+    "맹산|孟山": {
+      "latitude": 39.75551,
+      "longitude": 126.508951,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "맹산|孟山"
+    },
+    "성천|成川": {
+      "latitude": 39.684362,
+      "longitude": 126.016631,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "성천|成川"
+    },
+    "숙천|肅川": {
+      "latitude": 39.153584,
+      "longitude": 126.493414,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "숙천|肅川"
+    },
+    "안주|安州": {
+      "latitude": 39.463174,
+      "longitude": 126.220261,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "안주|安州"
+    },
+    "양덕|陽德": {
+      "latitude": 39.492961,
+      "longitude": 125.883235,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "양덕|陽德"
+    },
+    "용강|龍岡": {
+      "latitude": 39.460413,
+      "longitude": 125.465146,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "용강|龍岡"
+    },
+    "중화|中和": {
+      "latitude": 39.841595,
+      "longitude": 126.651319,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "중화|中和"
+    },
+    "평원|平原": {
+      "latitude": 39.203018,
+      "longitude": 126.160425,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "평원|平原"
+    },
+    "개성|開城": {
+      "latitude": 38.323416,
+      "longitude": 126.384925,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "개성|開城"
+    },
+    "봉산|鳳山": {
+      "latitude": 38.871918,
+      "longitude": 125.864647,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "봉산|鳳山"
+    },
+    "서흥|瑞興": {
+      "latitude": 38.185094,
+      "longitude": 126.422956,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "서흥|瑞興"
+    },
+    "설성|雪成": {
+      "latitude": 38.439272,
+      "longitude": 126.414709,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "설성|雪成"
+    },
+    "수안|遂安": {
+      "latitude": 38.926169,
+      "longitude": 126.862708,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "수안|遂安"
+    },
+    "신계|新溪": {
+      "latitude": 38.900373,
+      "longitude": 126.712467,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "신계|新溪"
+    },
+    "장단|長湍": {
+      "latitude": 38.441959,
+      "longitude": 125.835565,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "장단|長湍"
+    },
+    "제안|齊安": {
+      "latitude": 39.088774,
+      "longitude": 126.709045,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "제안|齊安"
+    },
+    "평산|平山": {
+      "latitude": 38.271909,
+      "longitude": 126.152826,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "평산|平山"
+    },
+    "해풍|海豐": {
+      "latitude": 38.77798,
+      "longitude": 125.777413,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "해풍|海豐"
+    },
+    "백천|白川": {
+      "latitude": 38.343148,
+      "longitude": 125.584969,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "백천|白川"
+    },
+    "신천|信川": {
+      "latitude": 38.030114,
+      "longitude": 125.508259,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "신천|信川"
+    },
+    "안악|安岳": {
+      "latitude": 38.070734,
+      "longitude": 126.081382,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "안악|安岳"
+    },
+    "연백|延白": {
+      "latitude": 38.090561,
+      "longitude": 124.974436,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "연백|延白"
+    },
+    "연안|延安": {
+      "latitude": 38.520382,
+      "longitude": 125.442374,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "연안|延安"
+    },
+    "은율|殷栗": {
+      "latitude": 38.505366,
+      "longitude": 125.432442,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "은율|殷栗"
+    },
+    "장연|長淵": {
+      "latitude": 37.937246,
+      "longitude": 126.003572,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "장연|長淵"
+    },
+    "재녕|載寧": {
+      "latitude": 37.895892,
+      "longitude": 126.092665,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "재녕|載寧"
+    },
+    "재령|載寧": {
+      "latitude": 38.136053,
+      "longitude": 125.158015,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "재령|載寧"
+    },
+    "재영|載寧": {
+      "latitude": 38.049096,
+      "longitude": 126.015832,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "재영|載寧"
+    },
+    "평양|平壤": {
+      "latitude": 38.970322,
+      "longitude": 125.637868,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "평양|平壤"
+    }
+  }
+}

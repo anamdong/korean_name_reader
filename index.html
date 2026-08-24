@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&amp;family=Noto+Sans+JP:wght@400;500;600;700;800&amp;family=Noto+Sans+KR:wght@400;500;600;700;800&amp;family=Noto+Sans+TC:wght@400;500;600;700;800&amp;display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260821-bongwan-map" />
+    <link rel="stylesheet" href="./styles.css?v=20260824-map-selection-contrast-1" />
   </head>
   <body>
     <header class="utility-header">
@@ -168,10 +168,6 @@
 
       <section id="bongwan-panel" class="site-panel bongwan-panel" role="tabpanel" aria-labelledby="bongwan-tab" data-panel="bongwan" tabindex="0" hidden>
         <div class="bongwan-explorer-content">
-          <header class="bongwan-explorer-header">
-            <h1 data-i18n="bongwanMapTitle">Bon-gwan map</h1>
-            <p data-i18n="bongwanMapIntro">Explore historical Bon-gwan origins across the Korean Peninsula.</p>
-          </header>
           <div class="bongwan-search-wrap">
             <label class="visually-hidden" for="bongwan-query" data-i18n="bongwanSearchLabel">Search surname or Bon-gwan</label>
             <div class="bongwan-search-row">
@@ -197,7 +193,7 @@
             </section>
             <aside id="bongwan-region-panel" class="bongwan-region-panel" hidden></aside>
           </div>
-          <section class="bongwan-results-section" aria-labelledby="bongwan-results-title">
+          <section id="bongwan-results-section" class="bongwan-results-section" aria-labelledby="bongwan-results-title" hidden>
             <div class="bongwan-section-heading">
               <h2 id="bongwan-results-title" data-i18n="matchingClans">Matching clans</h2>
               <span id="bongwan-results-count" class="bongwan-results-count"></span>
@@ -409,6 +405,6 @@
       </article>
     </template>
 
-  <script type="module" src="./app.js?v=20260821-bongwan-map"></script>
+  <script type="module" src="./app.js?v=20260824-map-search-heat"></script>
   </body>
 </html>
