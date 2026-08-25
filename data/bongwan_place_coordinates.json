@@ -2767,12 +2767,12 @@
       "source": "Validated province/equivalent association",
       "query": "서흥|瑞興"
     },
-    "설성|雪成": {
+    "설성|雪城": {
       "latitude": 38.439272,
       "longitude": 126.414709,
       "mappingConfidence": "regional_approximation",
       "source": "Validated province/equivalent association",
-      "query": "설성|雪成"
+      "query": "설성|雪城"
     },
     "수안|遂安": {
       "latitude": 38.926169,
@@ -2815,13 +2815,6 @@
       "mappingConfidence": "regional_approximation",
       "source": "Validated province/equivalent association",
       "query": "해풍|海豐"
-    },
-    "백천|白川": {
-      "latitude": 38.343148,
-      "longitude": 125.584969,
-      "mappingConfidence": "regional_approximation",
-      "source": "Validated province/equivalent association",
-      "query": "백천|白川"
     },
     "신천|信川": {
       "latitude": 38.030114,
@@ -2892,6 +2885,13 @@
       "mappingConfidence": "regional_approximation",
       "source": "Validated province/equivalent association",
       "query": "평양|平壤"
+    },
+    "배천|白川": {
+      "latitude": 38.343148,
+      "longitude": 125.584969,
+      "mappingConfidence": "regional_approximation",
+      "source": "Validated province/equivalent association",
+      "query": "배천|白川"
     }
   }
 }

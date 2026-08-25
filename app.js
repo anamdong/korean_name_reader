@@ -1,15 +1,15 @@
 import { analyzeLatinNameInput, createKoreanRomanSuggestionIndex, isKoreanRomanShorthand, keyboardWeightedDistance } from "./name_input_helpers.js?v=20260814-chinese-guidance-3";
 import { clanIdForHangnyeol, findHangnyeolMatches, leadingSurnameHanja, sourceRecordsForHangnyeolMatch } from "./hangnyeol_matcher.js?v=20260817-explicit-surname-hanja";
-import { initializeBongwanExplorerUi } from "./bongwan_explorer_ui.js?v=20260824-map-search-heat-1";
+import { initializeBongwanExplorerUi } from "./bongwan_explorer_ui.js?v=20260825-map-entry-sequence-3";
 
 const dataUrl = "./data/name_index.json?v=20260804-japanese-surname-priors";
 const hanjaReadingUrl = "./data/hanja_readings.json?v=20260721-unihan-khangul";
 const hanjaNameCharUrl = "./data/hanja_name_chars.json?v=20260721-top1000-name-hanja";
 const hanjaUsageRankUrl = "./data/hanja_usage_rank.json?v=20260721-ohmybaby-top50";
-const bonGwanDataUrl = "./data/bon_gwan_by_surname.json?v=20260721-kosis-2015-hanja";
-const hangnyeolDataUrl = "./data/hangnyeol_by_clan.json?v=20260821-branch-hanja-15";
-const bongwanGeographyUrl = "./data/bongwan_geography.json?v=20260821-map-explorer-1";
-const bongwanPlaceCoordinatesUrl = "./data/bongwan_place_coordinates.json?v=20260824-locality-heatmap-1";
+const bonGwanDataUrl = "./data/bon_gwan_by_surname.json?v=20260825-baechon-yu";
+const hangnyeolDataUrl = "./data/hangnyeol_by_clan.json?v=20260825-cheorwon-choi-1";
+const bongwanGeographyUrl = "./data/bongwan_geography.json?v=20260825-baechon-yu";
+const bongwanPlaceCoordinatesUrl = "./data/bongwan_place_coordinates.json?v=20260825-baechon-yu";
 const peninsulaRegionsUrl = "./data/peninsula_regions.geojson?v=20260821-map-explorer-1";
 
 const LANGUAGE_STORAGE_KEY = "gildonghong.language";
@@ -709,8 +709,47 @@ function moveLanguageMenuFocus(direction) {
   languageOptionEls[nextIndex].focus();
 }
 
+let bongwanMapEntryTimer = 0;
+let bongwanMapPulseTimer = 0;
+const BONGWAN_MAP_PIN_STAGGER_MS = 760;
+const BONGWAN_MAP_PIN_ANIMATION_MS = 480;
+const BONGWAN_MAP_PULSE_SETTLE_MS = 120;
+
+function playBongwanMapEntryAnimation() {
+  const panel = document.querySelector("#bongwan-panel");
+  if (!panel) return;
+  window.clearTimeout(bongwanMapEntryTimer);
+  window.clearTimeout(bongwanMapPulseTimer);
+  let entryComplete = false;
+  const enablePulses = () => {
+    window.clearTimeout(bongwanMapPulseTimer);
+    panel.classList.remove("is-entering-map");
+    panel.classList.add("is-map-pulses-ready");
+  };
+  const completeEntry = () => {
+    if (entryComplete) return;
+    entryComplete = true;
+    window.clearTimeout(bongwanMapEntryTimer);
+    panel.classList.remove("is-entering-map");
+    bongwanMapPulseTimer = window.setTimeout(enablePulses, BONGWAN_MAP_PULSE_SETTLE_MS);
+  };
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    enablePulses();
+    return;
+  }
+  panel.classList.remove("is-entering-map", "is-map-pulses-ready");
+  void panel.offsetWidth;
+  panel.classList.add("is-entering-map");
+  // Rings are withheld until the slowest staggered pin has completely settled.
+  bongwanMapEntryTimer = window.setTimeout(
+    completeEntry,
+    BONGWAN_MAP_PIN_STAGGER_MS + BONGWAN_MAP_PIN_ANIMATION_MS,
+  );
+}
+
 function setActiveSiteTab(name, options = {}) {
   const { focus = false } = options;
+  const previousTab = siteTabEls.find((tab) => tab.getAttribute("aria-selected") === "true")?.dataset.tab;
   const activeTab = siteTabEls.find((tab) => tab.dataset.tab === name) || siteTabEls[0];
   if (!activeTab) return;
   for (const tab of siteTabEls) {
@@ -721,6 +760,7 @@ function setActiveSiteTab(name, options = {}) {
   for (const panel of sitePanelEls) {
     panel.hidden = panel.dataset.panel !== activeTab.dataset.tab;
   }
+  if (activeTab.dataset.tab === "bongwan" && previousTab !== "bongwan") playBongwanMapEntryAnimation();
   if (activeTab.dataset.tab !== "home") stopActivePronunciation();
   if (focus) activeTab.focus();
 }

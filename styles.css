@@ -2916,9 +2916,16 @@ html[data-language="zh"] .typewriter-wrap::before {
 .bongwan-search-row input { background: rgb(255 255 255 / 0.96); box-shadow: 0 6px 20px rgba(17, 17, 17, 0.10); }
 .bongwan-map-layout { display: block; }
 .bongwan-map-heading { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.bongwan-map-frame { position: fixed; z-index: 0; inset: 0; min-height: 100dvh; border: 0; border-radius: 0; background: #eff6ff; }
+.bongwan-map-frame { position: fixed; z-index: 0; inset: 0; min-height: 100dvh; border: 0; border-radius: 0; background: #fff; isolation: isolate; }
+.bongwan-map-frame::before { content: ""; position: absolute; z-index: -1; inset: 0; background: #eff6ff; clip-path: circle(0% at 0 0); pointer-events: none; }
 .bongwan-map { width: 100%; height: 100dvh; min-height: 0; }
 .bongwan-heat-dot { fill: rgb(var(--color-primary-rgb) / calc(0.14 + (var(--heat-intensity, 0) * 0.76))); transition: fill 160ms ease-out, opacity 160ms ease-out; }
+#bongwan-panel.is-entering-map .bongwan-map-frame::before { animation: bongwan-map-surface-in 860ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+#bongwan-panel.is-map-pulses-ready .bongwan-map-frame::before { clip-path: circle(150% at 0 0); }
+#bongwan-panel.is-entering-map .bongwan-heat-dot { transform-box: fill-box; transform-origin: center; animation: bongwan-map-pin-in 480ms cubic-bezier(0.22, 0.8, 0.28, 1) var(--map-pin-delay, 0s) both; }
+#bongwan-panel:not(.is-map-pulses-ready) .bongwan-location-pulse { opacity: 0; animation: none; }
+@keyframes bongwan-map-surface-in { from { clip-path: circle(0% at 0 0); } to { clip-path: circle(150% at 0 0); } }
+@keyframes bongwan-map-pin-in { 0% { opacity: 0; transform: translateY(-8px) scale(0.16); } 72% { opacity: 1; transform: translateY(1px) scale(1.08); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
 .bongwan-heat-dot:not(.is-selectable) { fill: rgb(var(--color-primary-rgb) / 0.12); transition: none; }
 .bongwan-heat-dot.is-selectable { fill: var(--color-primary); filter: drop-shadow(0 0 3px rgb(var(--color-primary-rgb) / 0.72)); }
 .bongwan-heat-dot.is-selected { fill: var(--color-primary); opacity: 1; filter: drop-shadow(0 0 4px rgb(var(--color-primary-rgb) / 0.72)); }
@@ -2952,7 +2959,7 @@ html[data-language="zh"] .typewriter-wrap::before {
 
 /* Keep the map visible around compact, dismissible mobile overlays. */
 .bongwan-search-wrap { top: 88px; }
-.bongwan-location-pulse { animation-delay: var(--pulse-delay, 0s); }
+#bongwan-panel.is-map-pulses-ready .bongwan-location-pulse { animation-delay: var(--pulse-delay, 0s); }
 @keyframes bongwan-location-pulse { 0% { opacity: 0; transform: scale(0.72); } 16% { opacity: 0.7; } 64%, 100% { opacity: 0; transform: scale(1.6); } }
 .bongwan-report-header { position: relative; padding-right: 42px; }
 .bongwan-report-close { position: absolute; top: -2px; right: -2px; width: 32px; height: 32px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--text-secondary); font-size: 22px; line-height: 1; }

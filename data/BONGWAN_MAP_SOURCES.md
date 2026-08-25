@@ -69,7 +69,7 @@ recorded as the historical name of 영광 정씨 and maps to South Jeolla.
 The full place set was also checked against direct clan-form articles in Korean
 Wikipedia when the index did not resolve an alias. This added, for example,
 `낭주/랑주(朗州)` through 영암, `면성(綿城)` through 무안,
-`설성(雪成)` through 개성, `팔계(八溪)` through 초계, and
+`설성(雪城)` through 개성, `팔계(八溪)` through 초계, and
 `효령(孝令)` through 군위. Matching Hanja alone is not treated as evidence:
 existing current-region mappings are retained when a source result refers to a
 different place sharing the same characters.

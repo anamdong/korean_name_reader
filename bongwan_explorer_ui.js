@@ -116,6 +116,21 @@ export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolD
   const state = { selectedClanId: "", selectedBranchId: "", selectedLocationKey: "", activeQuery: "", lastMatches: explorer.entries.map((entry) => ({ entry, relevance: 1 })), resultLimit: MAX_RESULTS };
   const features = regionGeoJson?.features || [];
   const dotGrid = buildDotGrid(features);
+  const mapEntryBounds = dotGrid.reduce((bounds, dot) => ({
+    minX: Math.min(bounds.minX, dot.x),
+    maxX: Math.max(bounds.maxX, dot.x),
+    minY: Math.min(bounds.minY, dot.y),
+    maxY: Math.max(bounds.maxY, dot.y),
+  }), { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity });
+  const mapEntryWidth = Math.max(1, mapEntryBounds.maxX - mapEntryBounds.minX);
+  const mapEntryHeight = Math.max(1, mapEntryBounds.maxY - mapEntryBounds.minY);
+  const mapEntryProgress = (dot) => Math.min(1, (
+    ((dot.x - mapEntryBounds.minX) / mapEntryWidth +
+      (dot.y - mapEntryBounds.minY) / mapEntryHeight) / 2
+  ));
+  const mapEntryFinalDotId = dotGrid.reduce((lastDot, dot) => (
+    !lastDot || mapEntryProgress(dot) > mapEntryProgress(lastDot) ? dot : lastDot
+  ), null)?.id || "";
   const mapViewport = { scale: 1, centerX: MAP_VIEWBOX_WIDTH / 2, centerY: MAP_VIEWBOX_HEIGHT / 2 };
   const mapViewportTarget = { ...mapViewport };
   const mapPointers = new Map();
@@ -125,6 +140,8 @@ export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolD
   let queryHintTimer = null;
   let queryHintFadeTimer = null;
   let mapViewportAnimationFrame = 0;
+  let wheelZoomAnimationFrame = 0;
+  let pendingWheelZoom = null;
   let mapRenderKey = null;
   const scrollbarFadeTimers = new WeakMap();
 
@@ -224,7 +241,22 @@ export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolD
     updateMapViewport();
     elements.map.addEventListener("wheel", (event) => {
       event.preventDefault();
-      zoomMapAt(mapPointFromClient(event.clientX, event.clientY, mapViewportTarget), Math.exp(-event.deltaY * 0.0015));
+      const point = mapPointFromClient(event.clientX, event.clientY, mapViewportTarget);
+      const deltaY = Math.max(-160, Math.min(160, event.deltaY));
+      if (pendingWheelZoom) {
+        pendingWheelZoom.point = point;
+        pendingWheelZoom.deltaY = Math.max(-240, Math.min(240, pendingWheelZoom.deltaY + deltaY));
+      } else {
+        pendingWheelZoom = { point, deltaY };
+      }
+      if (wheelZoomAnimationFrame) return;
+      wheelZoomAnimationFrame = requestAnimationFrame(() => {
+        wheelZoomAnimationFrame = 0;
+        const pending = pendingWheelZoom;
+        pendingWheelZoom = null;
+        if (!pending) return;
+        zoomMapAt(pending.point, Math.exp(-pending.deltaY * 0.0012));
+      });
     }, { passive: false });
     elements.map.addEventListener("pointerdown", (event) => {
       if (event.pointerType === "mouse" && event.button !== 0) return;
@@ -518,6 +550,9 @@ export function initializeBongwanExplorerUi({ bonGwanData, geography, hangnyeolD
       });
       circle.dataset.locationKeys = bucket?.map((location) => location.locationKey).join("\u001f") || "";
       circle.style.setProperty("--heat-intensity", heat.toFixed(3));
+      const pinDelay = 0.04 + mapEntryProgress(dot) * 0.72;
+      circle.style.setProperty("--map-pin-delay", `${pinDelay.toFixed(3)}s`);
+      if (dot.id === mapEntryFinalDotId) circle.dataset.mapEntryFinalPin = "true";
       elements.map.append(circle);
       if (!bucket?.length) continue;
       const pulse = svgElement("circle", {
